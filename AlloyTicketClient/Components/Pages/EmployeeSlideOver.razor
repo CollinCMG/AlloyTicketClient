@@ -1,5 +1,7 @@
 @* Slide-over panel for employee actions *@
 @inject FormFieldService FormFieldService
+@using AlloyTicketClient.Components.Fields
+@using AlloyTicketClient
 
 @if (Show)
 {
@@ -16,12 +18,10 @@
                 }
                 else if (fields != null && fields.Count > 0)
                 {
-                    <ul>
-                        @foreach (var field in fields)
-                        {
-                            <li>@(string.IsNullOrWhiteSpace(field.Field_Label) ? field.Field_Name : field.Field_Label)</li>
-                        }
-                    </ul>
+                    @foreach (var field in fields)
+                    {
+                        <FieldInput Field="field" />
+                    }
                 }
                 else
                 {

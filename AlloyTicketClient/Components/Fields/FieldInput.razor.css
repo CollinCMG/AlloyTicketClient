@@ -1,0 +1,6 @@
+.field-block .required {
+    color: #e53935 !important;
+    margin-left: 0.25em;
+    font-weight: bold;
+    font-size: 1.1em;
+}

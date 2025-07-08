@@ -1,3 +1,5 @@
+using AlloyTicketClient.Enums;
+
 public class FormFieldDto
 {
     public Guid ID { get; set; }
@@ -12,4 +14,5 @@ public class FormFieldDto
     public string? Table_Name { get; set; }
     public Guid? Lookup_ID { get; set; }
     public string? Filter { get; set; }
+    public FieldType? FieldType { get; set; } 
 }

@@ -1,0 +1,89 @@
+@using AlloyTicketClient.Enums
+@using AlloyTicketClient
+@using Microsoft.AspNetCore.Components
+
+@if (Field != null)
+{
+    <div class="field-block">
+        <h4>
+            @GetDisplayName(Field)
+            @if (Field.Mandatory == true)
+            {
+                <span class="required" title="Required">*</span>
+            }
+        </h4>
+        @if (Field.FieldType == FieldType.Four && !string.IsNullOrWhiteSpace(Field.Lookup_Values))
+        {
+            var options = ParseLookupValues(Field.Lookup_Values);
+            <select class="form-control">
+                <option value="">-- Select --</option>
+                @foreach (var option in options)
+                {
+                    <option value="@option">@option</option>
+                }
+            </select>
+        }
+        else if (Field.FieldType == FieldType.Four)
+        {
+            <input type="text" class="form-control" />
+        }
+        else if (Field.FieldType == FieldType.Dropdown || (Field.Field_Name?.Equals("Requester_Id", StringComparison.OrdinalIgnoreCase) ?? false))
+        {
+            <select class="form-control">
+                <option value="">-- Select --</option>
+                <!-- TODO: Populate with actual Requester options -->
+            </select>
+        }
+        else if (Field.Field_Name?.Equals("Due_date", StringComparison.OrdinalIgnoreCase) ?? false)
+        {
+            <input type="date" class="form-control" @bind-value="dueDateValue" @bind-value:event="oninput" />
+        }
+        else
+        {
+            <!-- Future: handle other field types -->
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public FormFieldDto? Field { get; set; }
+
+    private DateTime? dueDateValue { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (Field?.Field_Name?.Equals("Due_date", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            if (DateTime.TryParse(Field.Filter, out var dt))
+                dueDateValue = dt;
+            else
+                dueDateValue = null;
+        }
+    }
+
+    private string GetDisplayName(FormFieldDto field)
+    {
+        // Always use Field_Label as the display name if present, otherwise fallback to Field_Name
+        return string.IsNullOrWhiteSpace(field.Field_Label) ? field.Field_Name ?? string.Empty : field.Field_Label;
+    }
+
+    private IEnumerable<string> ParseLookupValues(string lookupValues)
+    {
+        // If the value contains a comma and a quote, extract the quoted part
+        if (lookupValues.Contains('"'))
+        {
+            var quoteStart = lookupValues.IndexOf('"');
+            var quoteEnd = lookupValues.LastIndexOf('"');
+            if (quoteStart >= 0 && quoteEnd > quoteStart)
+            {
+                var quoted = lookupValues.Substring(quoteStart + 1, quoteEnd - quoteStart - 1);
+                return quoted.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries)
+                    .Select(x => x.Replace("\"", string.Empty));
+            }
+        }
+        // Otherwise, treat as a simple CSV
+        return lookupValues.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries)
+            .Select(x => x.Replace("\"", string.Empty));
+    }
+}

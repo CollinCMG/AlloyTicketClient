@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using AlloyTicketClient.Enums;
 
 public class AlloyNavigatorDbContext : DbContext
 {
@@ -13,6 +14,9 @@ public class AlloyNavigatorDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<FormFieldDto>().HasNoKey();
+        modelBuilder.Entity<FormFieldDto>()
+            .Property(e => e.FieldType)
+            .HasConversion<int?>(); // Map nullable enum to int
         base.OnModelCreating(modelBuilder);
     }
 

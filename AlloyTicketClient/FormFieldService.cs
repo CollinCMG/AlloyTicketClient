@@ -28,7 +28,8 @@ public class FormFieldService
         f.Lookup_Values,
         f.Table_Name,
         f.Lookup_ID,
-        d.Filter
+        d.Filter,
+        f.Field_Type AS FieldType
     FROM
         cfgLCFormDefinition d
     LEFT JOIN
