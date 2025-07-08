@@ -1,0 +1,61 @@
+@* Slide-over panel for employee actions *@
+@inject FormFieldService FormFieldService
+
+@if (Show)
+{
+    <div class="slide-over-overlay" @onclick="OnClose">
+        <div class="slide-over-panel" @onclick:stopPropagation>
+            <div class="slide-over-header">
+                <h2>@Title</h2>
+                <button class="slide-over-close" @onclick="OnClose">&times;</button>
+            </div>
+            <div class="slide-over-content">
+                @if (isLoading)
+                {
+                    <p>Loading...</p>
+                }
+                else if (fields != null && fields.Count > 0)
+                {
+                    <ul>
+                        @foreach (var field in fields)
+                        {
+                            <li>@(string.IsNullOrWhiteSpace(field.Field_Label) ? field.Field_Name : field.Field_Label)</li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p>No fields found for this form.</p>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? FormId { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private bool isLoading = false;
+    private List<FormFieldDto>? fields;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Show && Guid.TryParse(FormId, out var formId))
+        {
+            isLoading = true;
+            fields = null;
+            StateHasChanged();
+            fields = await FormFieldService.GetFormFieldsAsync(formId);
+            isLoading = false;
+            StateHasChanged();
+        }
+        else if (!Show)
+        {
+            fields = null;
+            isLoading = false;
+        }
+    }
+}

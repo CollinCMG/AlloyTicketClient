@@ -1,0 +1,56 @@
+.slide-over-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.3);
+    z-index: 1000;
+    display: flex;
+    justify-content: flex-end;
+    align-items: stretch;
+}
+
+.slide-over-panel {
+    background: #fff;
+    width: 40vw;
+    max-width: 500px;
+    height: 100vh;
+    box-shadow: -2px 0 24px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+.slide-over-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem 1rem 2rem;
+    border-bottom: 1px solid #eee;
+}
+
+.slide-over-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #888;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.slide-over-content {
+    padding: 2rem;
+    flex: 1;
+    overflow-y: auto;
+}

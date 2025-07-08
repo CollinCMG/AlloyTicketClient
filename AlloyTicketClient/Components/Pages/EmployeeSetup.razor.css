@@ -1,0 +1,59 @@
+.employee-setup-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+.employee-setup-title {
+    font-size: 5rem;
+    font-weight: 400;
+    margin-bottom: 0.5rem;
+    color: #2c2f32;
+}
+
+.employee-setup-subtitle {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: #393e42;
+}
+
+.employee-setup-help {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+    color: #444;
+}
+
+.employee-setup-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.employee-btn {
+    font-size: 1.25rem;
+    font-weight: 600;
+    padding: 0.75rem 2.5rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.add-btn {
+    background-color: #2563eb;
+    color: #fff;
+}
+
+.add-btn:hover {
+    background-color: #1746a2;
+}
+
+.remove-btn {
+    background-color: #7ea6fa;
+    color: #fff;
+}
+
+.remove-btn:hover {
+    background-color: #4b6cb7;
+}

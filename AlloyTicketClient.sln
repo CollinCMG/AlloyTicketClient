@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36301.6 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlloyTicketClient", "AlloyTicketClient\AlloyTicketClient.csproj", "{36778AB3-1148-4031-9EE6-02991A97ACEC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{36778AB3-1148-4031-9EE6-02991A97ACEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36778AB3-1148-4031-9EE6-02991A97ACEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36778AB3-1148-4031-9EE6-02991A97ACEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36778AB3-1148-4031-9EE6-02991A97ACEC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3F165592-3825-461B-8F70-CB8DE42E7E51}
+	EndGlobalSection
+EndGlobal
