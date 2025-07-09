@@ -1,7 +1,7 @@
-@* Slide-over panel for employee actions *@
 @inject FormFieldService FormFieldService
+@inject IJSRuntime JSRuntime
 @using AlloyTicketClient.Components.Fields
-@using AlloyTicketClient
+@using AlloyTicketClient.Models
 @using AlloyTicketClient.Enums
 
 @if (Show)
@@ -17,17 +17,56 @@
                 {
                     <p>Loading...</p>
                 }
-                else if (fields != null && fields.Count > 0)
+                else if (pages != null && pages.Count > 0)
                 {
-                    @foreach (var field in fields)
-                    {
-                        <FieldInput Field="field" />
-                    }
+                    var p = pages[currentPageIndex];
+                    <div class="form-page">
+                        <h3>@p.PageName</h3>
+                        @foreach (var item in p.Items)
+                        {
+                            if (item is FieldInputDto fieldInput)
+                            {
+                                var fieldKey = fieldInput.Field_Name;
+
+                                <FieldInput Field="@(MapToFormFieldDto(fieldInput))"
+                                            Value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : null)"
+                                            OnValueChanged="val => fieldValues[fieldKey] = val" />
+
+                            }
+                            else if (item is FieldTextDto fieldText)
+                            {
+                                <div class="field-text">@GetTextValue(fieldText.ElementDefinition)</div>
+                            }
+                            else if (item is AttachmentInputDto attachment)
+                            {
+                                // Use a unique key for the attachment field
+                                var attachmentKey = $"attachment_{currentPageIndex}_{p.Items.IndexOf(item)}";
+                                <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" />
+                                @if (fieldValues.ContainsKey(attachmentKey) && fieldValues[attachmentKey] is IBrowserFile browserFile)  
+                                {  
+                                    <div class="mt-1 text-success">File selected: @browserFile.Name</div>  
+                                }
+                            }
+                        }
+                    </div>
                 }
                 else
                 {
                     <p>No fields found for this form.</p>
                 }
+            </div>
+            <div class="slide-over-footer slide-over-footer-flex">
+                <button class="btn btn-secondary slide-over-btn-min" @onclick="GoBack" disabled="@IsFirstPage">Back</button>
+                <div class="slide-over-footer-right">
+                    @if (!IsLastPage)
+                    {
+                        <button class="btn btn-primary slide-over-btn-min" @onclick="GoNext">Next</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-success slide-over-btn-min" @onclick="SubmitForm">Submit</button>
+                    }
+                </div>
             </div>
         </div>
     </div>
@@ -40,30 +79,121 @@
     [Parameter] public EventCallback OnClose { get; set; }
 
     private bool isLoading = false;
-    private List<FormFieldDto>? fields;
+    private List<PageDto>? pages;
+    private int currentPageIndex = 0;
+    private bool IsFirstPage => currentPageIndex == 0;
+    private bool IsLastPage => pages == null || currentPageIndex == pages.Count - 1;
+    private Dictionary<string, object?> fieldValues = new();
 
     protected override async Task OnParametersSetAsync()
     {
         if (Show && Guid.TryParse(FormId, out var formId))
         {
             isLoading = true;
-            fields = null;
+            pages = null;
+            currentPageIndex = 0;
             StateHasChanged();
-            fields = await FormFieldService.GetFormFieldsAsync(formId);
-
-            // Sequentially load dropdown options for all dropdown fields (FieldType 8)
-            foreach (var field in fields.Where(f => f.FieldType == FieldType.Dropdown && !string.IsNullOrWhiteSpace(f.Table_Name) && !string.IsNullOrWhiteSpace(f.Display_Fields)))
-            {
-                await FormFieldService.GetDropdownOptionsAsync(field);
-            }
-
+            pages = await FormFieldService.GetFormPagesAsync(formId);
             isLoading = false;
             StateHasChanged();
         }
         else if (!Show)
         {
-            fields = null;
+            pages = null;
             isLoading = false;
+            currentPageIndex = 0;
+        }
+    }
+
+    private void GoBack()
+    {
+        if (currentPageIndex > 0)
+            currentPageIndex--;
+    }
+
+    private void GoNext()
+    {
+        if (pages != null && currentPageIndex < pages.Count - 1)
+            currentPageIndex++;
+    }
+
+    private async Task SubmitForm()
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(fieldValues);
+        await JSRuntime.InvokeVoidAsync("alert", json);
+        // TODO: send json to API or handle as needed
+        Console.WriteLine(json);
+    }
+
+    private FormFieldDto MapToFormFieldDto(FieldInputDto input)
+    {
+        return new FormFieldDto
+        {
+            Field_Num = input.Field_Num,
+            Field_Label = input.FieldLabel,
+            Field_Name = input.Field_Name,
+            ID = input.DefinitionID ?? Guid.Empty,
+            Virtual = input.Virtual,
+            Mandatory = input.Mandatory,
+            Read_Only = input.Read_Only,
+            LookupValues = input.Lookup_Values,
+            TableName = input.Table_Name,
+            LookupID = input.Lookup_ID,
+            Filter = input.Filter,
+            FieldType = input.FieldType,
+            DisplayFields = input.Display_Fields
+        };
+    }
+
+    private string GetTextValue(string? elementDefinition)
+    {
+        if (string.IsNullOrWhiteSpace(elementDefinition))
+            return string.Empty;
+
+        try
+        {
+            var doc = System.Xml.Linq.XDocument.Parse(elementDefinition);
+            var item = doc.Descendants("ITEM")
+                          .FirstOrDefault(e => (string?)e.Attribute("Name") == "Text");
+            return item?.Attribute("Value")?.Value ?? string.Empty;
+        }
+        catch
+        {
+            return System.Text.RegularExpressions.Regex.Replace(elementDefinition, "<.*?>", string.Empty).Trim();
+        }
+    }
+
+    private T? GetFieldValue<T>(string key)
+    {
+        if (fieldValues.TryGetValue(key, out var value) && value is T t)
+            return t;
+        return default;
+    }
+
+    private void SetFieldValue<T>(string key, T value)
+    {
+        fieldValues[key] = value;
+    }
+
+    private string GetOrSetFieldValue(string key)
+    {
+        return fieldValues.TryGetValue(key, out var value) ? value?.ToString() ?? string.Empty : string.Empty;
+    }
+    private void GetOrSetFieldValue(string key, string value)
+    {
+        fieldValues[key] = value;
+    }
+
+    private void OnAttachmentChanged(InputFileChangeEventArgs e, string key)
+    {
+        if (e.FileCount > 0)
+        {
+            var file = e.File;
+            fieldValues[key] = file;
+        }
+        else
+        {
+            fieldValues.Remove(key);
         }
     }
 }

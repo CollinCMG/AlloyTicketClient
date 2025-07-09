@@ -5,18 +5,15 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddMicrosoftIdentityConsentHandler();
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 
-// Register AlloyNavigatorDbContext with connection string
 builder.Services.AddDbContext<AlloyNavigatorDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("AlloyNavigator")));
 
-// Register FormFieldService
 builder.Services.AddScoped<FormFieldService>();
 
 builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
@@ -29,7 +26,7 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
-// Configure the HTTP request pipeline.
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);

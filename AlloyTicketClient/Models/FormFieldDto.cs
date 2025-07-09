@@ -9,11 +9,11 @@ public class FormFieldDto
     public bool? Virtual { get; set; }
     public bool? Mandatory { get; set; }
     public bool? Read_Only { get; set; }
-    public string? Lookup_Values { get; set; }
-    public string? Table_Name { get; set; }
-    public Guid? Lookup_ID { get; set; }
+    public string? LookupValues { get; set; }
+    public string? TableName { get; set; }
+    public Guid? LookupID { get; set; }
     public string? Filter { get; set; }
     public FieldType? FieldType { get; set; } 
-    public string? Display_Fields { get; set; } // Added for display_fields column
-    public List<string>? Options { get; set; } // For dropdown options
+    public string? DisplayFields { get; set; } 
+    public List<string>? Options { get; set; } 
 }

@@ -7,7 +7,6 @@ public class AlloyNavigatorDbContext : DbContext
     {
     }
 
-    // Keyless DbSet for FormFieldDto
     public DbSet<FormFieldDto> FormFieldResults { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -15,11 +14,8 @@ public class AlloyNavigatorDbContext : DbContext
         modelBuilder.Entity<FormFieldDto>().HasNoKey();
         modelBuilder.Entity<FormFieldDto>()
             .Property(e => e.FieldType)
-            .HasConversion<int?>(); // Map nullable enum to int
-        modelBuilder.Entity<FormFieldDto>().Ignore(f => f.Options); // Ignore Options property
+            .HasConversion<int?>(); 
+        modelBuilder.Entity<FormFieldDto>().Ignore(f => f.Options); 
         base.OnModelCreating(modelBuilder);
     }
-
-    // Define DbSet properties for your tables, for example:
-    // public DbSet<YourEntity> YourEntities { get; set; }
 }

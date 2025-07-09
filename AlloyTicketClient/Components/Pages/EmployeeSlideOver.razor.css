@@ -1,37 +1,30 @@
+/* Overlay */
 .slide-over-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0,0,0,0.3);
+    background: rgba(0, 0, 0, 0.3);
     z-index: 1000;
     display: flex;
     justify-content: flex-end;
     align-items: stretch;
 }
 
+/* Panel */
 .slide-over-panel {
     background: #fff;
     width: 40vw;
-    max-width: 500px;
+    max-width: 31.25rem; /* 500px = 31.25rem */
     height: 100vh;
-    box-shadow: -2px 0 24px rgba(0,0,0,0.15);
+    box-shadow: -0.125rem 0 1.5rem rgba(0, 0, 0, 0.15); /* -2px 0 24px */
     display: flex;
     flex-direction: column;
-    transform: translateX(100%);
-    animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    position: relative;
 }
 
-@keyframes slideInRight {
-    from {
-        transform: translateX(100%);
-    }
-    to {
-        transform: translateX(0);
-    }
-}
-
+/* Header */
 .slide-over-header {
     display: flex;
     justify-content: space-between;
@@ -40,6 +33,7 @@
     border-bottom: 1px solid #eee;
 }
 
+/* Close Button */
 .slide-over-close {
     background: none;
     border: none;
@@ -49,8 +43,63 @@
     line-height: 1;
 }
 
+/* Content */
 .slide-over-content {
     padding: 2rem;
-    flex: 1;
+    flex: 1 1 auto;
     overflow-y: auto;
+    padding-bottom: 5.625rem; /* 90px = 5.625rem, space for footer */
+}
+
+/* Footer */
+.slide-over-footer {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    background: #fff;
+    border-top: 1px solid #eee;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: flex-end;
+    z-index: 1001;
+    width: 40vw;
+    max-width: 31.25rem; /* 500px = 31.25rem */
+    box-sizing: border-box;
+}
+
+/* Footer Flex Layout */
+.slide-over-footer-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Button Minimum Width */
+.slide-over-btn-min {
+    min-width: 6.25rem; /* 100px = 6.25rem */
+}
+
+/* Footer Right Alignment */
+.slide-over-footer-right {
+    margin-left: auto;
+}
+
+/* Responsive */
+@media (max-width: 37.5rem) { /* 600px = 37.5rem */
+    .slide-over-panel,
+    .slide-over-footer {
+        width: 100vw;
+        max-width: 100vw;
+    }
+}
+
+/* Animation */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
 }

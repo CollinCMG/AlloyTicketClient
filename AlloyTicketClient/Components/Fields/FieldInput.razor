@@ -14,10 +14,10 @@
                 <span class="required" title="Required">*</span>
             }
         </h4>
-        @if (Field.FieldType == FieldType.Four && !string.IsNullOrWhiteSpace(Field.Lookup_Values))
+        @if (Field.FieldType == FieldType.Input && !string.IsNullOrWhiteSpace(Field.LookupValues))
         {
-            var options = ParseLookupValues(Field.Lookup_Values);
-            <select class="form-control">
+            var options = ParseLookupValues(Field.LookupValues);
+            <select class="form-control" value="@Value" @onchange="OnInputChangedHandler">
                 <option value="">-- Select --</option>
                 @foreach (var option in options)
                 {
@@ -25,11 +25,11 @@
                 }
             </select>
         }
-        else if (Field.FieldType == FieldType.Four)
+        else if (Field.FieldType == FieldType.Input)
         {
-            <input type="text" class="form-control" />
+            <input type="text" class="form-control" value="@Value" @oninput="OnInputChangedHandler" />
         }
-        else if (Field.FieldType == FieldType.Dropdown && !string.IsNullOrWhiteSpace(Field.Table_Name) && !string.IsNullOrWhiteSpace(Field.Display_Fields))
+        else if (Field.FieldType == FieldType.Dropdown && !string.IsNullOrWhiteSpace(Field.TableName) && !string.IsNullOrWhiteSpace(Field.DisplayFields))
         {
             if (Field.Options == null)
             {
@@ -37,7 +37,7 @@
             }
             else
             {
-                <select class="form-control" value="@Value" @onchange="OnDropdownChangedHandler">
+                <select class="form-control" value="@Value" @onchange="OnInputChangedHandler">
                     <option value="">-- Select --</option>
                     @foreach (var option in Field.Options)
                     {
@@ -48,18 +48,18 @@
         }
         else if (Field.FieldType == FieldType.Dropdown || (Field.Field_Name?.Equals("Requester_Id", StringComparison.OrdinalIgnoreCase) ?? false))
         {
-            <select class="form-control">
+            <select class="form-control" value="@Value" @onchange="OnInputChangedHandler">
                 <option value="">-- Select --</option>
                 <!-- TODO: Populate with actual Requester options -->
             </select>
         }
         else if (Field.Field_Name?.Equals("Due_date", StringComparison.OrdinalIgnoreCase) ?? false)
         {
-            <input type="date" class="form-control" @bind-value="dueDateValue" @bind-value:event="oninput" />
+            <input type="date" class="form-control" value="@Value" @oninput="OnInputChangedHandler" />
         }
         else
         {
-            <!-- Future: handle other field types -->
+            <input type="text" class="form-control" value="@Value" @oninput="OnInputChangedHandler" />
         }
     </div>
 }
@@ -69,33 +69,20 @@
     [Parameter] public string? Value { get; set; }
     [Parameter] public EventCallback<string?> OnValueChanged { get; set; }
 
-    private DateTime? dueDateValue { get; set; }
-
-    protected override void OnParametersSet()
+    private async Task OnInputChangedHandler(ChangeEventArgs e)
     {
-        if (Field?.Field_Name?.Equals("Due_date", StringComparison.OrdinalIgnoreCase) == true)
-        {
-            if (DateTime.TryParse(Field.Filter, out var dt))
-                dueDateValue = dt;
-            else
-                dueDateValue = null;
-        }
+        await OnValueChanged.InvokeAsync(e.Value?.ToString());
     }
 
     protected override async Task OnInitializedAsync()
     {
         // Load dropdown options for any Dropdown with Table_Name and Display_Fields
-        if (Field?.FieldType == FieldType.Dropdown && !string.IsNullOrWhiteSpace(Field.Table_Name) && !string.IsNullOrWhiteSpace(Field.Display_Fields))
+        if (Field?.FieldType == FieldType.Dropdown && !string.IsNullOrWhiteSpace(Field.TableName) && !string.IsNullOrWhiteSpace(Field.DisplayFields))
         {
             Field.Options = null;
             await FormFieldService.GetDropdownOptionsAsync(Field);
             StateHasChanged();
         }
-    }
-
-    private async Task OnDropdownChangedHandler(ChangeEventArgs e)
-    {
-        await OnValueChanged.InvokeAsync(e.Value?.ToString());
     }
 
     private string GetDisplayName(FormFieldDto field)
