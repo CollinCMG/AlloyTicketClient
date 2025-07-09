@@ -28,42 +28,10 @@
                             if (item is FieldInputDto fieldInput)
                             {
                                 var fieldKey = fieldInput.FieldName;
-                                if (IsSupportedFieldInput(fieldInput))
-                                {
-                                    <FieldInput @key="fieldInput.FieldName"
-                                               Field="@(MapToFormFieldDto(fieldInput))"
-                                               Value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : null)"
-                                               OnValueChanged="@(val => OnFieldValueChanged(val, fieldKey))" />
-                                }
-                                else if (fieldInput.FieldName?.Equals("Due_date", StringComparison.OrdinalIgnoreCase) == true)
-                                {
-                                    <div class="field-block">
-                                        <h4>@(string.IsNullOrWhiteSpace(fieldInput.FieldLabel) ? fieldInput.FieldName : fieldInput.FieldLabel)</h4>
-                                        <input type="date" class="form-control"
-                                               value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : string.Empty)"
-                                               @onchange="e => SetFieldValue(fieldKey, e.Value?.ToString())" />
-                                    </div>
-                                }
-                                else if (fieldInput.FieldName?.Equals("Requester_Id", StringComparison.OrdinalIgnoreCase) == true)
-                                {
-                                    <div class="field-block">
-                                        <h4>@(string.IsNullOrWhiteSpace(fieldInput.FieldLabel) ? fieldInput.FieldName : fieldInput.FieldLabel)</h4>
-                                        <select class="form-control"
-                                                value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : string.Empty)"
-                                                @onchange="e => SetFieldValue(fieldKey, e.Value?.ToString())">
-                                            <option value="">-- Select --</option>
-                                        </select>
-                                    </div>
-                                }
-                                else
-                                {
-                                    <div class="field-block">
-                                        <h4>@(string.IsNullOrWhiteSpace(fieldInput.FieldLabel) ? fieldInput.FieldName : fieldInput.FieldLabel)</h4>
-                                        <input class="form-control" placeholder="Enter value..."
-                                               value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : string.Empty)"
-                                               @onchange="e => SetFieldValue(fieldKey, e.Value?.ToString())" />
-                                    </div>
-                                }
+                                <FieldInput @key="fieldInput.FieldName"
+                                            Field="@(MapToFormFieldDto(fieldInput))"
+                                            Value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : null)"
+                                            OnValueChanged="@(val => OnFieldValueChanged(val, fieldKey))" />
                             }
                             else if (item is FieldTextDto fieldText)
                             {
@@ -77,7 +45,7 @@
                                 @if (fieldValues.ContainsKey(attachmentKey))
                                 {
                                     <div class="mt-1 text-success">File selected: @(((IBrowserFile)fieldValues[attachmentKey]).Name)</div>
-                               }
+                                }
                             }
                         }
                     </div>
@@ -92,11 +60,11 @@
                 <div style="margin-left: auto;">
                     @if (!IsLastPage)
                     {
-                        <button class="btn btn-primary" @onclick="GoNext" style="min-width: 100px;">Next</button>
+                        <button class="btn btn-primary" @onclick="GoNext" style="min-width: 100px;" disabled="@(AreRequiredFieldsFilled() ? null : true)">Next</button>
                     }
                     else
                     {
-                        <button class="btn btn-success" @onclick="SubmitForm" style="min-width: 100px;">Submit</button>
+                        <button class="btn btn-success" @onclick="SubmitForm" style="min-width: 100px;" disabled="@(AreRequiredFieldsFilled() ? null : true)">Submit</button>
                     }
                 </div>
             </div>
@@ -184,13 +152,6 @@
         };
     }
 
-    private bool IsSupportedFieldInput(FieldInputDto input)
-    {
-        // Use FieldType to determine if this input is supported by FieldInput.razor
-        // Supported: not null and not FieldType.Null
-        return input.FieldType != null && input.FieldType != FieldType.Null;
-    }
-
     private string GetTextValue(string? elementDefinition)
     {
         if (string.IsNullOrWhiteSpace(elementDefinition))
@@ -249,5 +210,25 @@
         {
             fieldValues.Remove(key);
         }
+    }
+
+    // Returns true if all required (Mandatory) fields on the current page have a value
+    private bool AreRequiredFieldsFilled()
+    {
+        if (pages == null || pages.Count == 0)
+            return false;
+        var page = pages[currentPageIndex];
+        foreach (var item in page.Items)
+        {
+            if (item is FieldInputDto fieldInput && fieldInput.Mandatory == true)
+            {
+                var key = fieldInput.FieldName;
+                if (!fieldValues.TryGetValue(key, out var value) || value == null || string.IsNullOrWhiteSpace(value.ToString()))
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }
