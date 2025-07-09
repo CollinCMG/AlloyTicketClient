@@ -2,6 +2,7 @@
 @inject FormFieldService FormFieldService
 @using AlloyTicketClient.Components.Fields
 @using AlloyTicketClient
+@using AlloyTicketClient.Enums
 
 @if (Show)
 {
@@ -49,6 +50,13 @@
             fields = null;
             StateHasChanged();
             fields = await FormFieldService.GetFormFieldsAsync(formId);
+
+            // Sequentially load dropdown options for all dropdown fields (FieldType 8)
+            foreach (var field in fields.Where(f => f.FieldType == FieldType.Dropdown && !string.IsNullOrWhiteSpace(f.Table_Name) && !string.IsNullOrWhiteSpace(f.Display_Fields)))
+            {
+                await FormFieldService.GetDropdownOptionsAsync(field);
+            }
+
             isLoading = false;
             StateHasChanged();
         }

@@ -2,6 +2,8 @@
 @using AlloyTicketClient
 @using Microsoft.AspNetCore.Components
 
+@inject FormFieldService FormFieldService
+
 @if (Field != null)
 {
     <div class="field-block">
@@ -27,6 +29,23 @@
         {
             <input type="text" class="form-control" />
         }
+        else if (Field.FieldType == FieldType.Dropdown && !string.IsNullOrWhiteSpace(Field.Table_Name) && !string.IsNullOrWhiteSpace(Field.Display_Fields))
+        {
+            if (Field.Options == null)
+            {
+                <span>Loading...</span>
+            }
+            else
+            {
+                <select class="form-control" value="@Value" @onchange="OnDropdownChangedHandler">
+                    <option value="">-- Select --</option>
+                    @foreach (var option in Field.Options)
+                    {
+                        <option value="@option">@option</option>
+                    }
+                </select>
+            }
+        }
         else if (Field.FieldType == FieldType.Dropdown || (Field.Field_Name?.Equals("Requester_Id", StringComparison.OrdinalIgnoreCase) ?? false))
         {
             <select class="form-control">
@@ -46,8 +65,9 @@
 }
 
 @code {
-    [Parameter]
-    public FormFieldDto? Field { get; set; }
+    [Parameter] public FormFieldDto? Field { get; set; }
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> OnValueChanged { get; set; }
 
     private DateTime? dueDateValue { get; set; }
 
@@ -60,6 +80,22 @@
             else
                 dueDateValue = null;
         }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load dropdown options for any Dropdown with Table_Name and Display_Fields
+        if (Field?.FieldType == FieldType.Dropdown && !string.IsNullOrWhiteSpace(Field.Table_Name) && !string.IsNullOrWhiteSpace(Field.Display_Fields))
+        {
+            Field.Options = null;
+            await FormFieldService.GetDropdownOptionsAsync(Field);
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnDropdownChangedHandler(ChangeEventArgs e)
+    {
+        await OnValueChanged.InvokeAsync(e.Value?.ToString());
     }
 
     private string GetDisplayName(FormFieldDto field)
