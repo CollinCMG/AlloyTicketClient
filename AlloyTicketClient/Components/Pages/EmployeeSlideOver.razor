@@ -56,7 +56,10 @@
                 }
             </div>
             <div class="slide-over-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-                <button class="btn btn-secondary" @onclick="GoBack" disabled="@IsFirstPage" style="min-width: 100px;">Back</button>
+                @if (!IsFirstPage)
+                {
+                    <button class="btn btn-secondary" @onclick="GoBack" style="min-width: 100px;">Back</button>
+                }
                 <div style="margin-left: auto;">
                     @if (!IsLastPage)
                     {

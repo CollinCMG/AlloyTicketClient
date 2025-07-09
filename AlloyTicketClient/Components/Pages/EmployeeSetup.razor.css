@@ -38,15 +38,8 @@
     border-radius: 8px;
     cursor: pointer;
     transition: background 0.2s, color 0.2s;
-}
-
-.add-btn {
     background-color: #2563eb;
     color: #fff;
-}
-
-.add-btn:hover {
-    background-color: #1746a2;
 }
 
 .remove-btn {
