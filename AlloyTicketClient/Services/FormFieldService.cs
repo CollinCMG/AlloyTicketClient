@@ -51,11 +51,14 @@ public class FormFieldService
                 f.Field_Type AS FieldType,
                 d.Mandatory,
                 Lookup_Values,
-                Table_Name,
-                Virtual
+                f.Table_Name,
+                Virtual,
+                ct.Display_Fields as Display_Fields
             FROM cfgLCFormDefinition d
             LEFT JOIN cfgLCFormFields f
                 ON REPLACE(REPLACE(d.Field_Name, '{', ''), '}', '') = REPLACE(REPLACE(f.ID, '{', ''), '}', '')
+            LEFT JOIN cfgCustTables ct
+                ON f.Table_Name = ct.Table_Name
             OUTER APPLY (
                 SELECT TOP 1 pb2.PageName, pb2.PageRank
                 FROM PageBreaks pb2
@@ -82,7 +85,8 @@ public class FormFieldService
                 NULL AS Mandatory,
                 null as Lookup_Values,
                 null as Table_Name,
-                null as Virtual
+                null as Virtual,
+                null as Display_Fields
             FROM cfgLCFormElements e
             OUTER APPLY (
                 SELECT TOP 1 pb2.PageName, pb2.PageRank, pb2.NextPageRank
@@ -109,7 +113,8 @@ public class FormFieldService
             Mandatory,
             Lookup_Values as LookupValues,
             Table_Name as TableName,
-            Virtual
+            Virtual,
+            Display_Fields as DisplayFields
         FROM FieldAssignments
         UNION ALL
         SELECT
@@ -126,7 +131,8 @@ public class FormFieldService
             Mandatory,
             Lookup_Values as LookupValues,
             Table_Name as TableName,
-            Virtual
+            Virtual,
+            Display_Fields as DisplayFields
         FROM ElementAssignments
         ORDER BY PageRank, SortOrder, DefinitionID
     ";
@@ -164,29 +170,35 @@ public class FormFieldService
         return pages;
     }
 
-    public async Task GetDropdownOptionsAsync(FormFieldDto field)
+    public async Task<List<string>> GetDropdownOptionsAsync(FormFieldDto field)
     {
         if (string.IsNullOrWhiteSpace(field.TableName) || string.IsNullOrWhiteSpace(field.DisplayFields))
         {
             field.Options = new List<string>();
-            return;
+            return field.Options;
         }
         var cacheKey = $"{field.TableName}|{field.DisplayFields}|{field.Filter}";
         if (_dropdownOptionsCache.TryGetValue(cacheKey, out var cachedOptions))
         {
             field.Options = cachedOptions;
-            return;
+            return cachedOptions;
         }
         var sql = $"SELECT {field.DisplayFields} FROM [{field.TableName}]";
         if (!string.IsNullOrWhiteSpace(field.Filter))
             sql += $" WHERE {field.Filter}";
         var options = new List<string>();
-        using (var command = _db.Database.GetDbConnection().CreateCommand())
+        var connection = _db.Database.GetDbConnection();
+        bool shouldClose = false;
+        try
         {
-            command.CommandText = sql;
-            EnsureConnectionOpen(command);
-            try
+            if (connection.State != System.Data.ConnectionState.Open)
             {
+                await connection.OpenAsync();
+                shouldClose = true;
+            }
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = sql;
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     while (await reader.ReadAsync())
@@ -195,18 +207,20 @@ public class FormFieldService
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error executing SQL: {sql}");
-                Console.WriteLine($"Exception: {ex}");
-            }
-            finally
-            {
-                EnsureConnectionClosed(command);
-            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error executing SQL: {sql}");
+            Console.WriteLine($"Exception: {ex}");
+        }
+        finally
+        {
+            if (shouldClose && connection.State == System.Data.ConnectionState.Open)
+                connection.Close();
         }
         _dropdownOptionsCache[cacheKey] = options;
         field.Options = options;
+        return options;
     }
 
     private void EnsureConnectionOpen(DbCommand command)
@@ -240,7 +254,8 @@ public class FormFieldService
             Mandatory = reader["Mandatory"] != DBNull.Value ? (bool?)Convert.ToBoolean(reader["Mandatory"]) : null,
             LookupValues = reader["LookupValues"]?.ToString(),
             TableName = reader["TableName"]?.ToString(),
-            Virtual = reader["Virtual"] != DBNull.Value ? (bool?)Convert.ToBoolean(reader["Virtual"]) : null
+            Virtual = reader["Virtual"] != DBNull.Value ? (bool?)Convert.ToBoolean(reader["Virtual"]) : null,
+            DisplayFields = reader["DisplayFields"]?.ToString()
         };
     }
 
@@ -252,14 +267,15 @@ public class FormFieldService
             {
                 Field_Num = x.FieldNum,
                 FieldLabel = x.FieldLabel,
-                Field_Name = x.FieldName,
+                FieldName = x.FieldName,
                 DefinitionID = x.DefinitionID,
                 SortOrder = x.SortOrder,
                 FieldType = x.FieldType,
                 Mandatory = x.Mandatory,
                 Lookup_Values = x.LookupValues,
                 Table_Name = x.TableName,
-                Virtual = x.Virtual
+                Virtual = x.Virtual,
+                DisplayFields = x.DisplayFields
             };
         }
         else if (x.ElementType == 1)

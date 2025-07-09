@@ -18,7 +18,7 @@ namespace AlloyTicketClient.Models
     {
         public int? Field_Num { get; set; }
         public string FieldLabel { get; set; } = string.Empty;
-        public string Field_Name { get; set; } = string.Empty;
+        public string FieldName { get; set; } = string.Empty;
         public Guid? DefinitionID { get; set; }
         public int SortOrder { get; set; }
         public bool? Virtual { get; set; }
@@ -29,7 +29,7 @@ namespace AlloyTicketClient.Models
         public Guid? Lookup_ID { get; set; }
         public string? Filter { get; set; }
         public FieldType? FieldType { get; set; }
-        public string? Display_Fields { get; set; }
+        public string? DisplayFields { get; set; }
     }
 
     public class FieldTextDto : IPageItem

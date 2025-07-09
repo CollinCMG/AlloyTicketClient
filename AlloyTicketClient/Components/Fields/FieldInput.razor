@@ -31,7 +31,7 @@
         }
         else if (Field.FieldType == FieldType.Dropdown && !string.IsNullOrWhiteSpace(Field.TableName) && !string.IsNullOrWhiteSpace(Field.DisplayFields))
         {
-            if (Field.Options == null)
+            if (Options == null)
             {
                 <span>Loading...</span>
             }
@@ -39,12 +39,22 @@
             {
                 <select class="form-control" value="@Value" @onchange="OnInputChangedHandler">
                     <option value="">-- Select --</option>
-                    @foreach (var option in Field.Options)
+                    @foreach (var option in Options)
                     {
                         <option value="@option">@option</option>
                     }
                 </select>
             }
+        }
+        else if (Field.FieldType == FieldType.Dropdown && Options != null)
+        {
+            <select class="form-control" value="@Value" @onchange="OnInputChangedHandler">
+                <option value="">-- Select --</option>
+                @foreach (var option in Options)
+                {
+                    <option value="@option">@option</option>
+                }
+            </select>
         }
         else if (Field.FieldType == FieldType.Dropdown || (Field.Field_Name?.Equals("Requester_Id", StringComparison.OrdinalIgnoreCase) ?? false))
         {
@@ -69,6 +79,8 @@
     [Parameter] public string? Value { get; set; }
     [Parameter] public EventCallback<string?> OnValueChanged { get; set; }
 
+    private List<string>? Options;
+
     private async Task OnInputChangedHandler(ChangeEventArgs e)
     {
         await OnValueChanged.InvokeAsync(e.Value?.ToString());
@@ -76,12 +88,19 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Load dropdown options for any Dropdown with Table_Name and Display_Fields
+        await LoadDropdownOptions();
+    }
+
+    private async Task LoadDropdownOptions()
+    {
         if (Field?.FieldType == FieldType.Dropdown && !string.IsNullOrWhiteSpace(Field.TableName) && !string.IsNullOrWhiteSpace(Field.DisplayFields))
         {
-            Field.Options = null;
-            await FormFieldService.GetDropdownOptionsAsync(Field);
+            Options = await FormFieldService.GetDropdownOptionsAsync(Field);
             StateHasChanged();
+        }
+        else
+        {
+            Options = null;
         }
     }
 

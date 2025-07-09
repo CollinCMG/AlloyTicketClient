@@ -1,3 +1,4 @@
+@* Slide-over panel for employee actions (page-based) *@
 @inject FormFieldService FormFieldService
 @inject IJSRuntime JSRuntime
 @using AlloyTicketClient.Components.Fields
@@ -26,12 +27,43 @@
                         {
                             if (item is FieldInputDto fieldInput)
                             {
-                                var fieldKey = fieldInput.Field_Name;
-
-                                <FieldInput Field="@(MapToFormFieldDto(fieldInput))"
-                                            Value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : null)"
-                                            OnValueChanged="val => fieldValues[fieldKey] = val" />
-
+                                var fieldKey = fieldInput.FieldName;
+                                if (IsSupportedFieldInput(fieldInput))
+                                {
+                                    <FieldInput @key="fieldInput.FieldName"
+                                               Field="@(MapToFormFieldDto(fieldInput))"
+                                               Value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : null)"
+                                               OnValueChanged="@(val => OnFieldValueChanged(val, fieldKey))" />
+                                }
+                                else if (fieldInput.FieldName?.Equals("Due_date", StringComparison.OrdinalIgnoreCase) == true)
+                                {
+                                    <div class="field-block">
+                                        <h4>@(string.IsNullOrWhiteSpace(fieldInput.FieldLabel) ? fieldInput.FieldName : fieldInput.FieldLabel)</h4>
+                                        <input type="date" class="form-control"
+                                               value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : string.Empty)"
+                                               @onchange="e => SetFieldValue(fieldKey, e.Value?.ToString())" />
+                                    </div>
+                                }
+                                else if (fieldInput.FieldName?.Equals("Requester_Id", StringComparison.OrdinalIgnoreCase) == true)
+                                {
+                                    <div class="field-block">
+                                        <h4>@(string.IsNullOrWhiteSpace(fieldInput.FieldLabel) ? fieldInput.FieldName : fieldInput.FieldLabel)</h4>
+                                        <select class="form-control"
+                                                value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : string.Empty)"
+                                                @onchange="e => SetFieldValue(fieldKey, e.Value?.ToString())">
+                                            <option value="">-- Select --</option>
+                                        </select>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="field-block">
+                                        <h4>@(string.IsNullOrWhiteSpace(fieldInput.FieldLabel) ? fieldInput.FieldName : fieldInput.FieldLabel)</h4>
+                                        <input class="form-control" placeholder="Enter value..."
+                                               value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : string.Empty)"
+                                               @onchange="e => SetFieldValue(fieldKey, e.Value?.ToString())" />
+                                    </div>
+                                }
                             }
                             else if (item is FieldTextDto fieldText)
                             {
@@ -42,10 +74,10 @@
                                 // Use a unique key for the attachment field
                                 var attachmentKey = $"attachment_{currentPageIndex}_{p.Items.IndexOf(item)}";
                                 <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" />
-                                @if (fieldValues.ContainsKey(attachmentKey) && fieldValues[attachmentKey] is IBrowserFile browserFile)  
-                                {  
-                                    <div class="mt-1 text-success">File selected: @browserFile.Name</div>  
-                                }
+                                @if (fieldValues.ContainsKey(attachmentKey))
+                                {
+                                    <div class="mt-1 text-success">File selected: @(((IBrowserFile)fieldValues[attachmentKey]).Name)</div>
+                               }
                             }
                         }
                     </div>
@@ -55,16 +87,16 @@
                     <p>No fields found for this form.</p>
                 }
             </div>
-            <div class="slide-over-footer slide-over-footer-flex">
-                <button class="btn btn-secondary slide-over-btn-min" @onclick="GoBack" disabled="@IsFirstPage">Back</button>
-                <div class="slide-over-footer-right">
+            <div class="slide-over-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                <button class="btn btn-secondary" @onclick="GoBack" disabled="@IsFirstPage" style="min-width: 100px;">Back</button>
+                <div style="margin-left: auto;">
                     @if (!IsLastPage)
                     {
-                        <button class="btn btn-primary slide-over-btn-min" @onclick="GoNext">Next</button>
+                        <button class="btn btn-primary" @onclick="GoNext" style="min-width: 100px;">Next</button>
                     }
                     else
                     {
-                        <button class="btn btn-success slide-over-btn-min" @onclick="SubmitForm">Submit</button>
+                        <button class="btn btn-success" @onclick="SubmitForm" style="min-width: 100px;">Submit</button>
                     }
                 </div>
             </div>
@@ -84,24 +116,30 @@
     private bool IsFirstPage => currentPageIndex == 0;
     private bool IsLastPage => pages == null || currentPageIndex == pages.Count - 1;
     private Dictionary<string, object?> fieldValues = new();
+    private Guid? lastLoadedFormId = null;
 
     protected override async Task OnParametersSetAsync()
     {
         if (Show && Guid.TryParse(FormId, out var formId))
         {
-            isLoading = true;
-            pages = null;
-            currentPageIndex = 0;
-            StateHasChanged();
-            pages = await FormFieldService.GetFormPagesAsync(formId);
-            isLoading = false;
-            StateHasChanged();
+            // Only reload if FormId changes or Show is toggled
+            if (lastLoadedFormId != formId || pages == null)
+            {
+                isLoading = true;
+                pages = null;
+                currentPageIndex = 0;
+                pages = await FormFieldService.GetFormPagesAsync(formId);
+                lastLoadedFormId = formId;
+                isLoading = false;
+                StateHasChanged();
+            }
         }
         else if (!Show)
         {
             pages = null;
             isLoading = false;
             currentPageIndex = 0;
+            lastLoadedFormId = null;
         }
     }
 
@@ -125,13 +163,14 @@
         Console.WriteLine(json);
     }
 
+    // Helper to map FieldInputDto to FormFieldDto for FieldInput component
     private FormFieldDto MapToFormFieldDto(FieldInputDto input)
     {
         return new FormFieldDto
         {
             Field_Num = input.Field_Num,
             Field_Label = input.FieldLabel,
-            Field_Name = input.Field_Name,
+            Field_Name = input.FieldName,
             ID = input.DefinitionID ?? Guid.Empty,
             Virtual = input.Virtual,
             Mandatory = input.Mandatory,
@@ -141,8 +180,15 @@
             LookupID = input.Lookup_ID,
             Filter = input.Filter,
             FieldType = input.FieldType,
-            DisplayFields = input.Display_Fields
+            DisplayFields = input.DisplayFields
         };
+    }
+
+    private bool IsSupportedFieldInput(FieldInputDto input)
+    {
+        // Use FieldType to determine if this input is supported by FieldInput.razor
+        // Supported: not null and not FieldType.Null
+        return input.FieldType != null && input.FieldType != FieldType.Null;
     }
 
     private string GetTextValue(string? elementDefinition)
@@ -159,6 +205,7 @@
         }
         catch
         {
+            // Fallback: strip tags if not valid XML
             return System.Text.RegularExpressions.Regex.Replace(elementDefinition, "<.*?>", string.Empty).Trim();
         }
     }
@@ -184,10 +231,17 @@
         fieldValues[key] = value;
     }
 
-    private void OnAttachmentChanged(InputFileChangeEventArgs e, string key)
+    private Task OnFieldValueChanged(string? value, string fieldKey)
+    {
+        fieldValues[fieldKey] = value;
+        return Task.CompletedTask;
+    }
+
+    private async Task OnAttachmentChanged(InputFileChangeEventArgs e, string key)
     {
         if (e.FileCount > 0)
         {
+            // Store the first file (can be extended for multiple files)
             var file = e.File;
             fieldValues[key] = file;
         }
