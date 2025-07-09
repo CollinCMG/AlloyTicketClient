@@ -132,6 +132,7 @@ public class FormFieldService
     ";
         var param = new SqlParameter("@FieldId", formId);
         var results = new List<dynamic>();
+        // Read all data into memory before further processing (no MARS required)
         using (var command = _db.Database.GetDbConnection().CreateCommand())
         {
             command.CommandText = sql;
@@ -145,7 +146,7 @@ public class FormFieldService
                 }
             }
         }
-
+        // All data is now in memory, safe to process
         var pages = results
             .GroupBy(r => new { r.PageName, r.PageRank })
             .Select(g => new PageDto
