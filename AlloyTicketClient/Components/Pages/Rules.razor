@@ -1,0 +1,207 @@
+@page "/rules"
+@rendermode InteractiveServer
+
+@using AlloyTicketClient.Models
+@using AlloyTicketClient.Services
+@inject IConfiguration Configuration
+@inject FormFieldService FormFieldService
+@inject RulesService RulesService
+
+<PageTitle>Rules</PageTitle>
+
+<div class="request-setup-container">
+    <h1 class="request-setup-title">Rules</h1>
+    <div class="request-setup-subtitle">Manage rules for each request type below.</div>
+    <div class="rules-add-section">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Request (Form)</label>
+                <select class="form-select" @onchange="OnFormSelected">
+                    <option value="">-- Select a Request --</option>
+                    @foreach (var form in Forms)
+                    {
+                        <option value="@form.FormId">@form.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Trigger Field</label>
+                <select class="form-select" @bind="SelectedFieldId">
+                    <option value="">-- Select Trigger Field --</option>
+                    @foreach (var field in FormFields)
+                    {
+                        <option value="@field.DefinitionID">@(string.IsNullOrEmpty(field.FieldLabel) ? field.FieldName : field.FieldLabel)</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Action</label>
+                <select class="form-select" @bind="SelectedAction">
+                    <option value="hide">Hide</option>
+                    <option value="show">Show</option>
+                    <option value="modifyapps">Modify Apps</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Target Fields</label>
+                <select class="form-select" multiple size="6" style="height:auto;min-height:120px;" @onchange="OnTargetFieldsChanged">
+                    @foreach (var field in FormFields)
+                    {
+                        <option value="@field.DefinitionID" selected="@SelectedTargetFieldIds.Contains(field.DefinitionID?.ToString())">@(string.IsNullOrEmpty(field.FieldLabel) ? field.FieldName : field.FieldLabel)</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-1">
+                <button class="btn btn-primary w-100" @onclick="AddRule">Add</button>
+            </div>
+        </div>
+    </div>
+
+    @if (RulesConfig.Instance.Rules.Any())
+    {
+        <div class="rules-list-section mt-4">
+            @foreach (var group in RulesConfig.Instance.Rules.GroupBy(r => r.FormId))
+            {
+                var formName = Forms.FirstOrDefault(f => f.FormId == group.Key)?.Name ?? group.First().FormName ?? group.Key;
+                <div class="rules-group mb-4 p-3 border rounded bg-light">
+                    <h5 class="mb-3">@formName <span style="font-size:small;color:gray">(FormId: @group.Key)</span></h5>
+                    <table class="table table-sm table-bordered mb-0">
+                        <thead>
+                            <tr>
+                                <th>Trigger Field</th>
+                                <th>Action</th>
+                                <th>Target Fields</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var rule in group)
+                            {
+                                <tr>
+                                    <td>@rule.TriggerFieldLabel</td>
+                                    <td>@(rule.Action == "modifyapps" ? "Modify Apps" : rule.Action)</td>
+                                    <td>@string.Join(", ", rule.TargetFieldLabels ?? rule.List)</td>
+                                    <td>
+                                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteRule(rule)">Delete</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private class FormInfo
+    {
+        public string FormId { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+    }
+
+    private List<FormInfo> Forms { get; set; } = new();
+    private string? SelectedFormId { get; set; }
+    private string? SelectedFieldId { get; set; }
+    private string SelectedAction { get; set; } = "hide";
+    private List<string> SelectedTargetFieldIds { get; set; } = new();
+    private List<FieldInputDto> FormFields { get; set; } = new();
+
+    private void OnTargetFieldsChanged(ChangeEventArgs e)
+    {
+        var selected = new List<string>();
+        if (e.Value is not null)
+        {
+            if (e.Value is string single)
+            {
+                selected.Add(single);
+            }
+            else if (e.Value is IEnumerable<string> selectedOptions)
+            {
+                selected = selectedOptions.Select(x => x.ToString()).ToList();
+            }
+            else if (e.Value is string[] arr)
+            {
+                selected = arr.Select(x => x.ToString()).ToList();
+            }
+        }
+        SelectedTargetFieldIds = selected;
+    }
+
+    private void AddRule()
+    {
+        if (!string.IsNullOrEmpty(SelectedFormId) && !string.IsNullOrEmpty(SelectedFieldId) && SelectedTargetFieldIds.Any())
+        {
+            var triggerFieldLabel = GetFieldLabelById(SelectedFieldId);
+            var targetFieldLabels = SelectedTargetFieldIds.Select(id => GetFieldLabelById(id)).ToList();
+            var formName = Forms.FirstOrDefault(f => f.FormId == SelectedFormId)?.Name ?? SelectedFormId;
+            var rule = new RuleConfig
+            {
+                FormId = SelectedFormId,
+                FormName = formName,
+                TriggerField = SelectedFieldId,
+                TriggerFieldLabel = triggerFieldLabel,
+                Action = SelectedAction,
+                List = SelectedTargetFieldIds.ToList(),
+                TargetFieldLabels = targetFieldLabels
+            };
+            RulesConfig.Instance.Rules.Add(rule);
+            SelectedFieldId = null;
+            SelectedAction = "hide";
+            SelectedTargetFieldIds = new List<string>();
+            StateHasChanged();
+        }
+    }
+
+    private void DeleteRule(RuleConfig rule)
+    {
+        // Remove from global config
+        RulesConfig.Instance.Rules.Remove(rule);
+        // Remove from RulesService (by FormId and TriggerField id)
+        RulesService.RemoveRuleAsync(rule.FormId, rule);
+        StateHasChanged();
+    }
+
+    private string GetFieldLabelById(string? id)
+    {
+        if (string.IsNullOrEmpty(id)) return id ?? string.Empty;
+        var field = FormFields.FirstOrDefault(f => f.DefinitionID?.ToString() == id);
+        // Prefer FieldLabel, else fallback to FieldName
+        return !string.IsNullOrWhiteSpace(field?.FieldLabel) ? field.FieldLabel : (field?.FieldName ?? id);
+    }
+
+    protected override void OnInitialized()
+    {
+        // Load forms from DynamicPages in appsettings.json using strongly-typed config
+        var dynamicPages = Configuration.GetSection("DynamicPages").Get<List<DynamicPageConfig>>() ?? new();
+        foreach (var page in dynamicPages)
+        {
+            if (page.Buttons != null)
+            {
+                foreach (var btn in page.Buttons)
+                {
+                    Forms.Add(new FormInfo { FormId = btn.FormId, Name = btn.Name });
+                }
+            }
+        }
+    }
+
+    private async Task OnFormSelected(ChangeEventArgs e)
+    {
+        SelectedFormId = e.Value?.ToString();
+        SelectedFieldId = null;
+        SelectedAction = "hide";
+        SelectedTargetFieldIds = new List<string>();
+        FormFields.Clear();
+        if (!string.IsNullOrEmpty(SelectedFormId) && Guid.TryParse(SelectedFormId, out var formGuid))
+        {
+            var pages = await FormFieldService.GetFormPagesAsync(formGuid);
+            var fields = pages.SelectMany(p => p.Items)
+                .OfType<FieldInputDto>()
+                .ToList();
+            FormFields = fields;
+        }
+        StateHasChanged();
+    }
+}

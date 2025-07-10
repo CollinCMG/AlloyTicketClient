@@ -1,0 +1,77 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@using AlloyTicketClient.Models
+@inject IConfiguration Configuration
+@using Microsoft.AspNetCore.Components
+@inject NavigationManager NavigationManager
+
+@page "/request/{headerText}"
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+<PageTitle>Request</PageTitle>
+
+@if (dynamicPage != null)
+{
+    <div class="request-setup-container">
+        <h1 class="request-setup-title">@dynamicPage.HeaderText</h1>
+        <div class="request-setup-subtitle">@dynamicPage.PageText</div>
+        <div class="request-setup-help"><em>@dynamicPage.SubText</em></div>
+        <div class="request-setup-buttons">
+            @foreach (var btn in dynamicPage.Buttons)
+            {
+                <button class="request-btn add-btn" @onclick="() => ShowDynamicButton(btn)">@btn.Name</button>
+            }
+        </div>
+    </div>
+}
+
+<FormSlideOver Show="showSlideOver"
+               Title="@slideOverTitle"
+               Payload="@slideOverPayload"
+               OnClose="CloseSlideOver" />
+
+@code {
+    [Parameter]
+    public string? headerText { get; set; }
+
+    private bool showSlideOver = false;
+    private string? slideOverTitle;
+    private RequestActionPayload? slideOverPayload;
+    private DynamicPageConfig? dynamicPage;
+
+    protected override void OnParametersSet()
+    {
+        // Read DynamicPages from appsettings.json
+        var dynamicPages = Configuration.GetSection("DynamicPages").Get<List<DynamicPageConfig>>() ?? new();
+        dynamicPage = null; // Reset dynamicPage on parameter set
+        if (!string.IsNullOrEmpty(headerText))
+        {
+            // Find the dynamic page by headerText (case-insensitive, decoded)
+            var match = dynamicPages.FirstOrDefault(p => string.Equals(p.HeaderText, Uri.UnescapeDataString(headerText), StringComparison.OrdinalIgnoreCase));
+            if (match != null)
+            {
+                dynamicPage = match;
+            }
+        }
+    }
+
+    private void ShowDynamicButton(DynamicButtonConfig btn)
+    {
+        slideOverTitle = btn.Name + " Request";
+        slideOverPayload = new RequestActionPayload
+        {
+            FormId = btn.FormId,
+            Data = new Dictionary<string, object?>(),
+            CategoryId = btn.CategoryId,
+            Route = btn.Route
+        };
+        showSlideOver = true;
+    }
+
+    private void CloseSlideOver()
+    {
+        showSlideOver = false;
+        slideOverTitle = null;
+        slideOverPayload = null;
+    }
+}

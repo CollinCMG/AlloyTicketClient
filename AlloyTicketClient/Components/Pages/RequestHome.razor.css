@@ -1,0 +1,13 @@
+/* RequestHome.razor.css */
+:host {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.redirecting-message {
+    text-align: center;
+    margin-top: 3rem;
+    font-size: 1.2rem;
+    color: #888;
+}

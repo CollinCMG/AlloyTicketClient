@@ -1,0 +1,18 @@
+namespace AlloyTicketClient.Models
+{
+    public class DynamicButtonConfig
+    {
+        public string FormId { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Route { get; set; } = string.Empty;
+        public string CategoryId { get; set; } = string.Empty;
+    }
+
+    public class DynamicPageConfig
+    {
+        public string HeaderText { get; set; } = string.Empty;
+        public string PageText { get; set; } = string.Empty;
+        public string SubText { get; set; } = string.Empty;
+        public List<DynamicButtonConfig> Buttons { get; set; } = new();
+    }
+}

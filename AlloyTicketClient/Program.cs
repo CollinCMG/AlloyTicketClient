@@ -18,6 +18,8 @@ builder.Services.AddDbContext<AlloyNavigatorDbContext>(options =>
 builder.Services.AddScoped<FormFieldService>();
 builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddScoped<AlloyApiService>();
+builder.Services.AddScoped<UserRoleService>();
+builder.Services.AddScoped<RulesService>();
 
 builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"))

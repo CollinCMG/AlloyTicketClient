@@ -1,9 +1,9 @@
 namespace AlloyTicketClient.Models
 {
-    public class EmployeeActionPayload
+    public class RequestActionPayload
     {
-        public string FormId { get; set; } // The form id to use for loading form data
-        public object Data { get; set; } // Dynamic form data
+        public string FormId { get; set; } 
+        public object Data { get; set; } 
         public string CategoryId { get; set; }
         public string Route { get; set; }
     }

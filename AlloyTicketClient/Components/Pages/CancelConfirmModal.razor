@@ -1,0 +1,22 @@
+<div class="cancel-modal-overlay cancel-modal-center" style="z-index: 9999;">
+    <div class="cancel-modal-dialog">
+        <div class="cancel-modal-content">
+            <div class="cancel-modal-header">
+                <h5 class="cancel-modal-title">Cancel Action</h5>
+            </div>
+            <div class="cancel-modal-body">
+                <div class="cancel-modal-message">Are you sure you want to cancel this action?</div>
+            </div>
+            <div class="cancel-modal-divider"></div>
+            <div class="cancel-modal-footer">
+                <button class="btn btn-danger" @onclick="OnConfirm">Yes</button>
+                <button class="btn btn-secondary" @onclick="OnCancel">No</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+}
