@@ -1,7 +1,9 @@
-﻿@page "/ticket"
+﻿@page "/"
 @rendermode InteractiveServer
 
 @using System.ComponentModel.DataAnnotations
+@using System.Text.Json
+@inject IJSRuntime JS
 
 <PageTitle>Ticket</PageTitle>
 
@@ -45,9 +47,16 @@
         uploadedFiles = e.GetMultipleFiles();
     }
 
-    private void HandleValidSubmit()
+    private async Task HandleValidSubmit()
     {
-        // TODO: Submit logic
+        var payload = new TicketPayload
+        {
+            Summary = ticketModel.Summary,
+            Description = ticketModel.Description,
+            FileNames = uploadedFiles?.Select(f => f.Name).ToList() ?? new List<string>()
+        };
+        var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+        await JS.InvokeVoidAsync("alert", json);
     }
 
     public class TicketModel
@@ -57,5 +66,12 @@
 
         [Required(ErrorMessage = "Description is required.")]
         public string? Description { get; set; }
+    }
+
+    public class TicketPayload
+    {
+        public string? Summary { get; set; }
+        public string? Description { get; set; }
+        public List<string> FileNames { get; set; } = new();
     }
 }
