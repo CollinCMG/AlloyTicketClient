@@ -1,4 +1,5 @@
 @using Microsoft.AspNetCore.Authorization
+@using AlloyTicketClient.Models
 @inject IConfiguration Configuration
 
 @page "/"
@@ -16,32 +17,46 @@
         <em>(for all other user requests, please contact the Help Desk.)</em>
     </div>
     <div class="employee-setup-buttons">
-        <button class="employee-btn add-btn" @onclick="ShowAddNew">Add Hire</button>
-        <button class="employee-btn add-btn" @onclick="ShowRemoveExisting">Remove Hire</button>
+        @if (employeeActions != null)
+        {
+            foreach (var action in employeeActions)
+            {
+                <button class="employee-btn add-btn"
+                        @onclick="() => ShowEmployeeAction(action)">
+                    @action.ButtonName
+                </button>
+            }
+        }
     </div>
 </div>
 
 <EmployeeSlideOver Show="showSlideOver"
                    Title="@slideOverTitle"
-                   FormId="@slideOverFormId"
+                   Payload="@slideOverPayload"
                    OnClose="CloseSlideOver" />
 
 @code {
     private bool showSlideOver = false;
     private string? slideOverTitle;
-    private string? slideOverFormId;
+    private EmployeeActionPayload? slideOverPayload;
+    private List<EmployeeAction>? employeeActions;
 
-    private void ShowAddNew()
+    protected override void OnInitialized()
     {
-        slideOverTitle = "New Hire Request";
-        slideOverFormId = Configuration["EmployeeActions:NewHireFormId"];
-        showSlideOver = true;
+        // Read EmployeeActions from appsettings.json
+        employeeActions = Configuration.GetSection("EmployeeActions").Get<List<EmployeeAction>>();
     }
 
-    private void ShowRemoveExisting()
+    private void ShowEmployeeAction(EmployeeAction action)
     {
-        slideOverTitle = "Remove User Request";
-        slideOverFormId = Configuration["EmployeeActions:TerminateHireFormId"];
+        slideOverTitle = action.ButtonName + " Request";
+        slideOverPayload = new EmployeeActionPayload
+        {
+            FormId = action.FormId,
+            Data = new Dictionary<string, object?>(),
+            CategoryId = action.CategoryId,
+            Route = action.Route
+        };
         showSlideOver = true;
     }
 
@@ -49,6 +64,6 @@
     {
         showSlideOver = false;
         slideOverTitle = null;
-        slideOverFormId = null;
+        slideOverPayload = null;
     }
 }

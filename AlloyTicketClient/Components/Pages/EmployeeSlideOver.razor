@@ -77,14 +77,14 @@
                         }
                         else
                         {
-                            <button class="btn btn-success @( (!AreRequiredFieldsFilled() || isSubmitting) ? "disabled-green" : null )"
+                            <button class="btn btn-primary @( (!AreRequiredFieldsFilled() || isSubmitting) ? "disabled-blue" : null )"
                                     @onclick="SubmitForm"
                                     style="min-width: 100px; display: flex; align-items: center; justify-content: center; gap: 0.5rem;"
                                     disabled="@((!AreRequiredFieldsFilled() || isSubmitting) ? true : null)">
                                 @if (isSubmitting)
                                 {
-                                    <span class="modern-spinner" style="width: 1.25rem; height: 1.25rem; border-width: 2.5px;"></span>
                                     <span>Submitting</span>
+                                    <span class="modern-spinner" style="width: 1.25rem; height: 1.25rem; border-width: 2.5px;"></span>
                                 }
                                 else
                                 {
@@ -121,14 +121,14 @@
 @code {
     [Parameter] public bool Show { get; set; }
     [Parameter] public string? Title { get; set; }
-    [Parameter] public string? FormId { get; set; }
+    [Parameter] public EmployeeActionPayload? Payload { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
 
     private bool isLoading = false;
     private List<PageDto>? pages;
     private int currentPageIndex = 0;
     private bool IsFirstPage => currentPageIndex == 0;
-    private bool IsLastPage => pages == null || currentPageIndex == pages.Count - 1;
+    private bool IsLastPage => pages == null || pages.Count - 1 == currentPageIndex;
     private Dictionary<string, object?> fieldValues = new();
     private Guid? lastLoadedFormId = null;
     private bool isSubmitting = false;
@@ -137,11 +137,11 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        if (Show && Guid.TryParse(FormId, out var formId))
+        if (Show && Payload != null && Guid.TryParse(Payload.FormId, out var formId))
         {
-            // Clear field values when opening the sidebar
-            fieldValues.Clear();
-            // Only reload if FormId changes or Show is toggled
+            if (Payload.Data is Dictionary<string, object?> data)
+                fieldValues = data;
+            // Only reload if FormId changes or pages is null
             if (lastLoadedFormId != formId || pages == null)
             {
                 isLoading = true;
@@ -155,7 +155,6 @@
         }
         else if (!Show)
         {
-            // Clear field values when closing the sidebar
             fieldValues.Clear();
             pages = null;
             isLoading = false;
@@ -182,7 +181,11 @@
         StateHasChanged();
         try
         {
-            await AlloyApiService.PostAsync(fieldValues);
+            if (Payload != null)
+            {
+                Payload.Data = fieldValues;
+                await AlloyApiService.PostAsync(Payload);
+            }
         }
         finally
         {

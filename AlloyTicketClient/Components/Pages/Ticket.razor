@@ -1,10 +1,61 @@
 ﻿@page "/ticket"
 @rendermode InteractiveServer
 
+@using System.ComponentModel.DataAnnotations
+
 <PageTitle>Ticket</PageTitle>
 
-<h1>Ticket Request</h1>
+<div class="ticket-request-container">
+    <h1 class="ticket-request-title">New Support Request</h1>
+    <div class="ticket-request-subtitle">Complete the following form to submit a new support request to the Help Desk.</div>
+    <div class="ticket-request-help mb-3">
+        <span class="text-danger">*</span> <span class="fw-bold">indicates a required field</span>
+    </div>
+    <div class="ticket-request-card">
+        <h3 class="mb-3 border-bottom pb-2">Issue Description</h3>
+        <EditForm Model="@ticketModel" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <div class="mb-3">
+                <label class="form-label ticket-request-label" for="summary">Brief Summary<span class="text-danger">*</span></label>
+                <InputText id="summary" class="form-control" @bind-Value="ticketModel.Summary" required />
+                <ValidationMessage For="@(() => ticketModel.Summary)" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label ticket-request-label" for="description">Detailed Description<span class="text-danger">*</span></label>
+                <InputTextArea id="description" class="form-control" @bind-Value="ticketModel.Description" rows="7" required />
+                <ValidationMessage For="@(() => ticketModel.Description)" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label ticket-request-label" for="files">Relevant Files/Screenshots</label>
+                <InputFile id="files" OnChange="HandleFilesChange" multiple class="form-control" />
+            </div>
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="ticket-request-btn">Submit</button>
+            </div>
+        </EditForm>
+    </div>
+</div>
 
 @code {
+    private TicketModel ticketModel = new();
+    private IReadOnlyList<IBrowserFile>? uploadedFiles;
 
+    private void HandleFilesChange(InputFileChangeEventArgs e)
+    {
+        uploadedFiles = e.GetMultipleFiles();
+    }
+
+    private void HandleValidSubmit()
+    {
+        // TODO: Submit logic
+    }
+
+    public class TicketModel
+    {
+        [Required(ErrorMessage = "Summary is required.")]
+        public string? Summary { get; set; }
+
+        [Required(ErrorMessage = "Description is required.")]
+        public string? Description { get; set; }
+    }
 }
