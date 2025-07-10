@@ -96,7 +96,7 @@ public class FormFieldService
                   AND e.Rank < pb2.NextPageRank
                 ORDER BY pb2.PageRank DESC
             ) pb
-            WHERE e.Type IN (1,2)
+            WHERE e.Type IN (2)
               AND e.Form_ID = @FieldId
         )
         SELECT

@@ -16,7 +16,10 @@
             <div class="slide-over-content">
                 @if (isLoading)
                 {
-                    <p>Loading...</p>
+                    <div class="modern-loading">
+                        <div class="modern-spinner"></div>
+                        <span>Loading, please wait...</span>
+                    </div>
                 }
                 else if (pages != null && pages.Count > 0)
                 {
@@ -56,20 +59,23 @@
                 }
             </div>
             <div class="slide-over-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-                @if (!IsFirstPage)
+                @if (!isLoading && pages != null && pages.Count > 0)
                 {
-                    <button class="btn btn-secondary" @onclick="GoBack" style="min-width: 100px;">Back</button>
+                    @if (!IsFirstPage)
+                    {
+                        <button class="btn btn-secondary" @onclick="GoBack" style="min-width: 100px;">Back</button>
+                    }
+                    <div style="margin-left: auto;">
+                        @if (!IsLastPage)
+                        {
+                            <button class="btn btn-primary" @onclick="GoNext" style="min-width: 100px;" disabled="@(AreRequiredFieldsFilled() ? null : true)">Next</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-success" @onclick="SubmitForm" style="min-width: 100px;" disabled="@(AreRequiredFieldsFilled() ? null : true)">Submit</button>
+                        }
+                    </div>
                 }
-                <div style="margin-left: auto;">
-                    @if (!IsLastPage)
-                    {
-                        <button class="btn btn-primary" @onclick="GoNext" style="min-width: 100px;" disabled="@(AreRequiredFieldsFilled() ? null : true)">Next</button>
-                    }
-                    else
-                    {
-                        <button class="btn btn-success" @onclick="SubmitForm" style="min-width: 100px;" disabled="@(AreRequiredFieldsFilled() ? null : true)">Submit</button>
-                    }
-                </div>
             </div>
         </div>
     </div>
