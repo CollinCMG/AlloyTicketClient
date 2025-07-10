@@ -155,11 +155,14 @@ input:focus, select:focus, textarea:focus, .form-control:focus, .blazor-input:fo
 .btn-success:hover, .btn-success:focus {
     background: #16a34a;
 }
-.btn[disabled], .btn:disabled {
-    background: #cbd5e1 !important;
-    color: #64748b !important;
+.btn-success.disabled-green,
+.btn-success:disabled,
+.btn-success[disabled] {
+    background: #7ddfa4 !important; /* a light green shade */
+    color: #e6f9ee !important;
     cursor: not-allowed;
     box-shadow: none;
+    border: none;
 }
 
 /* File input and selected file */
@@ -224,4 +227,49 @@ input[type="file"].form-control {
     to {
         transform: translateX(0);
     }
+}
+
+/* Modal overlay and centering */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(30, 41, 59, 0.45);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.modal-center {
+    align-items: center;
+    justify-content: center;
+}
+.modal-dialog {
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 8px 32px rgba(30,41,59,0.18);
+    min-width: 320px;
+    max-width: 90vw;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+.modal-content {
+    padding: 1.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.modal-header {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
 }

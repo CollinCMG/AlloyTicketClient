@@ -1,12 +1,13 @@
 ﻿namespace AlloyTicketClient.Services
 {
     using AlloyTicketClient.Models;
+    using Azure.Core;
     using Microsoft.Extensions.Configuration;
+    using System;
     using System.Net.Http;
     using System.Net.Http.Headers;
     using System.Text;
     using System.Threading.Tasks;
-    using System;
 
     public class AlloyApiService
     {
@@ -41,6 +42,8 @@
         {
             try
             {
+                SetAuthHeader("test", null);
+
                 var apiUrl = $"{GetBaseUrl()}/NewHire";
                 var content = new StringContent(System.Text.Json.JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
                 using var response = await _client.PostAsync(apiUrl, content);

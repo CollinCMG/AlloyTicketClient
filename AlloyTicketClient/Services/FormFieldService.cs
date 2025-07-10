@@ -187,15 +187,11 @@ public class FormFieldService
         if (!string.IsNullOrWhiteSpace(field.Filter))
             sql += $" WHERE {field.Filter}";
         var options = new List<string>();
-        var connection = _db.Database.GetDbConnection();
-        bool shouldClose = false;
-        try
+        // Use a new SqlConnection to avoid DataReader conflicts
+        var connString = _db.Database.GetConnectionString();
+        using (var connection = new SqlConnection(connString))
         {
-            if (connection.State != System.Data.ConnectionState.Open)
-            {
-                await connection.OpenAsync();
-                shouldClose = true;
-            }
+            await connection.OpenAsync();
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = sql;
@@ -207,16 +203,6 @@ public class FormFieldService
                     }
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error executing SQL: {sql}");
-            Console.WriteLine($"Exception: {ex}");
-        }
-        finally
-        {
-            if (shouldClose && connection.State == System.Data.ConnectionState.Open)
-                connection.Close();
         }
         _dropdownOptionsCache[cacheKey] = options;
         field.Options = options;

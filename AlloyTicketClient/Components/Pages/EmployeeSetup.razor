@@ -17,7 +17,7 @@
     </div>
     <div class="employee-setup-buttons">
         <button class="employee-btn add-btn" @onclick="ShowAddNew">Add Hire</button>
-        <button class="employee-btn add-btn" @onclick="ShowRemoveExisting">Terminate Hire</button>
+        <button class="employee-btn add-btn" @onclick="ShowRemoveExisting">Remove Hire</button>
     </div>
 </div>
 
@@ -40,7 +40,7 @@
 
     private void ShowRemoveExisting()
     {
-        slideOverTitle = "Terminate User Request";
+        slideOverTitle = "Remove User Request";
         slideOverFormId = Configuration["EmployeeActions:TerminateHireFormId"];
         showSlideOver = true;
     }

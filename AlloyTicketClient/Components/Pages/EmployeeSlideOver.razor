@@ -9,11 +9,11 @@
 
 @if (Show)
 {
-    <div class="slide-over-overlay" @onclick="OnClose">
+    <div class="slide-over-overlay" @onclick="HandleOverlayClick">
         <div class="slide-over-panel" @onclick:stopPropagation>
             <div class="slide-over-header">
                 <h2>@Title</h2>
-                <button class="slide-over-close" @onclick="OnClose">&times;</button>
+                <button class="slide-over-close" @onclick="HandleClose">&times;</button>
             </div>
             <div class="slide-over-content">
                 @if (isLoading)
@@ -49,7 +49,10 @@
                                 <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" />
                                 @if (fieldValues.ContainsKey(attachmentKey))
                                 {
-                                    <div class="mt-1 text-success">File selected: @(((IBrowserFile)fieldValues[attachmentKey]).Name)</div>
+                                    <div class="mt-1 text-success" style="display: flex; align-items: center; gap: 0.5rem;">
+                                        File selected: @(((IBrowserFile)fieldValues[attachmentKey]).Name)
+                                        <button type="button" class="btn btn-sm btn-danger ms-2" @onclick="() => RemoveAttachment(attachmentKey)">Remove</button>
+                                    </div>
                                 }
                             }
                         }
@@ -74,10 +77,42 @@
                         }
                         else
                         {
-                            <button class="btn btn-success" @onclick="SubmitForm" style="min-width: 100px;" disabled="@(AreRequiredFieldsFilled() ? null : true)">Submit</button>
+                            <button class="btn btn-success @( (!AreRequiredFieldsFilled() || isSubmitting) ? "disabled-green" : null )"
+                                    @onclick="SubmitForm"
+                                    style="min-width: 100px; display: flex; align-items: center; justify-content: center; gap: 0.5rem;"
+                                    disabled="@((!AreRequiredFieldsFilled() || isSubmitting) ? true : null)">
+                                @if (isSubmitting)
+                                {
+                                    <span class="modern-spinner" style="width: 1.25rem; height: 1.25rem; border-width: 2.5px;"></span>
+                                    <span>Submitting</span>
+                                }
+                                else
+                                {
+                                    <span>Submit</span>
+                                }
+                            </button>
                         }
                     </div>
                 }
+            </div>
+        </div>
+    </div>
+}
+@if (showCancelConfirm)
+{
+    <div class="modal-overlay modal-center">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Cancel Action</h5>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to cancel this action?
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-danger" @onclick="ConfirmCancel">Yes</button>
+                    <button class="btn btn-secondary" @onclick="CancelCancel">No</button>
+                </div>
             </div>
         </div>
     </div>
@@ -96,11 +131,16 @@
     private bool IsLastPage => pages == null || currentPageIndex == pages.Count - 1;
     private Dictionary<string, object?> fieldValues = new();
     private Guid? lastLoadedFormId = null;
+    private bool isSubmitting = false;
+    private bool showCancelConfirm = false;
+    private bool closeSidebarOnConfirm = false;
 
     protected override async Task OnParametersSetAsync()
     {
         if (Show && Guid.TryParse(FormId, out var formId))
         {
+            // Clear field values when opening the sidebar
+            fieldValues.Clear();
             // Only reload if FormId changes or Show is toggled
             if (lastLoadedFormId != formId || pages == null)
             {
@@ -115,6 +155,8 @@
         }
         else if (!Show)
         {
+            // Clear field values when closing the sidebar
+            fieldValues.Clear();
             pages = null;
             isLoading = false;
             currentPageIndex = 0;
@@ -136,9 +178,17 @@
 
     private async Task SubmitForm()
     {
-        // Call AlloyApiService to submit the data
-        await AlloyApiService.PostAsync(fieldValues);
+        isSubmitting = true;
         StateHasChanged();
+        try
+        {
+            await AlloyApiService.PostAsync(fieldValues);
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
     }
 
     // Helper to map FieldInputDto to FormFieldDto for FieldInput component
@@ -222,11 +272,17 @@
         }
     }
 
+    private void RemoveAttachment(string key)
+    {
+        if (fieldValues.ContainsKey(key))
+        {
+            fieldValues.Remove(key);
+        }
+    }
+
     // Returns true if all required (Mandatory) fields on the current page have a value
     private bool AreRequiredFieldsFilled()
     {
-        return true;
-
         if (pages == null || pages.Count == 0)
             return false;
         var page = pages[currentPageIndex];
@@ -242,5 +298,49 @@
             }
         }
         return true;
+    }
+
+    private void HandleOverlayClick()
+    {
+        if (fieldValues.Count > 0)
+        {
+            showCancelConfirm = true;
+            closeSidebarOnConfirm = true;
+        }
+        else
+        {
+            fieldValues.Clear(); // Clear on close
+            OnClose.InvokeAsync();
+        }
+    }
+
+    private void ConfirmCancel()
+    {
+        showCancelConfirm = false;
+        if (closeSidebarOnConfirm)
+        {
+            fieldValues.Clear(); // Clear on close
+            OnClose.InvokeAsync();
+        }
+    }
+
+    private void CancelCancel()
+    {
+        showCancelConfirm = false;
+        closeSidebarOnConfirm = false;
+    }
+
+    private async Task HandleClose()
+    {
+        if (fieldValues.Count > 0)
+        {
+            showCancelConfirm = true;
+            closeSidebarOnConfirm = true;
+        }
+        else
+        {
+            fieldValues.Clear(); // Clear on close
+            await OnClose.InvokeAsync();
+        }
     }
 }
