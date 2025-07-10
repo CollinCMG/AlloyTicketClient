@@ -1,9 +1,9 @@
 ﻿@page "/"
 @rendermode InteractiveServer
 
-@using System.ComponentModel.DataAnnotations
-@using System.Text.Json
-@inject IJSRuntime JS
+@using Microsoft.Extensions.Configuration
+@using AlloyTicketClient.Models
+@inject IConfiguration Configuration
 
 <PageTitle>Ticket</PageTitle>
 
@@ -11,67 +11,53 @@
     <h1 class="ticket-request-title">New Support Request</h1>
     <div class="ticket-request-subtitle">Complete the following form to submit a new support request to the Help Desk.</div>
     <div class="ticket-request-help mb-3">
-        <span class="text-danger">*</span> <span class="fw-bold">indicates a required field</span>
     </div>
-    <div class="ticket-request-card">
-        <h3 class="mb-3 border-bottom pb-2">Issue Description</h3>
-        <EditForm Model="@ticketModel" OnValidSubmit="HandleValidSubmit">
-            <DataAnnotationsValidator />
-            <div class="mb-3">
-                <label class="form-label ticket-request-label" for="summary">Brief Summary<span class="text-danger">*</span></label>
-                <InputText id="summary" class="form-control" @bind-Value="ticketModel.Summary" required />
-                <ValidationMessage For="@(() => ticketModel.Summary)" />
-            </div>
-            <div class="mb-3">
-                <label class="form-label ticket-request-label" for="description">Detailed Description<span class="text-danger">*</span></label>
-                <InputTextArea id="description" class="form-control" @bind-Value="ticketModel.Description" rows="7" required />
-                <ValidationMessage For="@(() => ticketModel.Description)" />
-            </div>
-            <div class="mb-3">
-                <label class="form-label ticket-request-label" for="files">Relevant Files/Screenshots</label>
-                <InputFile id="files" OnChange="HandleFilesChange" multiple class="form-control" />
-            </div>
-            <div class="d-flex justify-content-end">
-                <button type="submit" class="ticket-request-btn">Submit</button>
-            </div>
-        </EditForm>
+    <div class="ticket-action-buttons" style="display: flex; gap: 1.5rem;">
+        @if (ticketActions != null)
+        {
+            foreach (var action in ticketActions)
+            {
+                <button class="ticket-btn add-btn" @onclick="() => ShowTicketAction(action)">
+                    @action.ButtonName
+                </button>
+            }
+        }
     </div>
 </div>
 
+<EmployeeSlideOver Show="showSlideOver"
+                   Title="@slideOverTitle"
+                   Payload="@slideOverPayload"
+                   OnClose="CloseSlideOver" />
+
 @code {
-    private TicketModel ticketModel = new();
-    private IReadOnlyList<IBrowserFile>? uploadedFiles;
+    private bool showSlideOver = false;
+    private string? slideOverTitle;
+    private EmployeeActionPayload? slideOverPayload;
+    private List<EmployeeAction>? ticketActions;
 
-    private void HandleFilesChange(InputFileChangeEventArgs e)
+    protected override void OnInitialized()
     {
-        uploadedFiles = e.GetMultipleFiles();
+        ticketActions = Configuration.GetSection("TicketActions").Get<List<EmployeeAction>>();
     }
 
-    private async Task HandleValidSubmit()
+    private void ShowTicketAction(EmployeeAction action)
     {
-        var payload = new TicketPayload
+        slideOverTitle = action.ButtonName + " Request";
+        slideOverPayload = new EmployeeActionPayload
         {
-            Summary = ticketModel.Summary,
-            Description = ticketModel.Description,
-            FileNames = uploadedFiles?.Select(f => f.Name).ToList() ?? new List<string>()
+            FormId = action.FormId,
+            Data = action, // Pass the whole object as Data
+            CategoryId = action.CategoryId,
+            Route = action.Route
         };
-        var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
-        await JS.InvokeVoidAsync("alert", json);
+        showSlideOver = true;
     }
 
-    public class TicketModel
+    private void CloseSlideOver()
     {
-        [Required(ErrorMessage = "Summary is required.")]
-        public string? Summary { get; set; }
-
-        [Required(ErrorMessage = "Description is required.")]
-        public string? Description { get; set; }
-    }
-
-    public class TicketPayload
-    {
-        public string? Summary { get; set; }
-        public string? Description { get; set; }
-        public List<string> FileNames { get; set; } = new();
+        showSlideOver = false;
+        slideOverTitle = null;
+        slideOverPayload = null;
     }
 }

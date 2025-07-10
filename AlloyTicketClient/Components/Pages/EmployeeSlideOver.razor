@@ -47,13 +47,6 @@
                                 // Use a unique key for the attachment field
                                 var attachmentKey = $"attachment_{currentPageIndex}_{p.Items.IndexOf(item)}";
                                 <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" />
-                                @if (fieldValues.ContainsKey(attachmentKey))
-                                {
-                                    <div class="mt-1 text-success" style="display: flex; align-items: center; gap: 0.5rem;">
-                                        File selected: @(((IBrowserFile)fieldValues[attachmentKey]).Name)
-                                        <button type="button" class="btn btn-sm btn-danger ms-2" @onclick="() => RemoveAttachment(attachmentKey)">Remove</button>
-                                    </div>
-                                }
                             }
                         }
                     </div>
@@ -184,7 +177,9 @@
             if (Payload != null)
             {
                 Payload.Data = fieldValues;
-                await AlloyApiService.PostAsync(Payload);
+                // await AlloyApiService.PostAsync(Payload); // Commented out API call
+                var json = System.Text.Json.JsonSerializer.Serialize(Payload, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                await JSRuntime.InvokeVoidAsync("alert", json);
             }
         }
         finally

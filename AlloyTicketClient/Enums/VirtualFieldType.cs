@@ -4,10 +4,10 @@ namespace AlloyTicketClient.Enums
     {
         Null = 0,
         One = 1,
-        Two = 2,
+        Checkbox = 2, // was Two
         Three = 3,
         Input = 4,
-        Five = 5,
+        Textarea = 5, // was Five
         Six = 6,
         Seven = 7,
         Dropdown = 8, 

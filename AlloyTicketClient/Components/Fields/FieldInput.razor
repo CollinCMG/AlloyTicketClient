@@ -29,6 +29,14 @@
         {
             <input type="text" class="form-control" value="@Value" @oninput="OnInputChangedHandler" />
         }
+        else if (Field.FieldType == FieldType.Checkbox)
+        {
+            <input type="checkbox" class="form-check-input" checked="@(Value == "true" || Value == "True")" @onchange="OnCheckboxChangedHandler" />
+        }
+        else if (Field.FieldType == FieldType.Textarea)
+        {
+            <textarea class="form-control" value="@Value" @oninput="OnInputChangedHandler"></textarea>
+        }
         else if (Field.FieldType == FieldType.Dropdown && !string.IsNullOrWhiteSpace(Field.TableName) && !string.IsNullOrWhiteSpace(Field.DisplayFields))
         {
             if (Options == null)
@@ -84,6 +92,12 @@
     private async Task OnInputChangedHandler(ChangeEventArgs e)
     {
         await OnValueChanged.InvokeAsync(e.Value?.ToString());
+    }
+
+    private async Task OnCheckboxChangedHandler(ChangeEventArgs e)
+    {
+        var isChecked = e.Value is bool b ? b : (e.Value?.ToString() == "true" || e.Value?.ToString() == "True");
+        await OnValueChanged.InvokeAsync(isChecked.ToString());
     }
 
     protected override async Task OnInitializedAsync()
