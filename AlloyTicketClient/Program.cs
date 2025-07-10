@@ -1,7 +1,8 @@
 using AlloyTicketClient.Components;
+using AlloyTicketClient.Services;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.Identity.Web;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +16,8 @@ builder.Services.AddDbContext<AlloyNavigatorDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("AlloyNavigator")));
 
 builder.Services.AddScoped<FormFieldService>();
+builder.Services.AddScoped<JwtTokenService>();
+builder.Services.AddScoped<AlloyApiService>();
 
 builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"))

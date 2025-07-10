@@ -4,6 +4,8 @@
 @using AlloyTicketClient.Components.Fields
 @using AlloyTicketClient.Models
 @using AlloyTicketClient.Enums
+@using AlloyTicketClient.Services
+@inject AlloyApiService AlloyApiService
 
 @if (Show)
 {
@@ -134,10 +136,9 @@
 
     private async Task SubmitForm()
     {
-        var json = System.Text.Json.JsonSerializer.Serialize(fieldValues);
-        await JSRuntime.InvokeVoidAsync("alert", json);
-        // TODO: send json to API or handle as needed
-        Console.WriteLine(json);
+        // Call AlloyApiService to submit the data
+        await AlloyApiService.PostAsync(fieldValues);
+        StateHasChanged();
     }
 
     // Helper to map FieldInputDto to FormFieldDto for FieldInput component
@@ -224,6 +225,8 @@
     // Returns true if all required (Mandatory) fields on the current page have a value
     private bool AreRequiredFieldsFilled()
     {
+        return true;
+
         if (pages == null || pages.Count == 0)
             return false;
         var page = pages[currentPageIndex];
