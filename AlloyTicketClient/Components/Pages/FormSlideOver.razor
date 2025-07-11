@@ -252,7 +252,7 @@
         fieldValues[key] = value;
     }
 
-    private async Task OnFieldValueChanged(string? value, string fieldKey)
+    private async Task OnFieldValueChanged(object? value, string fieldKey)
     {
         fieldValues[fieldKey] = value;
         if (Payload != null)

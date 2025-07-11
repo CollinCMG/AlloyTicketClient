@@ -1,10 +1,6 @@
 using AlloyTicketClient.Models;
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Threading.Tasks;
 
 namespace AlloyTicketClient.Services
 {
@@ -48,6 +44,27 @@ namespace AlloyTicketClient.Services
                 });
             }
             return roles;
+        }
+
+        public async Task<string> GetUsernameByEmailAsync(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email)) return string.Empty;
+            email = email.Trim();
+            await using var cn = new SqlConnection(_connectionString);
+            await cn.OpenAsync().ConfigureAwait(false);
+            await using var cmd = new SqlCommand("spGetUserListByEmail", cn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+            cmd.Parameters.Add(new SqlParameter("@UserEmail", SqlDbType.NVarChar) { Value = email });
+            await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+            while (await reader.ReadAsync().ConfigureAwait(false))
+            {
+                var username = reader["UserLogin"]?.ToString()?.Trim();
+                if (!string.IsNullOrEmpty(username))
+                    return username;
+            }
+            return string.Empty;
         }
     }
 }

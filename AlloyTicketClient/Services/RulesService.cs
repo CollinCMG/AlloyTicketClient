@@ -70,22 +70,47 @@ namespace AlloyTicketClient.Services
             // Evaluate hide rules
             foreach (var rule in hideRules)
             {
-                if (fieldValues.TryGetValue(rule.TriggerField, out var value) && !string.IsNullOrWhiteSpace(value?.ToString()))
+                if (fieldValues.TryGetValue(rule.TriggerField, out var value))
                 {
-                    foreach (var target in rule.List)
-                        fieldsToHide.Add(target);
+                    bool isActive = false;
+                    if (value is DropdownOptionDto dto)
+                    {
+                        // Consider active if any property is non-null/non-empty
+                        isActive = dto.Properties.Values.Any(v => v != null && !string.IsNullOrWhiteSpace(v.ToString()));
+                    }
+                    else
+                    {
+                        isActive = !string.IsNullOrWhiteSpace(value?.ToString());
+                    }
+                    if (isActive)
+                    {
+                        foreach (var target in rule.TargetList)
+                            fieldsToHide.Add(target.FieldId);
+                    }
                 }
             }
 
             // Evaluate show rules
             foreach (var rule in showRules)
             {
-                foreach (var target in rule.List)
-                    showTargets.Add(target);
-                if (fieldValues.TryGetValue(rule.TriggerField, out var value) && !string.IsNullOrWhiteSpace(value?.ToString()))
+                foreach (var target in rule.TargetList)
+                    showTargets.Add(target.FieldId);
+                if (fieldValues.TryGetValue(rule.TriggerField, out var value))
                 {
-                    foreach (var target in rule.List)
-                        fieldsToShow.Add(target);
+                    bool isActive = false;
+                    if (value is DropdownOptionDto dto)
+                    {
+                        isActive = dto.Properties.Values.Any(v => v != null && !string.IsNullOrWhiteSpace(v.ToString()));
+                    }
+                    else
+                    {
+                        isActive = !string.IsNullOrWhiteSpace(value?.ToString());
+                    }
+                    if (isActive)
+                    {
+                        foreach (var target in rule.TargetList)
+                            fieldsToShow.Add(target.FieldId);
+                    }
                 }
             }
 
@@ -96,18 +121,45 @@ namespace AlloyTicketClient.Services
                     fieldsToHide.Add(target);
             }
 
-            // Evaluate all modifyapps rules (not just for changedField)
+            // Evaluate modifyapps rules with app name/field name mapping
             foreach (var rule in modifyAppsRules)
             {
-                if (fieldValues.TryGetValue(rule.TriggerField, out var value) && !string.IsNullOrWhiteSpace(value?.ToString()))
+                if (fieldValues.TryGetValue(rule.TriggerField, out var value))
                 {
-                    //var result = await _userRoleService.GetRolesForUserAsync("cbuus");
-                    
-                    //var apps = result.Select(x => x.AppCode).Distinct();
-                    //var certs = result.Select(x => x.RoleName).Distinct();
-
-                    foreach (var target in rule.List)
-                        modifiedApps[target] = "test"; // Always set to "test"
+                    bool isActive = false;
+                    DropdownOptionDto? triggerDto = null;
+                    string username = string.Empty;
+                    if (value is DropdownOptionDto dto)
+                    {
+                        triggerDto = dto;
+                        isActive = dto.Properties.Values.Any(v => v != null && !string.IsNullOrWhiteSpace(v.ToString()));
+                        if (dto.Properties.TryGetValue("Primary_Email", out var emailObj) && emailObj is string email && !string.IsNullOrWhiteSpace(email))
+                        {
+                            var resolvedUsername = await _userRoleService.GetUsernameByEmailAsync(email);
+                            if (!string.IsNullOrWhiteSpace(resolvedUsername))
+                            {
+                                username = resolvedUsername;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        isActive = !string.IsNullOrWhiteSpace(value?.ToString());
+                    }
+                    if (isActive)
+                    {
+                        var result = await _userRoleService.GetRolesForUserAsync(username);
+                        var apps = result.Select(x => x.AppCode).Distinct();
+                        // Only set value if app name matches field name
+                        foreach (var target in rule.TargetList)
+                        {
+                            var targetValue = target.FieldType == Enums.FieldType.Checkbox
+                                ? (apps.Contains(target.FieldName) ? "True" : "False")
+                                : (apps.Contains(target.FieldName) ? "Yes" : "No");
+                            modifiedApps[target.FieldId] = targetValue;
+                        }
+                        // Example: you can now use triggerDto.Properties["Id"] or ["Display_Name"] for more advanced logic
+                    }
                 }
             }
 

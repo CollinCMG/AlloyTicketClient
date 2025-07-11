@@ -4,11 +4,17 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 using System.Data.Common;
+using System.Collections.Generic;
+
+public class DropdownOptionDto
+{
+    public Dictionary<string, object?> Properties { get; set; } = new();
+}
 
 public class FormFieldService
 {
     private readonly AlloyNavigatorDbContext _db;
-    private readonly ConcurrentDictionary<string, List<string>> _dropdownOptionsCache = new();
+    private readonly ConcurrentDictionary<string, List<DropdownOptionDto>> _dropdownOptionsCache = new();
 
     public FormFieldService(AlloyNavigatorDbContext db)
     {
@@ -170,24 +176,31 @@ public class FormFieldService
         return pages;
     }
 
-    public async Task<List<string>> GetDropdownOptionsAsync(FormFieldDto field)
+    public async Task<List<DropdownOptionDto>> GetDropdownOptionsAsync(FormFieldDto field)
     {
         if (string.IsNullOrWhiteSpace(field.TableName) || string.IsNullOrWhiteSpace(field.DisplayFields))
         {
-            field.Options = new List<string>();
-            return field.Options;
+            return new List<DropdownOptionDto>();
         }
         var cacheKey = $"{field.TableName}|{field.DisplayFields}|{field.Filter}";
         if (_dropdownOptionsCache.TryGetValue(cacheKey, out var cachedOptions))
         {
-            field.Options = cachedOptions;
             return cachedOptions;
         }
-        var sql = $"SELECT {field.DisplayFields} FROM [{field.TableName}]";
+        var sql = string.Empty;
+
+        if (field.TableName == "Persons")
+        {
+            sql = $"SELECT {field.DisplayFields + ", [Primary_Email]"} FROM [{field.TableName}]";
+        }
+        else
+        {
+             sql = $"SELECT {field.DisplayFields} FROM [{field.TableName}]";
+        }
+
         if (!string.IsNullOrWhiteSpace(field.Filter))
             sql += $" WHERE {field.Filter}";
-        var options = new List<string>();
-        // Use a new SqlConnection to avoid DataReader conflicts
+        var options = new List<DropdownOptionDto>();
         var connString = _db.Database.GetConnectionString();
         using (var connection = new SqlConnection(connString))
         {
@@ -199,13 +212,19 @@ public class FormFieldService
                 {
                     while (await reader.ReadAsync())
                     {
-                        options.Add(ReadDropdownOption(reader));
+                        var option = new DropdownOptionDto();
+                        for (int i = 0; i < reader.FieldCount; i++)
+                        {
+                            var name = reader.GetName(i);
+                            var value = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                            option.Properties[name] = value;
+                        }
+                        options.Add(option);
                     }
                 }
             }
         }
         _dropdownOptionsCache[cacheKey] = options;
-        field.Options = options;
         return options;
     }
 

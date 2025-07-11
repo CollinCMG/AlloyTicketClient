@@ -80,7 +80,7 @@
                                 <tr>
                                     <td>@rule.TriggerFieldLabel</td>
                                     <td>@(rule.Action == "modifyapps" ? "Modify Apps" : rule.Action)</td>
-                                    <td>@string.Join(", ", rule.TargetFieldLabels ?? rule.List)</td>
+                                    <td>@string.Join(", ", rule.TargetFieldLabels ?? rule.TargetList.Select(t => t.FieldName))</td>
                                     <td>
                                         <button class="btn btn-danger btn-sm" @onclick="() => DeleteRule(rule)">Delete</button>
                                     </td>
@@ -136,6 +136,16 @@
             var triggerFieldLabel = GetFieldLabelById(SelectedFieldId);
             var targetFieldLabels = SelectedTargetFieldIds.Select(id => GetFieldLabelById(id)).ToList();
             var formName = Forms.FirstOrDefault(f => f.FormId == SelectedFormId)?.Name ?? SelectedFormId;
+            var targetList = SelectedTargetFieldIds
+                .Select(id => {
+                    var field = FormFields.FirstOrDefault(f => f.DefinitionID?.ToString() == id);
+                    return new TargetFieldInfo {
+                        FieldId = id,
+                        FieldName = field?.FieldName ?? id,
+                        FieldType = field?.FieldType ?? AlloyTicketClient.Enums.FieldType.Null
+                    };
+                })
+                .ToList();
             var rule = new RuleConfig
             {
                 FormId = SelectedFormId,
@@ -143,7 +153,7 @@
                 TriggerField = SelectedFieldId,
                 TriggerFieldLabel = triggerFieldLabel,
                 Action = SelectedAction,
-                List = SelectedTargetFieldIds.ToList(),
+                TargetList = targetList,
                 TargetFieldLabels = targetFieldLabels
             };
             RulesConfig.Instance.Rules.Add(rule);

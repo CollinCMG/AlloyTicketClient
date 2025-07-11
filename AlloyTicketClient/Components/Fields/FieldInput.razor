@@ -45,22 +45,26 @@
             }
             else
             {
-                <select class="form-control" @bind="CurrentValue">
+                <select class="form-control" @onchange="OnDropdownChanged">
                     <option value="">-- Select --</option>
                     @foreach (var option in Options)
                     {
-                        <option value="@option">@option</option>
+                        var value = option.Properties.ContainsKey("Id") ? option.Properties["Id"]?.ToString() : option.Properties.Values.FirstOrDefault()?.ToString();
+                        var display = option.Properties.ContainsKey("Display_Name") ? option.Properties["Display_Name"]?.ToString() : option.Properties.Values.FirstOrDefault()?.ToString();
+                        <option value="@value">@display</option>
                     }
                 </select>
             }
         }
         else if (Field.FieldType == FieldType.Dropdown && Options != null)
         {
-            <select class="form-control" @bind="CurrentValue">
+            <select class="form-control" @onchange="OnDropdownChanged">
                 <option value="">-- Select --</option>
                 @foreach (var option in Options)
                 {
-                    <option value="@option">@option</option>
+                    var value = option.Properties.ContainsKey("Id") ? option.Properties["Id"]?.ToString() : option.Properties.Values.FirstOrDefault()?.ToString();
+                    var display = option.Properties.ContainsKey("Display_Name") ? option.Properties["Display_Name"]?.ToString() : option.Properties.Values.FirstOrDefault()?.ToString();
+                    <option value="@value">@display</option>
                 }
             </select>
         }
@@ -84,31 +88,59 @@
 
 @code {
     [Parameter] public FormFieldDto? Field { get; set; }
-    [Parameter] public string? Value { get; set; }
-    [Parameter] public EventCallback<string?> OnValueChanged { get; set; }
+    [Parameter] public object? Value { get; set; } // Now supports DropdownOptionDto
+    [Parameter] public EventCallback<object?> OnValueChanged { get; set; }
 
-    private List<string>? Options;
+    private List<DropdownOptionDto>? Options;
 
     private string? CurrentValue
     {
-        get => Value;
+        get => Value is DropdownOptionDto dto ? dto.Properties.ContainsKey("Id") ? dto.Properties["Id"]?.ToString() : dto.Properties.Values.FirstOrDefault()?.ToString() : Value?.ToString();
         set
         {
-            if (Value != value)
+            if (Field?.FieldType == FieldType.Dropdown && Options != null)
             {
-                Value = value;
-                OnValueChanged.InvokeAsync(value);
+                var selected = Options.FirstOrDefault(o => (o.Properties.ContainsKey("Id") ? o.Properties["Id"]?.ToString() : o.Properties.Values.FirstOrDefault()?.ToString()) == value);
+                if (selected != null && !Equals(Value, selected))
+                {
+                    Value = selected;
+                    OnValueChanged.InvokeAsync(selected);
+                }
+                else if (string.IsNullOrEmpty(value))
+                {
+                    Value = null;
+                    OnValueChanged.InvokeAsync(null);
+                }
             }
+            else
+            {
+                if (!Equals(Value, value))
+                {
+                    Value = value;
+                    OnValueChanged.InvokeAsync(value);
+                }
+            }
+        }
+    }
+
+    private void OnDropdownChanged(ChangeEventArgs e)
+    {
+        var selectedValue = e.Value?.ToString();
+        if (Options != null)
+        {
+            var selected = Options.FirstOrDefault(o => (o.Properties.ContainsKey("Id") ? o.Properties["Id"]?.ToString() : o.Properties.Values.FirstOrDefault()?.ToString()) == selectedValue);
+            Value = selected;
+            OnValueChanged.InvokeAsync(selected);
         }
     }
 
     private bool IsChecked
     {
-        get => Value == "true" || Value == "True";
+        get => Value?.ToString() == "true" || Value?.ToString() == "True";
         set
         {
             var strValue = value ? "true" : "false";
-            if (Value != strValue)
+            if (!Equals(Value, strValue))
             {
                 Value = strValue;
                 OnValueChanged.InvokeAsync(strValue);
@@ -120,14 +152,14 @@
     {
         get
         {
-            if (DateTime.TryParse(Value, out var dt))
+            if (DateTime.TryParse(Value?.ToString(), out var dt))
                 return dt;
             return null;
         }
         set
         {
             var strValue = value.HasValue ? value.Value.ToString("yyyy-MM-dd") : null;
-            if (Value != strValue)
+            if (!Equals(Value, strValue))
             {
                 Value = strValue;
                 OnValueChanged.InvokeAsync(strValue);

@@ -1,5 +1,14 @@
+using AlloyTicketClient.Enums;
+
 namespace AlloyTicketClient.Models
 {
+    public class TargetFieldInfo
+    {
+        public string FieldId { get; set; } = string.Empty; // GUID as string
+        public string FieldName { get; set; } = string.Empty;
+        public FieldType FieldType { get; set; } = FieldType.Null; // Use enum
+    }
+
     public class RuleConfig
     {
         public string FormId { get; set; } = string.Empty;
@@ -8,7 +17,7 @@ namespace AlloyTicketClient.Models
         public string? TriggerFieldLabel { get; set; } // Display name for trigger field
         public bool IsSet { get; set; } = true;
         public string Action { get; set; } = "hide";
-        public List<string> List { get; set; } = new();
+        public List<TargetFieldInfo> TargetList { get; set; } = new(); // List of target fields (name + guid)
         public List<string>? TargetFieldLabels { get; set; } // Display names for target fields
     }
 
