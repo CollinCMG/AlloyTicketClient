@@ -17,7 +17,7 @@
         @if (Field.FieldType == FieldType.Input && !string.IsNullOrWhiteSpace(Field.LookupValues))
         {
             var options = ParseLookupValues(Field.LookupValues);
-            <select class="form-control" value="@Value" @onchange="OnInputChangedHandler">
+            <select class="form-control" @bind="CurrentValue">
                 <option value="">-- Select --</option>
                 @foreach (var option in options)
                 {
@@ -27,15 +27,15 @@
         }
         else if (Field.FieldType == FieldType.Input)
         {
-            <input type="text" class="form-control" value="@Value" @oninput="OnInputChangedHandler" />
+            <input type="text" class="form-control" @bind="CurrentValue" @bind:event="oninput" />
         }
         else if (Field.FieldType == FieldType.Checkbox)
         {
-            <input type="checkbox" class="form-check-input" checked="@(Value == "true" || Value == "True")" @onchange="OnCheckboxChangedHandler" />
+            <input type="checkbox" class="form-check-input" @bind="IsChecked" />
         }
         else if (Field.FieldType == FieldType.Textarea)
         {
-            <textarea class="form-control" value="@Value" @oninput="OnInputChangedHandler"></textarea>
+            <textarea class="form-control" @bind="CurrentValue"></textarea>
         }
         else if (Field.FieldType == FieldType.Dropdown && !string.IsNullOrWhiteSpace(Field.TableName) && !string.IsNullOrWhiteSpace(Field.DisplayFields))
         {
@@ -45,7 +45,7 @@
             }
             else
             {
-                <select class="form-control" value="@Value" @onchange="OnInputChangedHandler">
+                <select class="form-control" @bind="CurrentValue">
                     <option value="">-- Select --</option>
                     @foreach (var option in Options)
                     {
@@ -56,7 +56,7 @@
         }
         else if (Field.FieldType == FieldType.Dropdown && Options != null)
         {
-            <select class="form-control" value="@Value" @onchange="OnInputChangedHandler">
+            <select class="form-control" @bind="CurrentValue">
                 <option value="">-- Select --</option>
                 @foreach (var option in Options)
                 {
@@ -66,18 +66,18 @@
         }
         else if (Field.FieldType == FieldType.Dropdown || (Field.Field_Name?.Equals("Requester_Id", StringComparison.OrdinalIgnoreCase) ?? false))
         {
-            <select class="form-control" value="@Value" @onchange="OnInputChangedHandler">
+            <select class="form-control" @bind="CurrentValue">
                 <option value="">-- Select --</option>
                 <!-- TODO: Populate with actual Requester options -->
             </select>
         }
         else if (Field.Field_Name?.Equals("Due_date", StringComparison.OrdinalIgnoreCase) ?? false)
         {
-            <input type="date" class="form-control" value="@Value" @oninput="OnInputChangedHandler" />
+            <input type="date" class="form-control" @bind="DateValue" />
         }
         else
         {
-            <input type="text" class="form-control" value="@Value" @oninput="OnInputChangedHandler" />
+            <input type="text" class="form-control" @bind="CurrentValue" @bind:event="oninput" />
         }
     </div>
 }
@@ -89,15 +89,50 @@
 
     private List<string>? Options;
 
-    private async Task OnInputChangedHandler(ChangeEventArgs e)
+    private string? CurrentValue
     {
-        await OnValueChanged.InvokeAsync(e.Value?.ToString());
+        get => Value;
+        set
+        {
+            if (Value != value)
+            {
+                Value = value;
+                OnValueChanged.InvokeAsync(value);
+            }
+        }
     }
 
-    private async Task OnCheckboxChangedHandler(ChangeEventArgs e)
+    private bool IsChecked
     {
-        var isChecked = e.Value is bool b ? b : (e.Value?.ToString() == "true" || e.Value?.ToString() == "True");
-        await OnValueChanged.InvokeAsync(isChecked.ToString());
+        get => Value == "true" || Value == "True";
+        set
+        {
+            var strValue = value ? "true" : "false";
+            if (Value != strValue)
+            {
+                Value = strValue;
+                OnValueChanged.InvokeAsync(strValue);
+            }
+        }
+    }
+
+    private DateTime? DateValue
+    {
+        get
+        {
+            if (DateTime.TryParse(Value, out var dt))
+                return dt;
+            return null;
+        }
+        set
+        {
+            var strValue = value.HasValue ? value.Value.ToString("yyyy-MM-dd") : null;
+            if (Value != strValue)
+            {
+                Value = strValue;
+                OnValueChanged.InvokeAsync(strValue);
+            }
+        }
     }
 
     protected override async Task OnInitializedAsync()

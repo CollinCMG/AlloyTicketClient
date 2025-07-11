@@ -42,62 +42,78 @@ namespace AlloyTicketClient.Services
         // Unified rule evaluation for Show, Hide, Modify Apps
         public async Task<RuleEvaluationResult> EvaluateRulesAsync(string formId, Dictionary<string, object?> fieldValues, string? changedField = null)
         {
-            var toHide = new HashSet<string>();
-            var toShow = new HashSet<string>();
-            var allShowTargets = new HashSet<string>();
+            // Prepare result containers
+            var fieldsToHide = new HashSet<string>();
+            var fieldsToShow = new HashSet<string>();
+            var showTargets = new HashSet<string>();
             var modifiedApps = new Dictionary<string, string>();
-            var results = await _userRoleService.GetRolesForUserAsync("cbuus");
 
+            // Get rules for the form
             var rules = _rulesByFormId.TryGetValue(formId, out var localRules)
                 ? localRules
                 : RulesConfig.Instance.Rules.Where(r => r.FormId == formId).ToList();
 
-            // Always evaluate all hide/show rules
+            // Partition rules by action for clarity
+            var hideRules = new List<RuleConfig>();
+            var showRules = new List<RuleConfig>();
+            var modifyAppsRules = new List<RuleConfig>();
             foreach (var rule in rules)
             {
-                if (rule.Action == "hide")
+                switch (rule.Action)
                 {
-                    // Use field id (GUID) as key
-                    if (fieldValues.TryGetValue(rule.TriggerField, out var value) && !string.IsNullOrWhiteSpace(value?.ToString()))
-                        foreach (var target in rule.List)
-                            toHide.Add(target);
+                    case "hide": hideRules.Add(rule); break;
+                    case "show": showRules.Add(rule); break;
+                    case "modifyapps": modifyAppsRules.Add(rule); break;
                 }
-                else if (rule.Action == "show")
+            }
+
+            // Evaluate hide rules
+            foreach (var rule in hideRules)
+            {
+                if (fieldValues.TryGetValue(rule.TriggerField, out var value) && !string.IsNullOrWhiteSpace(value?.ToString()))
                 {
                     foreach (var target in rule.List)
-                        allShowTargets.Add(target);
-                    // Use field id (GUID) as key
-                    if (fieldValues.TryGetValue(rule.TriggerField, out var value) && !string.IsNullOrWhiteSpace(value?.ToString()))
-                        foreach (var target in rule.List)
-                            toShow.Add(target);
+                        fieldsToHide.Add(target);
                 }
             }
 
-            // Only evaluate modifyapps rules for the changed field
-            if (!string.IsNullOrEmpty(changedField))
+            // Evaluate show rules
+            foreach (var rule in showRules)
             {
-                var modifyRules = rules.Where(r => r.Action == "modifyapps" && r.TriggerField == changedField).ToList();
-                foreach (var rule in modifyRules)
+                foreach (var target in rule.List)
+                    showTargets.Add(target);
+                if (fieldValues.TryGetValue(rule.TriggerField, out var value) && !string.IsNullOrWhiteSpace(value?.ToString()))
                 {
-                    // Use field id (GUID) as key
-                    if (fieldValues.TryGetValue(rule.TriggerField, out var value) && !string.IsNullOrWhiteSpace(value?.ToString()))
-                    {
-                        foreach (var target in rule.List)
-                        {
-                            modifiedApps[target] = value.ToString();
-                        }
-                    }
+                    foreach (var target in rule.List)
+                        fieldsToShow.Add(target);
                 }
             }
 
-            // For show rules: hide all show-targets unless their trigger is active
-            foreach (var target in allShowTargets)
-                if (!toShow.Contains(target))
-                    toHide.Add(target);
+            // Hide all show-targets unless their trigger is active
+            foreach (var target in showTargets)
+            {
+                if (!fieldsToShow.Contains(target))
+                    fieldsToHide.Add(target);
+            }
+
+            // Evaluate all modifyapps rules (not just for changedField)
+            foreach (var rule in modifyAppsRules)
+            {
+                if (fieldValues.TryGetValue(rule.TriggerField, out var value) && !string.IsNullOrWhiteSpace(value?.ToString()))
+                {
+                    //var result = await _userRoleService.GetRolesForUserAsync("cbuus");
+                    
+                    //var apps = result.Select(x => x.AppCode).Distinct();
+                    //var certs = result.Select(x => x.RoleName).Distinct();
+
+                    foreach (var target in rule.List)
+                        modifiedApps[target] = "test"; // Always set to "test"
+                }
+            }
 
             return new RuleEvaluationResult
             {
-                FieldsToHide = toHide.ToList(),
+                FieldsToHide = fieldsToHide.ToList(),
                 ModifiedApps = modifiedApps
             };
         }

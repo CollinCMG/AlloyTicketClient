@@ -137,6 +137,12 @@
                 lastLoadedFormId = formId;
                 // Evaluate rules on load
                 ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, fieldValues, null);
+                // Apply ModifiedApps values to fieldValues
+                if (ruleResult?.ModifiedApps != null)
+                {
+                    foreach (var kvp in ruleResult.ModifiedApps)
+                        fieldValues[kvp.Key] = kvp.Value;
+                }
                 isLoading = false;
                 StateHasChanged();
             }
@@ -252,6 +258,22 @@
         if (Payload != null)
         {
             ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, fieldValues, fieldKey);
+            // Only apply ModifiedApps if the changed field is a trigger for a modifyapps rule
+            var modifyAppsShouldApply = false;
+            if (ruleResult?.ModifiedApps != null && ruleResult.ModifiedApps.Count > 0)
+            {
+                // Find if any modifyapps rule has TriggerField == fieldKey
+                var rules = RulesConfig.Instance.Rules.Where(r => r.FormId == Payload.FormId && r.Action == "modifyapps" && r.TriggerField == fieldKey);
+                if (rules.Any())
+                {
+                    modifyAppsShouldApply = true;
+                }
+            }
+            if (modifyAppsShouldApply)
+            {
+                foreach (var kvp in ruleResult.ModifiedApps)
+                    fieldValues[kvp.Key] = kvp.Value;
+            }
             StateHasChanged();
         }
     }
@@ -271,6 +293,12 @@
         if (Payload != null)
         {
             ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, fieldValues, key);
+            // Apply ModifiedApps values to fieldValues
+            if (ruleResult?.ModifiedApps != null)
+            {
+                foreach (var kvp in ruleResult.ModifiedApps)
+                    fieldValues[kvp.Key] = kvp.Value;
+            }
             StateHasChanged();
         }
     }
