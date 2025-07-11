@@ -16,7 +16,7 @@ namespace AlloyTicketClient.Models
         public string TriggerField { get; set; } = string.Empty;
         public string? TriggerFieldLabel { get; set; } // Display name for trigger field
         public bool IsSet { get; set; } = true;
-        public string Action { get; set; } = "hide";
+        public FilterAction Action { get; set; } = FilterAction.Hide;
         public List<TargetFieldInfo> TargetList { get; set; } = new(); // List of target fields (name + guid)
         public List<string>? TargetFieldLabels { get; set; } // Display names for target fields
     }

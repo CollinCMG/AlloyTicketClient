@@ -1,5 +1,5 @@
 using AlloyTicketClient.Models;
-using System.Threading.Tasks;
+using AlloyTicketClient.Enums;
 
 namespace AlloyTicketClient.Services
 {
@@ -39,21 +39,17 @@ namespace AlloyTicketClient.Services
             return Task.FromResult(_rulesByFormId.Keys.ToList());
         }
 
-        // Unified rule evaluation for Show, Hide, Modify Apps
         public async Task<RuleEvaluationResult> EvaluateRulesAsync(string formId, Dictionary<string, object?> fieldValues, string? changedField = null)
         {
-            // Prepare result containers
             var fieldsToHide = new HashSet<string>();
             var fieldsToShow = new HashSet<string>();
             var showTargets = new HashSet<string>();
             var modifiedApps = new Dictionary<string, string>();
 
-            // Get rules for the form
             var rules = _rulesByFormId.TryGetValue(formId, out var localRules)
                 ? localRules
                 : RulesConfig.Instance.Rules.Where(r => r.FormId == formId).ToList();
 
-            // Partition rules by action for clarity
             var hideRules = new List<RuleConfig>();
             var showRules = new List<RuleConfig>();
             var modifyAppsRules = new List<RuleConfig>();
@@ -61,13 +57,12 @@ namespace AlloyTicketClient.Services
             {
                 switch (rule.Action)
                 {
-                    case "hide": hideRules.Add(rule); break;
-                    case "show": showRules.Add(rule); break;
-                    case "modifyapps": modifyAppsRules.Add(rule); break;
+                    case FilterAction.Hide: hideRules.Add(rule); break;
+                    case FilterAction.Show: showRules.Add(rule); break;
+                    case FilterAction.ModifyApps: modifyAppsRules.Add(rule); break;
                 }
             }
 
-            // Evaluate hide rules
             foreach (var rule in hideRules)
             {
                 if (fieldValues.TryGetValue(rule.TriggerField, out var value))
@@ -90,7 +85,6 @@ namespace AlloyTicketClient.Services
                 }
             }
 
-            // Evaluate show rules
             foreach (var rule in showRules)
             {
                 foreach (var target in rule.TargetList)
@@ -114,14 +108,12 @@ namespace AlloyTicketClient.Services
                 }
             }
 
-            // Hide all show-targets unless their trigger is active
             foreach (var target in showTargets)
             {
                 if (!fieldsToShow.Contains(target))
                     fieldsToHide.Add(target);
             }
 
-            // Evaluate modifyapps rules with app name/field name mapping
             foreach (var rule in modifyAppsRules)
             {
                 if (fieldValues.TryGetValue(rule.TriggerField, out var value))
@@ -150,7 +142,6 @@ namespace AlloyTicketClient.Services
                     {
                         var result = await _userRoleService.GetRolesForUserAsync(username);
                         var apps = result.Select(x => x.AppCode).Distinct();
-                        // Only set value if app name matches field name
                         foreach (var target in rule.TargetList)
                         {
                             var targetValue = target.FieldType == Enums.FieldType.Checkbox
@@ -158,7 +149,6 @@ namespace AlloyTicketClient.Services
                                 : (apps.Contains(target.FieldName) ? "Yes" : "No");
                             modifiedApps[target.FieldId] = targetValue;
                         }
-                        // Example: you can now use triggerDto.Properties["Id"] or ["Display_Name"] for more advanced logic
                     }
                 }
             }

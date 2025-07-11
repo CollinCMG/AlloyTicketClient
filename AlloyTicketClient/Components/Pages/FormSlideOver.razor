@@ -263,7 +263,7 @@
             if (ruleResult?.ModifiedApps != null && ruleResult.ModifiedApps.Count > 0)
             {
                 // Find if any modifyapps rule has TriggerField == fieldKey
-                var rules = RulesConfig.Instance.Rules.Where(r => r.FormId == Payload.FormId && r.Action == "modifyapps" && r.TriggerField == fieldKey);
+                var rules = RulesConfig.Instance.Rules.Where(r => r.FormId == Payload.FormId && r.Action == FilterAction.ModifyApps && r.TriggerField == fieldKey);
                 if (rules.Any())
                 {
                     modifyAppsShouldApply = true;

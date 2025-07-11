@@ -3,6 +3,7 @@
 
 @using AlloyTicketClient.Models
 @using AlloyTicketClient.Services
+@using AlloyTicketClient.Enums
 @inject IConfiguration Configuration
 @inject FormFieldService FormFieldService
 @inject RulesService RulesService
@@ -37,9 +38,9 @@
             <div class="col-md-2">
                 <label class="form-label">Action</label>
                 <select class="form-select" @bind="SelectedAction">
-                    <option value="hide">Hide</option>
-                    <option value="show">Show</option>
-                    <option value="modifyapps">Modify Apps</option>
+                    <option value="Hide">Hide</option>
+                    <option value="Show">Show</option>
+                    <option value="ModifyApps">Modify Apps</option>
                 </select>
             </div>
             <div class="col-md-3">
@@ -79,7 +80,7 @@
                             {
                                 <tr>
                                     <td>@rule.TriggerFieldLabel</td>
-                                    <td>@(rule.Action == "modifyapps" ? "Modify Apps" : rule.Action)</td>
+                                    <td>@rule.Action.ToString()</td>
                                     <td>@string.Join(", ", rule.TargetFieldLabels ?? rule.TargetList.Select(t => t.FieldName))</td>
                                     <td>
                                         <button class="btn btn-danger btn-sm" @onclick="() => DeleteRule(rule)">Delete</button>
@@ -104,7 +105,7 @@
     private List<FormInfo> Forms { get; set; } = new();
     private string? SelectedFormId { get; set; }
     private string? SelectedFieldId { get; set; }
-    private string SelectedAction { get; set; } = "hide";
+    private FilterAction SelectedAction { get; set; } = FilterAction.Hide;
     private List<string> SelectedTargetFieldIds { get; set; } = new();
     private List<FieldInputDto> FormFields { get; set; } = new();
 
@@ -158,7 +159,7 @@
             };
             RulesConfig.Instance.Rules.Add(rule);
             SelectedFieldId = null;
-            SelectedAction = "hide";
+            SelectedAction = FilterAction.Hide;
             SelectedTargetFieldIds = new List<string>();
             StateHasChanged();
         }
@@ -201,7 +202,7 @@
     {
         SelectedFormId = e.Value?.ToString();
         SelectedFieldId = null;
-        SelectedAction = "hide";
+        SelectedAction = FilterAction.Hide;
         SelectedTargetFieldIds = new List<string>();
         FormFields.Clear();
         if (!string.IsNullOrEmpty(SelectedFormId) && Guid.TryParse(SelectedFormId, out var formGuid))
