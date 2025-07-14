@@ -115,6 +115,7 @@
     private bool showCancelConfirm = false;
     private bool closeSidebarOnConfirm = false;
     private RuleEvaluationResult? ruleResult;
+    private List<string> modifyAppsTriggerFields = new();
 
     protected override async Task OnParametersSetAsync()
     {
@@ -129,6 +130,13 @@
                 pages = await FormFieldService.GetFormPagesAsync(formId);
                 lastLoadedFormId = formId;
                 ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, fieldValues, null);
+                // Get rules for this form and cache trigger fields for ModifyApps
+                var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
+                modifyAppsTriggerFields = rules
+                    .Where(r => r.Action == FilterAction.ModifyApps)
+                    .Select(r => r.TriggerField)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .ToList();
                 if (ruleResult?.ModifiedApps != null)
                 {
                     foreach (var kvp in ruleResult.ModifiedApps)
@@ -145,6 +153,7 @@
             isLoading = false;
             lastLoadedFormId = null;
             ruleResult = null;
+            modifyAppsTriggerFields = new();
         }
     }
 
@@ -156,7 +165,45 @@
         {
             if (Payload != null)
             {
-                Payload.Data = fieldValues;
+                // Map GUID keys to field names and field types
+                var guidToName = new Dictionary<string, string>();
+                var guidToType = new Dictionary<string, FieldType?>();
+                if (pages != null)
+                {
+                    foreach (var page in pages)
+                    {
+                        foreach (var item in page.Items)
+                        {
+                            if (item is FieldInputDto fieldInput && fieldInput.DefinitionID != null && !string.IsNullOrWhiteSpace(fieldInput.FieldName))
+                            {
+                                guidToName[fieldInput.DefinitionID.ToString()!] = fieldInput.FieldName;
+                                guidToType[fieldInput.DefinitionID.ToString()!] = fieldInput.FieldType;
+                            }
+                        }
+                    }
+                }
+                // Build new dictionary with field names as keys
+                var nameKeyed = new Dictionary<string, object?>();
+                foreach (var kvp in fieldValues)
+                {
+                    string? fieldName = null;
+                    FieldType? fieldType = null;
+                    if (guidToName.TryGetValue(kvp.Key, out var n) && !string.IsNullOrWhiteSpace(n))
+                        fieldName = n;
+                    if (guidToType.TryGetValue(kvp.Key, out var t))
+                        fieldType = t;
+
+                    object? value = kvp.Value;
+                    if (fieldType == FieldType.Dropdown && value is DropdownOptionDto dto)
+                    {
+                        if (dto.Properties.TryGetValue("Full_Name", out var fullNameVal) && fullNameVal != null)
+                            value = fullNameVal;
+                        else
+                            value = dto.Properties.Values.FirstOrDefault();
+                    }
+                    nameKeyed[fieldName ?? kvp.Key] = value;
+                }
+                Payload.Data = nameKeyed;
                 var json = System.Text.Json.JsonSerializer.Serialize(Payload, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
                 await JSRuntime.InvokeVoidAsync("alert", json);
             }
@@ -346,14 +393,14 @@
         }
     }
 
-    // Helper to group FieldInputDto into rows of 2, except textarea (full row)
+    // Helper to group FieldInputDto into rows of 2, except textarea (full row) and ModifyApps trigger fields (full row)
     private List<List<IPageItem>> GetFieldRows(List<IPageItem> items)
     {
         var rows = new List<List<IPageItem>>();
         var currentRow = new List<IPageItem>();
         foreach (var item in items)
         {
-            if (item is FieldInputDto fieldInput && fieldInput.FieldType == FieldType.Textarea)
+            if (item is FieldInputDto fieldInput && (fieldInput.FieldType == FieldType.Textarea || (fieldInput.DefinitionID != null && modifyAppsTriggerFields.Contains(fieldInput.DefinitionID.ToString()))))
             {
                 if (currentRow.Count > 0)
                 {
