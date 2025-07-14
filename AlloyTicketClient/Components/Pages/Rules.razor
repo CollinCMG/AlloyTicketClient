@@ -1,3 +1,4 @@
+Certainly! Here's the updated Razor file with the suggested code change applied:
 @page "/rules"
 @rendermode InteractiveServer
 
@@ -32,6 +33,7 @@
                             <thead>
                                 <tr>
                                     <th>Trigger Field</th>
+                                    <th>Trigger Value</th>
                                     <th>Action</th>
                                     <th>Target Fields</th>
                                     <th></th>
@@ -42,6 +44,7 @@
                                 {
                                     <tr>
                                         <td>@rule.TriggerFieldLabel</td>
+                                        <td>@(string.IsNullOrWhiteSpace(rule.TriggerValue) ? "Any" : rule.TriggerValue)</td>
                                         <td>@rule.Action.ToString()</td>
                                         <td>@string.Join(", ", rule.TargetFieldLabels ?? rule.TargetList.Select(t => t.FieldName))</td>
                                         <td class="text-nowrap">
@@ -104,6 +107,10 @@
                                             }
                                         </select>
                                     </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Trigger Value <span class="text-muted" style="font-size:smaller">(leave blank for any value)</span></label>
+                                        <input class="form-control" @bind="ModalTriggerValue" placeholder="Any value" />
+                                    </div>
                                     <div class="col-12">
                                         <label class="form-label">Target Fields</label>
                                         <select class="form-select w-100" multiple size="6" style="height:auto;min-height:120px;" @onchange="OnModalTargetFieldsChanged">
@@ -151,6 +158,7 @@
     private FilterAction ModalSelectedAction { get; set; } = FilterAction.Hide;
     private List<string> ModalSelectedTargetFieldIds { get; set; } = new();
     private List<FieldInputDto> ModalFormFields { get; set; } = new();
+    private string? ModalTriggerValue { get; set; }
 
     private async Task OpenRuleModal(RuleConfig? rule)
     {
@@ -164,6 +172,7 @@
             ModalSelectedAction = FilterAction.Hide;
             ModalSelectedTargetFieldIds = new List<string>();
             ModalFormFields = new List<FieldInputDto>();
+            ModalTriggerValue = null;
         }
         else
         {
@@ -173,6 +182,7 @@
             ModalSelectedFieldId = EditingRule?.TriggerField;
             ModalSelectedAction = EditingRule?.Action ?? FilterAction.Hide;
             ModalSelectedTargetFieldIds = EditingRule?.TargetList.Select(t => t.FieldId).ToList() ?? new List<string>();
+            ModalTriggerValue = EditingRule?.TriggerValue;
             if (!string.IsNullOrEmpty(ModalSelectedFormId) && Guid.TryParse(ModalSelectedFormId, out var formGuid))
             {
                 var pages = await FormFieldService.GetFormPagesAsync(formGuid);
@@ -254,6 +264,7 @@
             EditingRule.FormName = formName;
             EditingRule.TriggerField = ModalSelectedFieldId;
             EditingRule.TriggerFieldLabel = triggerFieldLabel;
+            EditingRule.TriggerValue = string.IsNullOrWhiteSpace(ModalTriggerValue) ? null : ModalTriggerValue;
             EditingRule.Action = ModalSelectedAction;
             EditingRule.TargetList = targetList;
             EditingRule.TargetFieldLabels = targetFieldLabels;
@@ -268,6 +279,7 @@
                 FormName = formName,
                 TriggerField = ModalSelectedFieldId,
                 TriggerFieldLabel = triggerFieldLabel,
+                TriggerValue = string.IsNullOrWhiteSpace(ModalTriggerValue) ? null : ModalTriggerValue,
                 Action = ModalSelectedAction,
                 TargetList = targetList,
                 TargetFieldLabels = targetFieldLabels

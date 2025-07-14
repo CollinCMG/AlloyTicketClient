@@ -85,16 +85,19 @@ namespace AlloyTicketClient.Services
                 if (fieldValues.TryGetValue(rule.TriggerField, out var value))
                 {
                     bool isActive = false;
+                    string? valueStr = value?.ToString();
                     if (value is DropdownOptionDto dto)
                     {
-                        // Consider active if any property is non-null/non-empty
                         isActive = dto.Properties.Values.Any(v => v != null && !string.IsNullOrWhiteSpace(v.ToString()));
+                        valueStr = dto.ToString(); // You may want to adjust this if DropdownOptionDto has a specific value property
                     }
                     else
                     {
-                        isActive = !string.IsNullOrWhiteSpace(value?.ToString());
+                        isActive = !string.IsNullOrWhiteSpace(valueStr);
                     }
-                    if (isActive)
+                    // Check trigger value logic
+                    bool triggerMatch = string.IsNullOrWhiteSpace(rule.TriggerValue) || string.Equals(valueStr, rule.TriggerValue, StringComparison.OrdinalIgnoreCase);
+                    if (isActive && triggerMatch)
                     {
                         foreach (var target in rule.TargetList)
                             fieldsToHide.Add(target.FieldId);
@@ -109,15 +112,18 @@ namespace AlloyTicketClient.Services
                 if (fieldValues.TryGetValue(rule.TriggerField, out var value))
                 {
                     bool isActive = false;
+                    string? valueStr = value?.ToString();
                     if (value is DropdownOptionDto dto)
                     {
                         isActive = dto.Properties.Values.Any(v => v != null && !string.IsNullOrWhiteSpace(v.ToString()));
+                        valueStr = dto.ToString(); // You may want to adjust this if DropdownOptionDto has a specific value property
                     }
                     else
                     {
-                        isActive = !string.IsNullOrWhiteSpace(value?.ToString());
+                        isActive = !string.IsNullOrWhiteSpace(valueStr);
                     }
-                    if (isActive)
+                    bool triggerMatch = string.IsNullOrWhiteSpace(rule.TriggerValue) || string.Equals(valueStr, rule.TriggerValue, StringComparison.OrdinalIgnoreCase);
+                    if (isActive && triggerMatch)
                     {
                         foreach (var target in rule.TargetList)
                             fieldsToShow.Add(target.FieldId);
@@ -138,10 +144,12 @@ namespace AlloyTicketClient.Services
                     bool isActive = false;
                     DropdownOptionDto? triggerDto = null;
                     string username = string.Empty;
+                    string? valueStr = value?.ToString();
                     if (value is DropdownOptionDto dto)
                     {
                         triggerDto = dto;
                         isActive = dto.Properties.Values.Any(v => v != null && !string.IsNullOrWhiteSpace(v.ToString()));
+                        valueStr = dto.ToString(); // You may want to adjust this if DropdownOptionDto has a specific value property
                         if (dto.Properties.TryGetValue("Primary_Email", out var emailObj) && emailObj is string email && !string.IsNullOrWhiteSpace(email))
                         {
                             var resolvedUsername = await _userRoleService.GetUsernameByEmailAsync(email);
@@ -153,9 +161,10 @@ namespace AlloyTicketClient.Services
                     }
                     else
                     {
-                        isActive = !string.IsNullOrWhiteSpace(value?.ToString());
+                        isActive = !string.IsNullOrWhiteSpace(valueStr);
                     }
-                    if (isActive)
+                    bool triggerMatch = string.IsNullOrWhiteSpace(rule.TriggerValue) || string.Equals(valueStr, rule.TriggerValue, StringComparison.OrdinalIgnoreCase);
+                    if (isActive && triggerMatch)
                     {
                         var result = await _userRoleService.GetRolesForUserAsync(username);
                         var apps = result.Select(x => x.AppCode).Distinct();

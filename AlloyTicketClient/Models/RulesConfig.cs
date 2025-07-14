@@ -16,6 +16,7 @@ namespace AlloyTicketClient.Models
         public string? FormName { get; set; } // Display name for the form
         public string TriggerField { get; set; } = string.Empty;
         public string? TriggerFieldLabel { get; set; } // Display name for trigger field
+        public string? TriggerValue { get; set; } // Value that triggers the rule, null or special for any value
         public bool IsSet { get; set; } = true;
         public FilterAction Action { get; set; } = FilterAction.Hide;
         public List<TargetFieldInfo> TargetList { get; set; } = new(); // List of target fields (name + guid)

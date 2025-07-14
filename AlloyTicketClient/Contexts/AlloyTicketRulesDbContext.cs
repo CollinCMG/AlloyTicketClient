@@ -29,6 +29,7 @@ namespace AlloyTicketClient.Contexts
                 entity.Property(e => e.Action).IsRequired();
                 entity.Property(e => e.FormName);
                 entity.Property(e => e.TriggerFieldLabel);
+                entity.Property(e => e.TriggerValue); // Add mapping for TriggerValue
                 entity.Property(e => e.IsSet);
                 entity.Property(e => e.TargetFieldLabels);
                 entity.Property(e => e.TargetList)
