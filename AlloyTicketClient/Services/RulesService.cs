@@ -3,6 +3,7 @@ using AlloyTicketClient.Models;
 using AlloyTicketClient.Enums;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace AlloyTicketClient.Services
 {
@@ -10,22 +11,35 @@ namespace AlloyTicketClient.Services
     {
         private readonly AlloyTicketRulesDbContext _db;
         private readonly UserRoleService _userRoleService;
+        private readonly IMemoryCache _cache;
+        private static readonly string AllRulesCacheKey = "AlloyTicketRules_All";
+        private static string FormRulesCacheKey(string formId) => $"AlloyTicketRules_{formId}";
 
-        public RulesService(AlloyTicketRulesDbContext db, UserRoleService userRoleService)
+        public RulesService(AlloyTicketRulesDbContext db, UserRoleService userRoleService, IMemoryCache cache)
         {
             _db = db;
             _userRoleService = userRoleService;
+            _cache = cache;
         }
 
         public async Task<List<RuleConfig>> GetRulesForFormAsync(string formId)
         {
-            var rules = await _db.AlloyTicketRules.Where(r => r.FormId == formId).ToListAsync();
+            var cacheKey = FormRulesCacheKey(formId);
+            if (!_cache.TryGetValue(cacheKey, out List<RuleConfig> rules))
+            {
+                rules = await _db.AlloyTicketRules.Where(r => r.FormId == formId).ToListAsync();
+                _cache.Set(cacheKey, rules, TimeSpan.FromMinutes(10));
+            }
             return rules;
         }
 
         public async Task<List<RuleConfig>> GetAllRulesAsync()
         {
-            var rules = await _db.AlloyTicketRules.ToListAsync();
+            if (!_cache.TryGetValue(AllRulesCacheKey, out List<RuleConfig> rules))
+            {
+                rules = await _db.AlloyTicketRules.ToListAsync();
+                _cache.Set(AllRulesCacheKey, rules, TimeSpan.FromMinutes(10));
+            }
             return rules;
         }
 
@@ -35,12 +49,14 @@ namespace AlloyTicketClient.Services
                 rule.RuleId = Guid.NewGuid();
             _db.AlloyTicketRules.Add(rule);
             await _db.SaveChangesAsync();
+            InvalidateRuleCache(rule.FormId);
         }
 
         public async Task UpdateRuleAsync(RuleConfig rule)
         {
             _db.AlloyTicketRules.Update(rule);
             await _db.SaveChangesAsync();
+            InvalidateRuleCache(rule.FormId);
         }
 
         public async Task RemoveRuleAsync(Guid ruleId)
@@ -50,6 +66,7 @@ namespace AlloyTicketClient.Services
             {
                 _db.AlloyTicketRules.Remove(rule);
                 await _db.SaveChangesAsync();
+                InvalidateRuleCache(rule.FormId);
             }
         }
 
@@ -62,7 +79,7 @@ namespace AlloyTicketClient.Services
         {
             var modifiedApps = new Dictionary<string, string>();
 
-            var rules = await _db.AlloyTicketRules.Where(r => r.FormId == formId).ToListAsync();
+            var rules = await GetRulesForFormAsync(formId);
 
             var hideRules = new List<RuleConfig>();
             var showRules = new List<RuleConfig>();
@@ -221,6 +238,12 @@ namespace AlloyTicketClient.Services
             {
                 ModifiedApps = modifiedApps
             };
+        }
+
+        private void InvalidateRuleCache(string formId)
+        {
+            _cache.Remove(FormRulesCacheKey(formId));
+            _cache.Remove(AllRulesCacheKey);
         }
     }
 
