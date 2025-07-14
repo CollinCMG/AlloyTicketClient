@@ -41,7 +41,7 @@
                                             if (ruleResult == null || !ruleResult.FieldsToHide.Contains(fieldKey))
                                             {
                                                 var isTextarea = fieldInput.FieldType == FieldType.Textarea;
-                                                <div class="form-col@(isTextarea ? " textarea-col" : "")" style="@(isTextarea ? "grid-column: span 2;" : null)">
+                                                <div class="form-col@(isTextarea ? " textarea-col" : "")">
                                                     <FieldInput @key="fieldInput.DefinitionID"
                                                                 Field="@(MapToFormFieldDto(fieldInput))"
                                                                 Value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : null)"
