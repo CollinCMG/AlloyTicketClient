@@ -1,11 +1,26 @@
+body, html {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.main-center-viewport {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .request-setup-container {
     background: #fff;
     border-radius: 18px;
     box-shadow: 0 4px 24px rgba(0,0,0,0.07), 0 1.5px 4px rgba(0,0,0,0.03);
     padding: 2.5rem 2rem 2rem 2rem;
-    margin: 2rem auto;
-    max-width: 1100px;
-    min-height: 80vh;
+    margin: 0;
+    width: 100%;
+    height: 95vh;
+    display: flex;
+    flex-direction: column;
     transition: box-shadow 0.2s;
 }
 .request-setup-title {
@@ -21,11 +36,11 @@
     margin-bottom: 2rem;
 }
 .rules-add-section {
-    background: #f8f9fa;
+    background: none;
     border-radius: 12px;
     padding: 1.5rem 1rem 1rem 1rem;
     margin-bottom: 2rem;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    box-shadow: none;
 }
 .rules-add-section .form-label {
     font-weight: 600;
@@ -45,20 +60,18 @@
     outline: none;
     box-shadow: 0 0 0 2px #6366f133;
 }
-.rules-add-section button.btn-primary {
-    background: linear-gradient(90deg, #6366f1 0%, #4f46e5 100%);
+.rules-add-section button.btn-primary, .rules-group .btn-primary {
+    background: #2563eb;
     border: none;
     border-radius: 8px;
     font-weight: 600;
     font-size: 1.1rem;
-    padding: 0.5rem 0;
+    padding: 0.5rem;
+    color: #fff;
     transition: background 0.2s;
 }
-.rules-add-section button.btn-primary:hover {
-    background: linear-gradient(90deg, #4f46e5 0%, #6366f1 100%);
-}
-.rules-list-section {
-    margin-top: 2.5rem;
+.rules-add-section button.btn-primary:hover, .rules-group .btn-primary:hover {
+    background: #1d4ed8;
 }
 .rules-group {
     background: #f4f6fb;
@@ -103,13 +116,20 @@
     border-radius: 6px;
     font-size: 0.95rem;
     padding: 0.35rem 0.9rem;
-    background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
+    background: #ef4444;
     border: none;
     font-weight: 600;
+    color: #fff;
     transition: background 0.2s;
 }
 .rules-group .btn-danger:hover {
-    background: linear-gradient(90deg, #f87171 0%, #ef4444 100%);
+    background: #b91c1c;
+}
+.rules-list-section {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    margin-top: 2.5rem;
 }
 
 @media (max-width: 900px) {

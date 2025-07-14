@@ -10,89 +10,121 @@
 
 <PageTitle>Rules</PageTitle>
 
-<div class="request-setup-container">
-    <h1 class="request-setup-title">Rules</h1>
-    <div class="request-setup-subtitle">Manage rules for each request type below.</div>
-    <div class="rules-add-section">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-3">
-                <label class="form-label">Request (Form)</label>
-                <select class="form-select" @onchange="OnFormSelected">
-                    <option value="">-- Select a Request --</option>
-                    @foreach (var form in Forms)
-                    {
-                        <option value="@form.FormId">@form.Name</option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Trigger Field</label>
-                <select class="form-select" @bind="SelectedFieldId">
-                    <option value="">-- Select Trigger Field --</option>
-                    @foreach (var field in FormFields)
-                    {
-                        <option value="@field.DefinitionID">@(string.IsNullOrEmpty(field.FieldLabel) ? field.FieldName : field.FieldLabel)</option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Action</label>
-                <select class="form-select" @bind="SelectedAction">
-                    <option value="Hide">Hide</option>
-                    <option value="Show">Show</option>
-                    <option value="ModifyApps">Modify Apps</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Target Fields</label>
-                <select class="form-select" multiple size="6" style="height:auto;min-height:120px;" @onchange="OnTargetFieldsChanged">
-                    @foreach (var field in FormFields)
-                    {
-                        <option value="@field.DefinitionID" selected="@SelectedTargetFieldIds.Contains(field.DefinitionID?.ToString())">@(string.IsNullOrEmpty(field.FieldLabel) ? field.FieldName : field.FieldLabel)</option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-1">
-                <button class="btn btn-primary w-100" @onclick="AddRule">Add</button>
-            </div>
+<div class="main-center-viewport">
+    <div class="request-setup-container">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h1 class="request-setup-title mb-0">Rules</h1>
+            <button class="btn btn-primary" @onclick="async () => await OpenRuleModal(null)">
+                <i class="bi bi-plus-lg"></i> Add Rule
+            </button>
         </div>
-    </div>
+        <div class="request-setup-subtitle">Manage rules for each request type below.</div>
 
-    @if (RulesConfig.Instance.Rules.Any())
-    {
-        <div class="rules-list-section mt-4">
-            @foreach (var group in RulesConfig.Instance.Rules.GroupBy(r => r.FormId))
-            {
-                var formName = Forms.FirstOrDefault(f => f.FormId == group.Key)?.Name ?? group.First().FormName ?? group.Key;
-                <div class="rules-group mb-4 p-3 border rounded bg-light">
-                    <h5 class="mb-3">@formName <span style="font-size:small;color:gray">(FormId: @group.Key)</span></h5>
-                    <table class="table table-sm table-bordered mb-0">
-                        <thead>
-                            <tr>
-                                <th>Trigger Field</th>
-                                <th>Action</th>
-                                <th>Target Fields</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var rule in group)
-                            {
+        @if (RulesList.Any())
+        {
+            <div class="rules-list-section mt-4">
+                @foreach (var group in RulesList.GroupBy(r => r.FormId))
+                {
+                    var formName = Forms.FirstOrDefault(f => f.FormId == group.Key)?.Name ?? group.First().FormName ?? group.Key;
+                    <div class="rules-group mb-4 p-3 border rounded bg-light">
+                        <h5 class="mb-3">@formName <span style="font-size:small;color:gray">(FormId: @group.Key)</span></h5>
+                        <table class="table table-sm table-bordered mb-0">
+                            <thead>
                                 <tr>
-                                    <td>@rule.TriggerFieldLabel</td>
-                                    <td>@rule.Action.ToString()</td>
-                                    <td>@string.Join(", ", rule.TargetFieldLabels ?? rule.TargetList.Select(t => t.FieldName))</td>
-                                    <td>
-                                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteRule(rule)">Delete</button>
-                                    </td>
+                                    <th>Trigger Field</th>
+                                    <th>Action</th>
+                                    <th>Target Fields</th>
+                                    <th></th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach (var rule in group)
+                                {
+                                    <tr>
+                                        <td>@rule.TriggerFieldLabel</td>
+                                        <td>@rule.Action.ToString()</td>
+                                        <td>@string.Join(", ", rule.TargetFieldLabels ?? rule.TargetList.Select(t => t.FieldName))</td>
+                                        <td class="text-nowrap">
+                                            <div class="d-flex flex-row gap-1 justify-content-center align-items-center">
+                                                <button class="btn btn-primary btn-sm d-flex align-items-center justify-content-center" @onclick="async () => await OpenRuleModal(rule)" title="Edit">
+                                                    Edit
+                                                </button>
+                                                <button class="btn btn-danger btn-sm d-flex align-items-center justify-content-center" @onclick="() => DeleteRule(rule)" title="Delete">
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (ShowRuleModal)
+        {
+            <div class="modal-backdrop fade show"></div>
+            <div class="modal d-block" tabindex="-1" style="background:rgba(34,34,59,0.12);">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">@(IsEditMode ? "Edit Rule" : "Add Rule")</h5>
+                            <button type="button" class="btn-close" @onclick="CloseRuleModal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="container-fluid">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Request (Form)</label>
+                                        <select class="form-select" @onchange="OnModalFormSelected" value="@ModalSelectedFormId" disabled="@IsEditMode">
+                                            <option value="">-- Select a Request --</option>
+                                            @foreach (var form in Forms)
+                                            {
+                                                <option value="@form.FormId">@form.Name</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Action</label>
+                                        <select class="form-select" @bind="ModalSelectedAction">
+                                            <option value="Hide">Hide</option>
+                                            <option value="Show">Show</option>
+                                            <option value="ModifyApps">Modify Apps</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Trigger Field</label>
+                                        <select class="form-select" @bind="ModalSelectedFieldId">
+                                            <option value="">-- Select Trigger Field --</option>
+                                            @foreach (var field in ModalFormFields)
+                                            {
+                                                <option value="@field.DefinitionID">@(string.IsNullOrEmpty(field.FieldLabel) ? field.FieldName : field.FieldLabel)</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Target Fields</label>
+                                        <select class="form-select w-100" multiple size="6" style="height:auto;min-height:120px;" @onchange="OnModalTargetFieldsChanged">
+                                            @foreach (var field in ModalFormFields)
+                                            {
+                                                <option value="@field.DefinitionID" selected="@ModalSelectedTargetFieldIds.Contains(field.DefinitionID?.ToString())">@(string.IsNullOrEmpty(field.FieldLabel) ? field.FieldName : field.FieldLabel)</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" @onclick="CloseRuleModal">Cancel</button>
+                            <button class="btn btn-primary" @onclick="SaveRuleFromModal" disabled="@(!CanAddRuleFromModal)">@(IsEditMode ? "Save Changes" : "Add Rule")</button>
+                        </div>
+                    </div>
                 </div>
-            }
-        </div>
-    }
+            </div>
+        }
+    </div>
 </div>
 
 @code {
@@ -103,11 +135,155 @@
     }
 
     private List<FormInfo> Forms { get; set; } = new();
+    private List<RuleConfig> RulesList { get; set; } = new();
     private string? SelectedFormId { get; set; }
     private string? SelectedFieldId { get; set; }
     private FilterAction SelectedAction { get; set; } = FilterAction.Hide;
     private List<string> SelectedTargetFieldIds { get; set; } = new();
     private List<FieldInputDto> FormFields { get; set; } = new();
+
+    // Modal state
+    private bool ShowRuleModal { get; set; } = false;
+    private bool IsEditMode { get; set; } = false;
+    private RuleConfig? EditingRule { get; set; }
+    private string? ModalSelectedFormId { get; set; }
+    private string? ModalSelectedFieldId { get; set; }
+    private FilterAction ModalSelectedAction { get; set; } = FilterAction.Hide;
+    private List<string> ModalSelectedTargetFieldIds { get; set; } = new();
+    private List<FieldInputDto> ModalFormFields { get; set; } = new();
+
+    private async Task OpenRuleModal(RuleConfig? rule)
+    {
+        ShowRuleModal = true;
+        IsEditMode = rule != null;
+        if (rule == null)
+        {
+            EditingRule = null;
+            ModalSelectedFormId = null;
+            ModalSelectedFieldId = null;
+            ModalSelectedAction = FilterAction.Hide;
+            ModalSelectedTargetFieldIds = new List<string>();
+            ModalFormFields = new List<FieldInputDto>();
+        }
+        else
+        {
+            // Use RuleId for unique identification
+            EditingRule = RulesList.FirstOrDefault(r => r.RuleId == rule.RuleId);
+            ModalSelectedFormId = EditingRule?.FormId;
+            ModalSelectedFieldId = EditingRule?.TriggerField;
+            ModalSelectedAction = EditingRule?.Action ?? FilterAction.Hide;
+            ModalSelectedTargetFieldIds = EditingRule?.TargetList.Select(t => t.FieldId).ToList() ?? new List<string>();
+            if (!string.IsNullOrEmpty(ModalSelectedFormId) && Guid.TryParse(ModalSelectedFormId, out var formGuid))
+            {
+                var pages = await FormFieldService.GetFormPagesAsync(formGuid);
+                ModalFormFields = pages.SelectMany(p => p.Items).OfType<FieldInputDto>().ToList();
+            }
+        }
+    }
+
+    private void CloseRuleModal()
+    {
+        ShowRuleModal = false;
+        EditingRule = null;
+    }
+
+    private async Task OnModalFormSelected(ChangeEventArgs e)
+    {
+        ModalSelectedFormId = e.Value?.ToString();
+        ModalSelectedFieldId = null;
+        ModalSelectedTargetFieldIds = new List<string>();
+        ModalFormFields.Clear();
+        if (!string.IsNullOrEmpty(ModalSelectedFormId) && Guid.TryParse(ModalSelectedFormId, out var formGuid))
+        {
+            var pages = await FormFieldService.GetFormPagesAsync(formGuid);
+            var fields = pages.SelectMany(p => p.Items)
+                .OfType<FieldInputDto>()
+                .ToList();
+            ModalFormFields = fields;
+        }
+        StateHasChanged();
+    }
+
+    private void OnModalTargetFieldsChanged(ChangeEventArgs e)
+    {
+        var selected = new List<string>();
+        if (e.Value is not null)
+        {
+            if (e.Value is string single)
+            {
+                selected.Add(single);
+            }
+            else if (e.Value is IEnumerable<string> selectedOptions)
+            {
+                selected = selectedOptions.Select(x => x.ToString()).ToList();
+            }
+            else if (e.Value is string[] arr)
+            {
+                selected = arr.Select(x => x.ToString()).ToList();
+            }
+        }
+        ModalSelectedTargetFieldIds = selected;
+    }
+
+    private bool CanAddRuleFromModal =>
+        !string.IsNullOrEmpty(ModalSelectedFormId) &&
+        !string.IsNullOrEmpty(ModalSelectedFieldId) &&
+        ModalSelectedTargetFieldIds.Any();
+
+    private void SaveRuleFromModal()
+    {
+        if (!CanAddRuleFromModal) return;
+        var triggerFieldLabel = GetModalFieldLabelById(ModalSelectedFieldId);
+        var targetFieldLabels = ModalSelectedTargetFieldIds.Select(id => GetModalFieldLabelById(id)).ToList();
+        var formName = Forms.FirstOrDefault(f => f.FormId == ModalSelectedFormId)?.Name ?? ModalSelectedFormId;
+        var targetList = ModalSelectedTargetFieldIds
+            .Select(id =>
+            {
+                var field = ModalFormFields.FirstOrDefault(f => f.DefinitionID?.ToString() == id);
+                return new TargetFieldInfo
+                {
+                    FieldId = id,
+                    FieldName = field?.FieldName ?? id,
+                    FieldType = field?.FieldType ?? AlloyTicketClient.Enums.FieldType.Null
+                };
+            })
+            .ToList();
+        if (IsEditMode && EditingRule != null)
+        {
+            EditingRule.FormId = ModalSelectedFormId;
+            EditingRule.FormName = formName;
+            EditingRule.TriggerField = ModalSelectedFieldId;
+            EditingRule.TriggerFieldLabel = triggerFieldLabel;
+            EditingRule.Action = ModalSelectedAction;
+            EditingRule.TargetList = targetList;
+            EditingRule.TargetFieldLabels = targetFieldLabels;
+        }
+        else
+        {
+            var rule = new RuleConfig
+            {
+                RuleId = Guid.NewGuid(),
+                FormId = ModalSelectedFormId,
+                FormName = formName,
+                TriggerField = ModalSelectedFieldId,
+                TriggerFieldLabel = triggerFieldLabel,
+                Action = ModalSelectedAction,
+                TargetList = targetList,
+                TargetFieldLabels = targetFieldLabels
+            };
+            RulesList.Add(rule);
+            RulesConfig.Instance.Rules.Add(rule);
+        }
+        CloseRuleModal();
+        StateHasChanged();
+    }
+
+    private string GetModalFieldLabelById(string? id)
+    {
+        if (string.IsNullOrEmpty(id)) return id ?? string.Empty;
+        var field = ModalFormFields.FirstOrDefault(f => f.DefinitionID?.ToString() == id);
+        return !string.IsNullOrWhiteSpace(field?.FieldLabel) ? field.FieldLabel : (field?.FieldName ?? id);
+    }
 
     private void OnTargetFieldsChanged(ChangeEventArgs e)
     {
@@ -138,9 +314,11 @@
             var targetFieldLabels = SelectedTargetFieldIds.Select(id => GetFieldLabelById(id)).ToList();
             var formName = Forms.FirstOrDefault(f => f.FormId == SelectedFormId)?.Name ?? SelectedFormId;
             var targetList = SelectedTargetFieldIds
-                .Select(id => {
+                .Select(id =>
+                {
                     var field = FormFields.FirstOrDefault(f => f.DefinitionID?.ToString() == id);
-                    return new TargetFieldInfo {
+                    return new TargetFieldInfo
+                    {
                         FieldId = id,
                         FieldName = field?.FieldName ?? id,
                         FieldType = field?.FieldType ?? AlloyTicketClient.Enums.FieldType.Null
@@ -157,6 +335,7 @@
                 TargetList = targetList,
                 TargetFieldLabels = targetFieldLabels
             };
+            RulesList.Add(rule);
             RulesConfig.Instance.Rules.Add(rule);
             SelectedFieldId = null;
             SelectedAction = FilterAction.Hide;
@@ -167,9 +346,25 @@
 
     private void DeleteRule(RuleConfig rule)
     {
-        // Remove from global config
-        RulesConfig.Instance.Rules.Remove(rule);
-        // Remove from RulesService (by FormId and TriggerField id)
+        // Remove from local list by unique keys as fallback if RuleId is default
+        if (rule.RuleId == default)
+        {
+            var toRemove = RulesList.FirstOrDefault(r => r.FormId == rule.FormId && r.TriggerField == rule.TriggerField && r.Action == rule.Action);
+            if (toRemove != null)
+                RulesList.Remove(toRemove);
+            var toRemoveGlobal = RulesConfig.Instance.Rules.FirstOrDefault(r => r.FormId == rule.FormId && r.TriggerField == rule.TriggerField && r.Action == rule.Action);
+            if (toRemoveGlobal != null)
+                RulesConfig.Instance.Rules.Remove(toRemoveGlobal);
+        }
+        else
+        {
+            var toRemove = RulesList.FirstOrDefault(r => r.RuleId == rule.RuleId);
+            if (toRemove != null)
+                RulesList.Remove(toRemove);
+            var toRemoveGlobal = RulesConfig.Instance.Rules.FirstOrDefault(r => r.RuleId == rule.RuleId);
+            if (toRemoveGlobal != null)
+                RulesConfig.Instance.Rules.Remove(toRemoveGlobal);
+        }
         RulesService.RemoveRuleAsync(rule.FormId, rule);
         StateHasChanged();
     }
@@ -196,6 +391,8 @@
                 }
             }
         }
+        // Copy rules to local list for reactivity
+        RulesList = RulesConfig.Instance.Rules.ToList();
     }
 
     private async Task OnFormSelected(ChangeEventArgs e)
