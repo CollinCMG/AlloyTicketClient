@@ -1,0 +1,340 @@
+@* Modal dialog for form actions (all pages as sections) *@
+@inject FormFieldService FormFieldService
+@inject IJSRuntime JSRuntime
+@using AlloyTicketClient.Components.Fields
+@using AlloyTicketClient.Models
+@using AlloyTicketClient.Enums
+@using AlloyTicketClient.Services
+@inject AlloyApiService AlloyApiService
+@inject RulesService RulesService
+
+@if (Show)
+{
+    <div class="modal-overlay" @onclick="HandleOverlayClick">
+        <div class="modal-dialog" @onclick:stopPropagation>
+            <div class="modal-header">
+                <h2>@Title</h2>
+                <button class="modal-close" @onclick="HandleClose">&times;</button>
+            </div>
+            <div class="modal-content">
+                @if (isLoading)
+                {
+                    <div class="modern-loading">
+                        <div class="modern-spinner"></div>
+                        <span>Loading, please wait...</span>
+                    </div>
+                }
+                else if (pages != null && pages.Count > 0)
+                {
+                    @foreach (var p in pages)
+                    {
+                        <div class="form-page">
+                            <h3>@p.PageName</h3>
+                            @foreach (var item in p.Items)
+                            {
+                                if (item is FieldInputDto fieldInput)
+                                {
+                                    var fieldKey = fieldInput.DefinitionID?.ToString();
+                                    if (ruleResult == null || !ruleResult.FieldsToHide.Contains(fieldKey))
+                                    {
+                                        <FieldInput @key="fieldInput.DefinitionID"
+                                                    Field="@(MapToFormFieldDto(fieldInput))"
+                                                    Value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : null)"
+                                                    OnValueChanged="@(val => OnFieldValueChanged(val, fieldKey))" />
+                                    }
+                                }
+                                else if (item is FieldTextDto fieldText)
+                                {
+                                    <div class="field-text">@GetTextValue(fieldText.ElementDefinition)</div>
+                                }
+                                else if (item is AttachmentInputDto attachment)
+                                {
+                                    var attachmentKey = $"attachment_{pages.IndexOf(p)}_{p.Items.IndexOf(item)}";
+                                    if (ruleResult == null || !ruleResult.FieldsToHide.Contains(attachmentKey))
+                                    {
+                                        <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" />
+                                    }
+                                }
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p>No fields found for this form.</p>
+                }
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: flex-end; align-items: center; gap: 1rem;">
+                @if (!isLoading && pages != null && pages.Count > 0)
+                {
+                    <button class="btn btn-primary @( (!AreAllRequiredFieldsFilled() || isSubmitting) ? "disabled-blue" : null )"
+                            @onclick="SubmitForm"
+                            style="min-width: 100px; display: flex; align-items: center; justify-content: center; gap: 0.5rem;"
+                            disabled="@((!AreAllRequiredFieldsFilled() || isSubmitting) ? true : null)">
+                        @if (isSubmitting)
+                        {
+                            <span>Submitting</span>
+                            <span class="modern-spinner" style="width: 1.25rem; height: 1.25rem; border-width: 2.5px;"></span>
+                        }
+                        else
+                        {
+                            <span>Submit</span>
+                        }
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+@if (showCancelConfirm)
+{
+    <CancelConfirmModal OnConfirm="ConfirmCancel" OnCancel="CancelCancel" />
+}
+
+@code {
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public RequestActionPayload? Payload { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private bool isLoading = false;
+    private List<PageDto>? pages;
+    private Dictionary<string, object?> fieldValues = new();
+    private Guid? lastLoadedFormId = null;
+    private bool isSubmitting = false;
+    private bool showCancelConfirm = false;
+    private bool closeSidebarOnConfirm = false;
+    private RuleEvaluationResult? ruleResult;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Show && Payload != null && Guid.TryParse(Payload.FormId, out var formId))
+        {
+            if (Payload.Data is Dictionary<string, object?> data)
+                fieldValues = data;
+            if (lastLoadedFormId != formId || pages == null)
+            {
+                isLoading = true;
+                pages = null;
+                pages = await FormFieldService.GetFormPagesAsync(formId);
+                lastLoadedFormId = formId;
+                ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, fieldValues, null);
+                if (ruleResult?.ModifiedApps != null)
+                {
+                    foreach (var kvp in ruleResult.ModifiedApps)
+                        fieldValues[kvp.Key] = kvp.Value;
+                }
+                isLoading = false;
+                StateHasChanged();
+            }
+        }
+        else if (!Show)
+        {
+            fieldValues.Clear();
+            pages = null;
+            isLoading = false;
+            lastLoadedFormId = null;
+            ruleResult = null;
+        }
+    }
+
+    private async Task SubmitForm()
+    {
+        isSubmitting = true;
+        StateHasChanged();
+        try
+        {
+            if (Payload != null)
+            {
+                Payload.Data = fieldValues;
+                var json = System.Text.Json.JsonSerializer.Serialize(Payload, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                await JSRuntime.InvokeVoidAsync("alert", json);
+            }
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private FormFieldDto MapToFormFieldDto(FieldInputDto input)
+    {
+        return new FormFieldDto
+        {
+            Field_Num = input.Field_Num,
+            Field_Label = input.FieldLabel,
+            Field_Name = input.FieldName,
+            ID = input.DefinitionID ?? Guid.Empty,
+            Virtual = input.Virtual,
+            Mandatory = input.Mandatory,
+            Read_Only = input.Read_Only,
+            LookupValues = input.Lookup_Values,
+            TableName = input.Table_Name,
+            LookupID = input.Lookup_ID,
+            Filter = input.Filter,
+            FieldType = input.FieldType,
+            DisplayFields = input.DisplayFields
+        };
+    }
+
+    private string GetTextValue(string? elementDefinition)
+    {
+        if (string.IsNullOrWhiteSpace(elementDefinition))
+            return string.Empty;
+
+        try
+        {
+            var doc = System.Xml.Linq.XDocument.Parse(elementDefinition);
+            var item = doc.Descendants("ITEM")
+                          .FirstOrDefault(e => (string?)e.Attribute("Name") == "Text");
+            return item?.Attribute("Value")?.Value ?? string.Empty;
+        }
+        catch
+        {
+            return System.Text.RegularExpressions.Regex.Replace(elementDefinition, "<.*?>", string.Empty).Trim();
+        }
+    }
+
+    private T? GetFieldValue<T>(string key)
+    {
+        if (fieldValues.TryGetValue(key, out var value) && value is T t)
+            return t;
+        return default;
+    }
+
+    private void SetFieldValue<T>(string key, T value)
+    {
+        fieldValues[key] = value;
+    }
+
+    private string GetOrSetFieldValue(string key)
+    {
+        return fieldValues.TryGetValue(key, out var value) ? value?.ToString() ?? string.Empty : string.Empty;
+    }
+    private void GetOrSetFieldValue(string key, string value)
+    {
+        fieldValues[key] = value;
+    }
+
+    private async Task OnFieldValueChanged(object? value, string fieldKey)
+    {
+        fieldValues[fieldKey] = value;
+        if (Payload != null)
+        {
+            ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, fieldValues, fieldKey);
+            var modifyAppsShouldApply = false;
+            if (ruleResult?.ModifiedApps != null && ruleResult.ModifiedApps.Count > 0)
+            {
+                var rules = RulesConfig.Instance.Rules.Where(r => r.FormId == Payload.FormId && r.Action == FilterAction.ModifyApps && r.TriggerField == fieldKey);
+                if (rules.Any())
+                {
+                    modifyAppsShouldApply = true;
+                }
+            }
+            if (modifyAppsShouldApply)
+            {
+                foreach (var kvp in ruleResult.ModifiedApps)
+                    fieldValues[kvp.Key] = kvp.Value;
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnAttachmentChanged(InputFileChangeEventArgs e, string key)
+    {
+        if (e.FileCount > 0)
+        {
+            var file = e.File;
+            fieldValues[key] = file;
+        }
+        else
+        {
+            fieldValues.Remove(key);
+        }
+        if (Payload != null)
+        {
+            ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, fieldValues, key);
+            if (ruleResult?.ModifiedApps != null)
+            {
+                foreach (var kvp in ruleResult.ModifiedApps)
+                    fieldValues[kvp.Key] = kvp.Value;
+            }
+            StateHasChanged();
+        }
+    }
+
+    private void RemoveAttachment(string key)
+    {
+        if (fieldValues.ContainsKey(key))
+        {
+            fieldValues.Remove(key);
+        }
+    }
+
+    // Checks all required fields across all pages
+    private bool AreAllRequiredFieldsFilled()
+    {
+        if (pages == null || pages.Count == 0)
+            return false;
+        foreach (var page in pages)
+        {
+            foreach (var item in page.Items)
+            {
+                if (item is FieldInputDto fieldInput && fieldInput.Mandatory == true)
+                {
+                    var key = fieldInput.DefinitionID?.ToString();
+                    if (!fieldValues.TryGetValue(key, out var value) || value == null || string.IsNullOrWhiteSpace(value.ToString()))
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    private void HandleOverlayClick()
+    {
+        if (fieldValues.Count > 0)
+        {
+            showCancelConfirm = true;
+            closeSidebarOnConfirm = true;
+        }
+        else
+        {
+            fieldValues.Clear();
+            OnClose.InvokeAsync();
+        }
+    }
+
+    private void ConfirmCancel()
+    {
+        showCancelConfirm = false;
+        if (closeSidebarOnConfirm)
+        {
+            fieldValues.Clear();
+            OnClose.InvokeAsync();
+        }
+    }
+
+    private void CancelCancel()
+    {
+        showCancelConfirm = false;
+        closeSidebarOnConfirm = false;
+    }
+
+    private async Task HandleClose()
+    {
+        if (fieldValues.Count > 0)
+        {
+            showCancelConfirm = true;
+            closeSidebarOnConfirm = true;
+        }
+        else
+        {
+            fieldValues.Clear();
+            await OnClose.InvokeAsync();
+        }
+    }
+}

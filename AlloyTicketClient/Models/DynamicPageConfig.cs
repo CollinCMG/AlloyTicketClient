@@ -14,5 +14,6 @@ namespace AlloyTicketClient.Models
         public string PageText { get; set; } = string.Empty;
         public string SubText { get; set; } = string.Empty;
         public List<DynamicButtonConfig> Buttons { get; set; } = new();
+        public bool ShowSlideOver { get; set; } = false;
     }
 }

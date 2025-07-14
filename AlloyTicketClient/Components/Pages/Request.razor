@@ -25,10 +25,20 @@
     </div>
 }
 
-<FormSlideOver Show="showSlideOver"
-               Title="@slideOverTitle"
-               Payload="@slideOverPayload"
-               OnClose="CloseSlideOver" />
+@if (dynamicPage != null && dynamicPage.ShowSlideOver)
+{
+    <FormSlideOver Show="showSlideOver"
+                   Title="@slideOverTitle"
+                   Payload="@slideOverPayload"
+                   OnClose="CloseSlideOver" />
+}
+else if (dynamicPage != null && !dynamicPage.ShowSlideOver)
+{
+    <FormModal Show="showSlideOver"
+              Title="@slideOverTitle"
+              Payload="@slideOverPayload"
+              OnClose="CloseSlideOver" />
+}
 
 @code {
     [Parameter]
