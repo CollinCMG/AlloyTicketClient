@@ -169,6 +169,7 @@
                 // Map GUID keys to field names and field types
                 var guidToName = new Dictionary<string, string>();
                 var guidToType = new Dictionary<string, FieldType?>();
+                var visibleFieldGuids = new HashSet<string>();
                 if (pages != null)
                 {
                     foreach (var page in pages)
@@ -179,14 +180,18 @@
                             {
                                 guidToName[fieldInput.DefinitionID.ToString()!] = fieldInput.FieldName;
                                 guidToType[fieldInput.DefinitionID.ToString()!] = fieldInput.FieldType;
+                                if (!fieldInput.IsHidden)
+                                    visibleFieldGuids.Add(fieldInput.DefinitionID.ToString()!);
                             }
                         }
                     }
                 }
-                // Build new dictionary with field names as keys
+                // Build new dictionary with field names as keys, only for visible fields
                 var nameKeyed = new Dictionary<string, object?>();
                 foreach (var kvp in fieldValues)
                 {
+                    if (!visibleFieldGuids.Contains(kvp.Key))
+                        continue;
                     string? fieldName = null;
                     FieldType? fieldType = null;
                     if (guidToName.TryGetValue(kvp.Key, out var n) && !string.IsNullOrWhiteSpace(n))
