@@ -4,16 +4,16 @@ namespace AlloyTicketClient.Enums
     {
         Null = 0,
         One = 1,
-        Checkbox = 2, // was Two
+        Checkbox = 2, 
         Three = 3,
         Input = 4,
-        Textarea = 5, // was Five
+        Memo = 5, 
         Six = 6,
         Seven = 7,
         Dropdown = 8, 
         Eleven = 11,
         Twelve = 12,
         Fourteen = 14,
-        Seventeen = 17
+        MultiSelect = 17
     }
 }

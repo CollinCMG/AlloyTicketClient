@@ -33,9 +33,19 @@
         {
             <input type="checkbox" class="form-check-input" @bind="IsChecked" />
         }
-        else if (Field.FieldType == FieldType.Textarea)
+        else if (Field.FieldType == FieldType.Memo)
         {
             <textarea class="form-control" @bind="CurrentValue"></textarea>
+        }
+        else if (Field.FieldType == FieldType.MultiSelect && !string.IsNullOrWhiteSpace(Field.LookupValues))
+        {
+            var options = ParseLookupValues(Field.LookupValues);
+            <select class="form-control" multiple @onchange="OnMultiSelectChanged">
+                @foreach (var option in options)
+                {
+                    <option value="@option" selected="@(SelectedMultiValues.Contains(option))">@option</option>
+                }
+            </select>
         }
         else if (Field.FieldType == FieldType.Dropdown && !string.IsNullOrWhiteSpace(Field.TableName) && !string.IsNullOrWhiteSpace(Field.DisplayFields))
         {
@@ -92,6 +102,65 @@
     [Parameter] public EventCallback<object?> OnValueChanged { get; set; }
 
     private List<DropdownOptionDto>? Options;
+
+    // For MultiSelect
+    private List<string> SelectedMultiValues
+    {
+        get
+        {
+            if (Value is List<string> list)
+                return list;
+            if (Value is string s && !string.IsNullOrWhiteSpace(s))
+                return s.Split(';').Select(x => x.Trim()).Where(x => !string.IsNullOrEmpty(x)).ToList();
+            return new List<string>();
+        }
+        set
+        {
+            if (!Equals(Value, value))
+            {
+                Value = value;
+                OnValueChanged.InvokeAsync(value);
+            }
+        }
+    }
+
+    private void OnMultiSelectChanged(ChangeEventArgs e)
+    {
+        if (e.Value is not null)
+        {
+            var selected = new List<string>();
+            if (e.Value is string single)
+            {
+                selected.Add(single);
+            }
+            else if (e.Value is IEnumerable<string> many)
+            {
+                selected.AddRange(many);
+            }
+            else if (e.Value is ChangeEventArgs ce && ce.Value is IEnumerable<string> ceMany)
+            {
+                selected.AddRange(ceMany);
+            }
+            else if (e.Value is System.Collections.Specialized.StringCollection sc)
+            {
+                foreach (var s in sc)
+                    selected.Add(s);
+            }
+            else if (e.Value is string[] arr)
+            {
+                selected.AddRange(arr);
+            }
+            else if (e.Value is IEnumerable<object> objArr)
+            {
+                selected.AddRange(objArr.Select(x => x?.ToString() ?? ""));
+            }
+            SelectedMultiValues = selected;
+        }
+        else
+        {
+            SelectedMultiValues = new List<string>();
+        }
+    }
 
     private string? CurrentValue
     {

@@ -40,7 +40,7 @@
                                             var fieldKey = fieldInput.DefinitionID?.ToString();
                                             if (!fieldInput.IsHidden)
                                             {
-                                                var isTextarea = fieldInput.FieldType == FieldType.Textarea;
+                                                var isTextarea = fieldInput.FieldType == FieldType.Memo;
                                                 <div class="form-col@(isTextarea ? " textarea-col" : "")">
                                                     <FieldInput @key="fieldInput.DefinitionID"
                                                                 Field="@(MapToFormFieldDto(fieldInput))"
@@ -375,7 +375,7 @@
         var currentRow = new List<IPageItem>();
         foreach (var item in items)
         {
-            if (item is FieldInputDto fieldInput && (fieldInput.FieldType == FieldType.Textarea || (fieldInput.DefinitionID != null && modifyAppsTriggerFields.Contains(fieldInput.DefinitionID.ToString()))))
+            if (item is FieldInputDto fieldInput && (fieldInput.FieldType == FieldType.Memo || (fieldInput.DefinitionID != null && modifyAppsTriggerFields.Contains(fieldInput.DefinitionID.ToString()))))
             {
                 if (currentRow.Count > 0)
                 {

@@ -130,16 +130,23 @@ namespace AlloyTicketClient.Services
                 {
                     bool isActive = false;
                     string? valueStr = value?.ToString();
+                    bool triggerMatch = false;
                     if (value is DropdownOptionDto dto)
                     {
                         isActive = dto.Properties.Values.Any(v => v != null && !string.IsNullOrWhiteSpace(v.ToString()));
                         valueStr = dto.ToString();
+                        triggerMatch = string.IsNullOrWhiteSpace(rule.TriggerValue) || string.Equals(valueStr, rule.TriggerValue, StringComparison.OrdinalIgnoreCase);
+                    }
+                    else if (value is List<string> multiList) // MultiSelect special case
+                    {
+                        isActive = multiList.Any();
+                        triggerMatch = string.IsNullOrWhiteSpace(rule.TriggerValue) || multiList.Any(v => string.Equals(v, rule.TriggerValue, StringComparison.OrdinalIgnoreCase));
                     }
                     else
                     {
                         isActive = !string.IsNullOrWhiteSpace(valueStr);
+                        triggerMatch = string.IsNullOrWhiteSpace(rule.TriggerValue) || string.Equals(valueStr, rule.TriggerValue, StringComparison.OrdinalIgnoreCase);
                     }
-                    bool triggerMatch = string.IsNullOrWhiteSpace(rule.TriggerValue) || string.Equals(valueStr, rule.TriggerValue, StringComparison.OrdinalIgnoreCase);
                     if (isActive && triggerMatch)
                     {
                         foreach (var target in rule.TargetList)
@@ -164,16 +171,23 @@ namespace AlloyTicketClient.Services
                 {
                     bool isActive = false;
                     string? valueStr = value?.ToString();
+                    bool triggerMatch = false;
                     if (value is DropdownOptionDto dto)
                     {
                         isActive = dto.Properties.Values.Any(v => v != null && !string.IsNullOrWhiteSpace(v.ToString()));
                         valueStr = dto.ToString();
+                        triggerMatch = string.IsNullOrWhiteSpace(rule.TriggerValue) || string.Equals(valueStr, rule.TriggerValue, StringComparison.OrdinalIgnoreCase);
+                    }
+                    else if (value is List<string> multiList) // MultiSelect special case
+                    {
+                        isActive = multiList.Any();
+                        triggerMatch = string.IsNullOrWhiteSpace(rule.TriggerValue) || multiList.Any(v => string.Equals(v, rule.TriggerValue, StringComparison.OrdinalIgnoreCase));
                     }
                     else
                     {
                         isActive = !string.IsNullOrWhiteSpace(valueStr);
+                        triggerMatch = string.IsNullOrWhiteSpace(rule.TriggerValue) || string.Equals(valueStr, rule.TriggerValue, StringComparison.OrdinalIgnoreCase);
                     }
-                    bool triggerMatch = string.IsNullOrWhiteSpace(rule.TriggerValue) || string.Equals(valueStr, rule.TriggerValue, StringComparison.OrdinalIgnoreCase);
                     if (isActive && triggerMatch)
                     {
                         foreach (var target in rule.TargetList)
