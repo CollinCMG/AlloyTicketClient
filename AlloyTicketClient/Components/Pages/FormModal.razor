@@ -26,7 +26,7 @@
                 }
                 else if (pages != null && pages.Count > 0)
                 {
-                    @foreach (var p in pages)
+                    @foreach (var p in pages.Where(pg => !pg.IsHidden))
                     {
                         <div class="form-page">
                             <h3>@p.PageName</h3>

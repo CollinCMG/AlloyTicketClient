@@ -27,36 +27,35 @@
                 else if (pages != null && pages.Count > 0)
                 {
                     var p = pages[currentPageIndex];
-                    <div class="form-page">
-                        <h3>@p.PageName</h3>
-                        @foreach (var item in p.Items)
-                        {
-                            if (item is FieldInputDto fieldInput)
+                    if (!p.IsHidden)
+                    {
+                        <div class="form-page">
+                            <h3>@p.PageName</h3>
+                            @foreach (var item in p.Items)
                             {
-                                var fieldKey = fieldInput.DefinitionID?.ToString();
-                                if (!fieldInput.IsHidden)
+                                if (item is FieldInputDto fieldInput)
                                 {
-                                    <FieldInput @key="fieldInput.DefinitionID"
-                                                Field="@(MapToFormFieldDto(fieldInput))"
-                                                Value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : null)"
-                                                OnValueChanged="@(val => OnFieldValueChanged(val, fieldKey))" />
+                                    var fieldKey = fieldInput.DefinitionID?.ToString();
+                                    if (!fieldInput.IsHidden)
+                                    {
+                                        <FieldInput @key="fieldInput.DefinitionID"
+                                                    Field="@(MapToFormFieldDto(fieldInput))"
+                                                    Value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : null)"
+                                                    OnValueChanged="@(val => OnFieldValueChanged(val, fieldKey))" />
+                                    }
+                                }
+                                else if (item is FieldTextDto fieldText)
+                                {
+                                    <div class="field-text">@GetTextValue(fieldText.ElementDefinition)</div>
+                                }
+                                else if (item is AttachmentInputDto attachment)
+                                {
+                                    // Use a unique key for the attachment field
+                                    // If you want to hide attachments, you may need to add IsHidden to AttachmentInputDto as well
                                 }
                             }
-                            else if (item is FieldTextDto fieldText)
-                            {
-                                <div class="field-text">@GetTextValue(fieldText.ElementDefinition)</div>
-                            }
-                            else if (item is AttachmentInputDto attachment)
-                            {
-                                // Use a unique key for the attachment field
-                             @*    var attachmentKey = $"attachment_{currentPageIndex}_{p.Items.IndexOf(item)}";
-                                if (!fieldInput.IsHidden)
-                                {
-                                    <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" />
-                                } *@
-                            }
-                        }
-                    </div>
+                        </div>
+                    }
                 }
                 else
                 {
