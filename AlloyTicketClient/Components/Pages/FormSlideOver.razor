@@ -34,7 +34,7 @@
                             if (item is FieldInputDto fieldInput)
                             {
                                 var fieldKey = fieldInput.DefinitionID?.ToString();
-                                if (ruleResult == null || !ruleResult.FieldsToHide.Contains(fieldKey))
+                                if (!fieldInput.IsHidden)
                                 {
                                     <FieldInput @key="fieldInput.DefinitionID"
                                                 Field="@(MapToFormFieldDto(fieldInput))"
@@ -49,11 +49,11 @@
                             else if (item is AttachmentInputDto attachment)
                             {
                                 // Use a unique key for the attachment field
-                                var attachmentKey = $"attachment_{currentPageIndex}_{p.Items.IndexOf(item)}";
-                                if (ruleResult == null || !ruleResult.FieldsToHide.Contains(attachmentKey))
+                             @*    var attachmentKey = $"attachment_{currentPageIndex}_{p.Items.IndexOf(item)}";
+                                if (!fieldInput.IsHidden)
                                 {
                                     <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" />
-                                }
+                                } *@
                             }
                         }
                     </div>
@@ -136,7 +136,7 @@
                 pages = await FormFieldService.GetFormPagesAsync(formId);
                 lastLoadedFormId = formId;
                 // Evaluate rules on load
-                ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, fieldValues, null);
+                ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, null);
                 // Apply ModifiedApps values to fieldValues
                 if (ruleResult?.ModifiedApps != null)
                 {
@@ -292,9 +292,9 @@
     private async Task OnFieldValueChanged(object? value, string fieldKey)
     {
         fieldValues[fieldKey] = value;
-        if (Payload != null)
+        if (Payload != null && pages != null)
         {
-            ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, fieldValues, fieldKey);
+            ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, fieldKey);
             // Only apply ModifiedApps if the changed field is a trigger for a modifyapps rule
             var modifyAppsShouldApply = false;
             if (ruleResult?.ModifiedApps != null && ruleResult.ModifiedApps.Count > 0)
@@ -327,9 +327,9 @@
         {
             fieldValues.Remove(key);
         }
-        if (Payload != null)
+        if (Payload != null && pages != null)
         {
-            ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, fieldValues, key);
+            ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, key);
             // Apply ModifiedApps values to fieldValues
             if (ruleResult?.ModifiedApps != null)
             {

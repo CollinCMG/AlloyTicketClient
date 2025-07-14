@@ -38,7 +38,7 @@
                                         if (item is FieldInputDto fieldInput)
                                         {
                                             var fieldKey = fieldInput.DefinitionID?.ToString();
-                                            if (ruleResult == null || !ruleResult.FieldsToHide.Contains(fieldKey))
+                                            if (!fieldInput.IsHidden)
                                             {
                                                 var isTextarea = fieldInput.FieldType == FieldType.Textarea;
                                                 <div class="form-col@(isTextarea ? " textarea-col" : "")">
@@ -56,12 +56,10 @@
                                         else if (item is AttachmentInputDto attachment)
                                         {
                                             var attachmentKey = $"attachment_{pages.IndexOf(p)}_{p.Items.IndexOf(item)}";
-                                            if (ruleResult == null || !ruleResult.FieldsToHide.Contains(attachmentKey))
-                                            {
-                                                <div class="form-col">
-                                                    <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" />
-                                                </div>
-                                            }
+                                            // If you want to hide attachments, you may need to add IsHidden to AttachmentInputDto as well
+                                            <div class="form-col">
+                                                <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" />
+                                            </div>
                                         }
                                     }
                                 </div>
@@ -129,7 +127,7 @@
                 pages = null;
                 pages = await FormFieldService.GetFormPagesAsync(formId);
                 lastLoadedFormId = formId;
-                ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, fieldValues, null);
+                ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, null);
                 // Get rules for this form and cache trigger fields for ModifyApps
                 var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
                 modifyAppsTriggerFields = rules
@@ -277,9 +275,9 @@
     private async Task OnFieldValueChanged(object? value, string fieldKey)
     {
         fieldValues[fieldKey] = value;
-        if (Payload != null)
+        if (Payload != null && pages != null)
         {
-            ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, fieldValues, fieldKey);
+            ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, fieldKey);
             var modifyAppsShouldApply = false;
             // Always get rules from the database
             var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
@@ -307,9 +305,9 @@
         {
             fieldValues.Remove(key);
         }
-        if (Payload != null)
+        if (Payload != null && pages != null)
         {
-            ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, fieldValues, key);
+            ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, key);
             if (ruleResult?.ModifiedApps != null)
             {
                 foreach (var kvp in ruleResult.ModifiedApps)

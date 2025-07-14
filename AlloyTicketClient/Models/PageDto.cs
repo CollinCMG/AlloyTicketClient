@@ -30,6 +30,7 @@ namespace AlloyTicketClient.Models
         public string? Filter { get; set; }
         public FieldType? FieldType { get; set; }
         public string? DisplayFields { get; set; }
+        public bool IsHidden { get; set; } = false;
     }
 
     public class FieldTextDto : IPageItem

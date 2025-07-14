@@ -58,14 +58,11 @@ namespace AlloyTicketClient.Services
             return await _db.AlloyTicketRules.Select(r => r.FormId).Distinct().ToListAsync();
         }
 
-        public async Task<RuleEvaluationResult> EvaluateRulesAsync(string formId, Dictionary<string, object?> fieldValues, string? changedField = null)
+        public async Task<RuleEvaluationResult> EvaluateRulesAsync(string formId, List<PageDto> pages, Dictionary<string, object?> fieldValues, string? changedField = null)
         {
-            var fieldsToHide = new HashSet<string>();
-            var fieldsToShow = new HashSet<string>();
-            var showTargets = new HashSet<string>();
             var modifiedApps = new Dictionary<string, string>();
 
-            var rules = _db.AlloyTicketRules.Where(r => r.FormId == formId).ToList();
+            var rules = await _db.AlloyTicketRules.Where(r => r.FormId == formId).ToListAsync();
 
             var hideRules = new List<RuleConfig>();
             var showRules = new List<RuleConfig>();
@@ -80,6 +77,37 @@ namespace AlloyTicketClient.Services
                 }
             }
 
+            // 1. Hide all target fields of Show rules by default
+            foreach (var rule in showRules)
+            {
+                foreach (var target in rule.TargetList)
+                {
+                    foreach (var page in pages)
+                    {
+                        foreach (var item in page.Items)
+                        {
+                            if (item is FieldInputDto f && f.DefinitionID?.ToString() == target.FieldId)
+                                f.IsHidden = true;
+                        }
+                    }
+                }
+            }
+
+            // 2. Reset all other fields to not hidden (unless a Hide rule will apply)
+            foreach (var page in pages)
+            {
+                foreach (var item in page.Items)
+                {
+                    if (item is FieldInputDto f)
+                    {
+                        // Only reset if not already hidden by Show rule default
+                        if (!showRules.SelectMany(r => r.TargetList).Any(t => t.FieldId == f.DefinitionID?.ToString()))
+                            f.IsHidden = false;
+                    }
+                }
+            }
+
+            // 3. Hide logic (set IsHidden = true for triggered Hide rules)
             foreach (var rule in hideRules)
             {
                 if (fieldValues.TryGetValue(rule.TriggerField, out var value))
@@ -89,26 +117,33 @@ namespace AlloyTicketClient.Services
                     if (value is DropdownOptionDto dto)
                     {
                         isActive = dto.Properties.Values.Any(v => v != null && !string.IsNullOrWhiteSpace(v.ToString()));
-                        valueStr = dto.ToString(); // You may want to adjust this if DropdownOptionDto has a specific value property
+                        valueStr = dto.ToString();
                     }
                     else
                     {
                         isActive = !string.IsNullOrWhiteSpace(valueStr);
                     }
-                    // Check trigger value logic
                     bool triggerMatch = string.IsNullOrWhiteSpace(rule.TriggerValue) || string.Equals(valueStr, rule.TriggerValue, StringComparison.OrdinalIgnoreCase);
                     if (isActive && triggerMatch)
                     {
                         foreach (var target in rule.TargetList)
-                            fieldsToHide.Add(target.FieldId);
+                        {
+                            foreach (var page in pages)
+                            {
+                                foreach (var item in page.Items)
+                                {
+                                    if (item is FieldInputDto f && f.DefinitionID?.ToString() == target.FieldId)
+                                        f.IsHidden = true;
+                                }
+                            }
+                        }
                     }
                 }
             }
 
+            // 4. Show logic (set IsHidden = false for triggered Show rules)
             foreach (var rule in showRules)
             {
-                foreach (var target in rule.TargetList)
-                    showTargets.Add(target.FieldId);
                 if (fieldValues.TryGetValue(rule.TriggerField, out var value))
                 {
                     bool isActive = false;
@@ -116,7 +151,7 @@ namespace AlloyTicketClient.Services
                     if (value is DropdownOptionDto dto)
                     {
                         isActive = dto.Properties.Values.Any(v => v != null && !string.IsNullOrWhiteSpace(v.ToString()));
-                        valueStr = dto.ToString(); // You may want to adjust this if DropdownOptionDto has a specific value property
+                        valueStr = dto.ToString();
                     }
                     else
                     {
@@ -126,15 +161,18 @@ namespace AlloyTicketClient.Services
                     if (isActive && triggerMatch)
                     {
                         foreach (var target in rule.TargetList)
-                            fieldsToShow.Add(target.FieldId);
+                        {
+                            foreach (var page in pages)
+                            {
+                                foreach (var item in page.Items)
+                                {
+                                    if (item is FieldInputDto f && f.DefinitionID?.ToString() == target.FieldId)
+                                        f.IsHidden = false;
+                                }
+                            }
+                        }
                     }
                 }
-            }
-
-            foreach (var target in showTargets)
-            {
-                if (!fieldsToShow.Contains(target))
-                    fieldsToHide.Add(target);
             }
 
             foreach (var rule in modifyAppsRules)
@@ -149,7 +187,7 @@ namespace AlloyTicketClient.Services
                     {
                         triggerDto = dto;
                         isActive = dto.Properties.Values.Any(v => v != null && !string.IsNullOrWhiteSpace(v.ToString()));
-                        valueStr = dto.ToString(); // You may want to adjust this if DropdownOptionDto has a specific value property
+                        valueStr = dto.ToString();
                         if (dto.Properties.TryGetValue("Primary_Email", out var emailObj) && emailObj is string email && !string.IsNullOrWhiteSpace(email))
                         {
                             var resolvedUsername = await _userRoleService.GetUsernameByEmailAsync(email);
@@ -181,7 +219,6 @@ namespace AlloyTicketClient.Services
 
             return new RuleEvaluationResult
             {
-                FieldsToHide = fieldsToHide.ToList(),
                 ModifiedApps = modifiedApps
             };
         }
@@ -189,7 +226,6 @@ namespace AlloyTicketClient.Services
 
     public class RuleEvaluationResult
     {
-        public List<string> FieldsToHide { get; set; } = new();
         public Dictionary<string, string> ModifiedApps { get; set; } = new();
     }
 }
