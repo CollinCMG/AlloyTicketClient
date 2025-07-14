@@ -1,9 +1,10 @@
 using AlloyTicketClient.Contexts;
-using AlloyTicketClient.Models;
 using AlloyTicketClient.Enums;
+using AlloyTicketClient.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.SqlServer.Server;
+using System.Text.Json;
 
 namespace AlloyTicketClient.Services
 {
@@ -75,10 +76,8 @@ namespace AlloyTicketClient.Services
             return await _db.AlloyTicketRules.Select(r => r.FormId).Distinct().ToListAsync();
         }
 
-        public async Task<RuleEvaluationResult> EvaluateRulesAsync(string formId, List<PageDto> pages, Dictionary<string, object?> fieldValues, string? changedField = null)
+        public async Task EvaluateRulesAsync(string formId, List<PageDto> pages, Dictionary<string, object?> fieldValues, string? changedField = null)
         {
-            var modifiedApps = new Dictionary<string, string>();
-
             var rules = await GetRulesForFormAsync(formId);
 
             var hideRules = new List<RuleConfig>();
@@ -191,7 +190,14 @@ namespace AlloyTicketClient.Services
                     }
                 }
             }
+        }
 
+        public async Task<RuleEvaluationResult> EvaluateModifyAppsRulesAsync(string formId, Dictionary<string, object?> fieldValues)
+        {
+            var rules = await GetRulesForFormAsync(formId);
+            var modifyAppsRules = rules.Where(r => r.Action == FilterAction.ModifyApps).ToList();
+
+            var modifiedApps = new Dictionary<string, string>();
             foreach (var rule in modifyAppsRules)
             {
                 if (fieldValues.TryGetValue(rule.TriggerField, out var value))

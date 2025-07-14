@@ -135,13 +135,16 @@
                 pages = await FormFieldService.GetFormPagesAsync(formId);
                 lastLoadedFormId = formId;
                 // Evaluate rules on load
-                ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, null);
+                ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
+
                 // Apply ModifiedApps values to fieldValues
                 if (ruleResult?.ModifiedApps != null)
                 {
                     foreach (var kvp in ruleResult.ModifiedApps)
                         fieldValues[kvp.Key] = kvp.Value;
                 }
+                await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, null);
+
                 isLoading = false;
                 StateHasChanged();
             }
@@ -293,7 +296,8 @@
         fieldValues[fieldKey] = value;
         if (Payload != null && pages != null)
         {
-            ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, fieldKey);
+            ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
+
             // Only apply ModifiedApps if the changed field is a trigger for a modifyapps rule
             var modifyAppsShouldApply = false;
             if (ruleResult?.ModifiedApps != null && ruleResult.ModifiedApps.Count > 0)
@@ -310,6 +314,9 @@
                 foreach (var kvp in ruleResult.ModifiedApps)
                     fieldValues[kvp.Key] = kvp.Value;
             }
+
+            await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, fieldKey);
+
             StateHasChanged();
         }
     }
@@ -328,13 +335,17 @@
         }
         if (Payload != null && pages != null)
         {
-            ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, key);
+            ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
+
             // Apply ModifiedApps values to fieldValues
             if (ruleResult?.ModifiedApps != null)
             {
                 foreach (var kvp in ruleResult.ModifiedApps)
                     fieldValues[kvp.Key] = kvp.Value;
             }
+
+            await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, key);
+
             StateHasChanged();
         }
     }
