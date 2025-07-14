@@ -230,7 +230,7 @@
         !string.IsNullOrEmpty(ModalSelectedFieldId) &&
         ModalSelectedTargetFieldIds.Any();
 
-    private void SaveRuleFromModal()
+    private async Task SaveRuleFromModal()
     {
         if (!CanAddRuleFromModal) return;
         var triggerFieldLabel = GetModalFieldLabelById(ModalSelectedFieldId);
@@ -257,6 +257,7 @@
             EditingRule.Action = ModalSelectedAction;
             EditingRule.TargetList = targetList;
             EditingRule.TargetFieldLabels = targetFieldLabels;
+            await RulesService.UpdateRuleAsync(EditingRule);
         }
         else
         {
@@ -271,9 +272,10 @@
                 TargetList = targetList,
                 TargetFieldLabels = targetFieldLabels
             };
-            RulesList.Add(rule);
-            RulesConfig.Instance.Rules.Add(rule);
+            await RulesService.AddRuleAsync(rule);
         }
+        // Reload rules from DB
+        RulesList = await RulesService.GetAllRulesAsync();
         CloseRuleModal();
         StateHasChanged();
     }
@@ -344,19 +346,9 @@
         }
     }
 
-    private void DeleteRule(RuleConfig rule)
+    private async void DeleteRule(RuleConfig rule)
     {
-        // Remove from local list by unique keys as fallback if RuleId is default
-        if (rule.RuleId == default)
-        {
-            var toRemove = RulesList.FirstOrDefault(r => r.FormId == rule.FormId && r.TriggerField == rule.TriggerField && r.Action == rule.Action);
-            if (toRemove != null)
-                RulesList.Remove(toRemove);
-            var toRemoveGlobal = RulesConfig.Instance.Rules.FirstOrDefault(r => r.FormId == rule.FormId && r.TriggerField == rule.TriggerField && r.Action == rule.Action);
-            if (toRemoveGlobal != null)
-                RulesConfig.Instance.Rules.Remove(toRemoveGlobal);
-        }
-        else
+        if (rule.RuleId != default)
         {
             var toRemove = RulesList.FirstOrDefault(r => r.RuleId == rule.RuleId);
             if (toRemove != null)
@@ -364,8 +356,18 @@
             var toRemoveGlobal = RulesConfig.Instance.Rules.FirstOrDefault(r => r.RuleId == rule.RuleId);
             if (toRemoveGlobal != null)
                 RulesConfig.Instance.Rules.Remove(toRemoveGlobal);
+            await RulesService.RemoveRuleAsync(rule.RuleId);
         }
-        RulesService.RemoveRuleAsync(rule.FormId, rule);
+        else
+        {
+            var toRemove = RulesList.FirstOrDefault(r => r.FormId == rule.FormId && r.TriggerField == rule.TriggerField && r.Action == rule.Action);
+            if (toRemove != null)
+                RulesList.Remove(toRemove);
+            var toRemoveGlobal = RulesConfig.Instance.Rules.FirstOrDefault(r => r.FormId == rule.FormId && r.TriggerField == rule.TriggerField && r.Action == rule.Action);
+            if (toRemoveGlobal != null)
+                RulesConfig.Instance.Rules.Remove(toRemoveGlobal);
+            // No DB delete for rules without RuleId
+        }
         StateHasChanged();
     }
 
@@ -377,7 +379,7 @@
         return !string.IsNullOrWhiteSpace(field?.FieldLabel) ? field.FieldLabel : (field?.FieldName ?? id);
     }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         // Load forms from DynamicPages in appsettings.json using strongly-typed config
         var dynamicPages = Configuration.GetSection("DynamicPages").Get<List<DynamicPageConfig>>() ?? new();
@@ -391,8 +393,8 @@
                 }
             }
         }
-        // Copy rules to local list for reactivity
-        RulesList = RulesConfig.Instance.Rules.ToList();
+        // Load rules from the database
+        RulesList = await RulesService.GetAllRulesAsync();
     }
 
     private async Task OnFormSelected(ChangeEventArgs e)

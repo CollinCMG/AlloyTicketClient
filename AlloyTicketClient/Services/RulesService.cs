@@ -1,42 +1,61 @@
+using AlloyTicketClient.Contexts;
 using AlloyTicketClient.Models;
 using AlloyTicketClient.Enums;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace AlloyTicketClient.Services
 {
     public class RulesService
     {
-        private readonly Dictionary<string, List<RuleConfig>> _rulesByFormId = new();
+        private readonly AlloyTicketRulesDbContext _db;
         private readonly UserRoleService _userRoleService;
 
-        public RulesService(UserRoleService userRoleService)
+        public RulesService(AlloyTicketRulesDbContext db, UserRoleService userRoleService)
         {
+            _db = db;
             _userRoleService = userRoleService;
         }
 
-        public Task<List<RuleConfig>> GetRulesForFormAsync(string formId)
+        public async Task<List<RuleConfig>> GetRulesForFormAsync(string formId)
         {
-            _rulesByFormId.TryGetValue(formId, out var rules);
-            return Task.FromResult(rules ?? new List<RuleConfig>());
+            var rules = await _db.AlloyTicketRules.Where(r => r.FormId == formId).ToListAsync();
+            return rules;
         }
 
-        public Task AddRuleAsync(string formId, RuleConfig rule)
+        public async Task<List<RuleConfig>> GetAllRulesAsync()
         {
-            if (!_rulesByFormId.ContainsKey(formId))
-                _rulesByFormId[formId] = new List<RuleConfig>();
-            _rulesByFormId[formId].Add(rule);
-            return Task.CompletedTask;
+            var rules = await _db.AlloyTicketRules.ToListAsync();
+            return rules;
         }
 
-        public Task RemoveRuleAsync(string formId, RuleConfig rule)
+        public async Task AddRuleAsync(RuleConfig rule)
         {
-            if (_rulesByFormId.ContainsKey(formId))
-                _rulesByFormId[formId].Remove(rule);
-            return Task.CompletedTask;
+            if (rule.RuleId == Guid.Empty)
+                rule.RuleId = Guid.NewGuid();
+            _db.AlloyTicketRules.Add(rule);
+            await _db.SaveChangesAsync();
         }
 
-        public Task<List<string>> GetAllFormIdsAsync()
+        public async Task UpdateRuleAsync(RuleConfig rule)
         {
-            return Task.FromResult(_rulesByFormId.Keys.ToList());
+            _db.AlloyTicketRules.Update(rule);
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task RemoveRuleAsync(Guid ruleId)
+        {
+            var rule = await _db.AlloyTicketRules.FirstOrDefaultAsync(r => r.RuleId == ruleId);
+            if (rule != null)
+            {
+                _db.AlloyTicketRules.Remove(rule);
+                await _db.SaveChangesAsync();
+            }
+        }
+
+        public async Task<List<string>> GetAllFormIdsAsync()
+        {
+            return await _db.AlloyTicketRules.Select(r => r.FormId).Distinct().ToListAsync();
         }
 
         public async Task<RuleEvaluationResult> EvaluateRulesAsync(string formId, Dictionary<string, object?> fieldValues, string? changedField = null)
@@ -46,9 +65,7 @@ namespace AlloyTicketClient.Services
             var showTargets = new HashSet<string>();
             var modifiedApps = new Dictionary<string, string>();
 
-            var rules = _rulesByFormId.TryGetValue(formId, out var localRules)
-                ? localRules
-                : RulesConfig.Instance.Rules.Where(r => r.FormId == formId).ToList();
+            var rules = _db.AlloyTicketRules.Where(r => r.FormId == formId).ToList();
 
             var hideRules = new List<RuleConfig>();
             var showRules = new List<RuleConfig>();

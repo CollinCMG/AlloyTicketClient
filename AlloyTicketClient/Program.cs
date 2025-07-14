@@ -3,6 +3,7 @@ using AlloyTicketClient.Services;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
+using AlloyTicketClient.Contexts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,9 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddDbContext<AlloyNavigatorDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("AlloyNavigator")));
+
+builder.Services.AddDbContext<AlloyTicketRulesDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("AlloyTicketRulesDb")));
 
 builder.Services.AddScoped<FormFieldService>();
 builder.Services.AddScoped<JwtTokenService>();

@@ -234,15 +234,13 @@
         {
             ruleResult = await RulesService.EvaluateRulesAsync(Payload.FormId, fieldValues, fieldKey);
             var modifyAppsShouldApply = false;
-            if (ruleResult?.ModifiedApps != null && ruleResult.ModifiedApps.Count > 0)
+            // Always get rules from the database
+            var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
+            if (rules.Any(r => r.Action == FilterAction.ModifyApps && r.TriggerField == fieldKey))
             {
-                var rules = RulesConfig.Instance.Rules.Where(r => r.FormId == Payload.FormId && r.Action == FilterAction.ModifyApps && r.TriggerField == fieldKey);
-                if (rules.Any())
-                {
-                    modifyAppsShouldApply = true;
-                }
+                modifyAppsShouldApply = true;
             }
-            if (modifyAppsShouldApply)
+            if (modifyAppsShouldApply && ruleResult?.ModifiedApps != null)
             {
                 foreach (var kvp in ruleResult.ModifiedApps)
                     fieldValues[kvp.Key] = kvp.Value;
