@@ -30,31 +30,41 @@
                     {
                         <div class="form-page">
                             <h3>@p.PageName</h3>
-                            @foreach (var item in p.Items)
+                            @foreach (var row in GetFieldRows(p.Items))
                             {
-                                if (item is FieldInputDto fieldInput)
-                                {
-                                    var fieldKey = fieldInput.DefinitionID?.ToString();
-                                    if (ruleResult == null || !ruleResult.FieldsToHide.Contains(fieldKey))
+                                <div class="form-row">
+                                    @foreach (var item in row)
                                     {
-                                        <FieldInput @key="fieldInput.DefinitionID"
-                                                    Field="@(MapToFormFieldDto(fieldInput))"
-                                                    Value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : null)"
-                                                    OnValueChanged="@(val => OnFieldValueChanged(val, fieldKey))" />
+                                        if (item is FieldInputDto fieldInput)
+                                        {
+                                            var fieldKey = fieldInput.DefinitionID?.ToString();
+                                            if (ruleResult == null || !ruleResult.FieldsToHide.Contains(fieldKey))
+                                            {
+                                                var isTextarea = fieldInput.FieldType == FieldType.Textarea;
+                                                <div class="form-col@(isTextarea ? " textarea-col" : "")" style="@(isTextarea ? "grid-column: span 2;" : null)">
+                                                    <FieldInput @key="fieldInput.DefinitionID"
+                                                                Field="@(MapToFormFieldDto(fieldInput))"
+                                                                Value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : null)"
+                                                                OnValueChanged="@(val => OnFieldValueChanged(val, fieldKey))" />
+                                                </div>
+                                            }
+                                        }
+                                        else if (item is FieldTextDto fieldText)
+                                        {
+                                            <div class="form-col field-text">@GetTextValue(fieldText.ElementDefinition)</div>
+                                        }
+                                        else if (item is AttachmentInputDto attachment)
+                                        {
+                                            var attachmentKey = $"attachment_{pages.IndexOf(p)}_{p.Items.IndexOf(item)}";
+                                            if (ruleResult == null || !ruleResult.FieldsToHide.Contains(attachmentKey))
+                                            {
+                                                <div class="form-col">
+                                                    <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" />
+                                                </div>
+                                            }
+                                        }
                                     }
-                                }
-                                else if (item is FieldTextDto fieldText)
-                                {
-                                    <div class="field-text">@GetTextValue(fieldText.ElementDefinition)</div>
-                                }
-                                else if (item is AttachmentInputDto attachment)
-                                {
-                                    var attachmentKey = $"attachment_{pages.IndexOf(p)}_{p.Items.IndexOf(item)}";
-                                    if (ruleResult == null || !ruleResult.FieldsToHide.Contains(attachmentKey))
-                                    {
-                                        <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" />
-                                    }
-                                }
+                                </div>
                             }
                         </div>
                     }
@@ -336,5 +346,36 @@
             fieldValues.Clear();
             await OnClose.InvokeAsync();
         }
+    }
+
+    // Helper to group FieldInputDto into rows of 2, except textarea (full row)
+    private List<List<IPageItem>> GetFieldRows(List<IPageItem> items)
+    {
+        var rows = new List<List<IPageItem>>();
+        var currentRow = new List<IPageItem>();
+        foreach (var item in items)
+        {
+            if (item is FieldInputDto fieldInput && fieldInput.FieldType == FieldType.Textarea)
+            {
+                if (currentRow.Count > 0)
+                {
+                    rows.Add(new List<IPageItem>(currentRow));
+                    currentRow.Clear();
+                }
+                rows.Add(new List<IPageItem> { item });
+            }
+            else
+            {
+                currentRow.Add(item);
+                if (currentRow.Count == 2)
+                {
+                    rows.Add(new List<IPageItem>(currentRow));
+                    currentRow.Clear();
+                }
+            }
+        }
+        if (currentRow.Count > 0)
+            rows.Add(currentRow);
+        return rows;
     }
 }

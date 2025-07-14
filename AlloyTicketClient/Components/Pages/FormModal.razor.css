@@ -10,7 +10,6 @@
 }
 .modal-dialog {
     background: #fff;
-    width: 480px;
     max-width: 95vw;
     max-height: 90vh;
     box-shadow: 0 8px 32px rgba(30,41,59,0.18);
@@ -122,6 +121,20 @@
     background-color: #e0e7ef;
     color: #334155;
 }
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+.form-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+.textarea-col {
+    grid-column: span 2;
+}
 @media (max-width: 600px) {
     .modal-dialog {
         width: 100vw;
@@ -131,5 +144,11 @@
     }
     .modal-header, .modal-content, .modal-footer {
         padding: 1rem;
+    }
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    .textarea-col {
+        grid-column: span 1;
     }
 }

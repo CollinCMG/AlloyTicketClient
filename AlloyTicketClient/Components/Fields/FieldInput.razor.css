@@ -1,8 +1,17 @@
-.field-block .required {
-    color: #e53935 !important;
+.field-block {
     margin-left: 0.25em;
     font-weight: bold;
     font-size: 1.1em;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
 }
 
-/* (style moved to app.css) */
+.field-block input,
+.field-block select,
+.field-block textarea {
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+}
