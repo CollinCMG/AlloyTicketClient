@@ -43,7 +43,7 @@
                                                 var isTextarea = fieldInput.FieldType == FieldType.Memo;
                                                 <div class="form-col@(isTextarea ? " textarea-col" : "")">
                                                     <FieldInput @key="fieldInput.DefinitionID"
-                                                                Field="@(MapToFormFieldDto(fieldInput))"
+                                                                Field="@(FormDataMapperService.MapToFormFieldDto(fieldInput))"
                                                                 Value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : null)"
                                                                 OnValueChanged="@(val => OnFieldValueChanged(val, fieldKey))" />
                                                 </div>
@@ -51,7 +51,7 @@
                                         }
                                         else if (item is FieldTextDto fieldText)
                                         {
-                                            <div class="form-col field-text">@GetTextValue(fieldText.ElementDefinition)</div>
+                                            <div class="form-col field-text">@FormDataMapperService.GetTextValue(fieldText.ElementDefinition)</div>
                                         }
                                         else if (item is AttachmentInputDto attachment)
                                         {
@@ -178,44 +178,6 @@
         {
             isSubmitting = false;
             StateHasChanged();
-        }
-    }
-
-    private FormFieldDto MapToFormFieldDto(FieldInputDto input)
-    {
-        return new FormFieldDto
-        {
-            Field_Num = input.Field_Num,
-            Field_Label = input.FieldLabel,
-            Field_Name = input.FieldName,
-            ID = input.DefinitionID ?? Guid.Empty,
-            Virtual = input.Virtual,
-            Mandatory = input.Mandatory,
-            Read_Only = input.Read_Only,
-            LookupValues = input.Lookup_Values,
-            TableName = input.Table_Name,
-            LookupID = input.Lookup_ID,
-            Filter = input.Filter,
-            FieldType = input.FieldType,
-            DisplayFields = input.DisplayFields
-        };
-    }
-
-    private string GetTextValue(string? elementDefinition)
-    {
-        if (string.IsNullOrWhiteSpace(elementDefinition))
-            return string.Empty;
-
-        try
-        {
-            var doc = System.Xml.Linq.XDocument.Parse(elementDefinition);
-            var item = doc.Descendants("ITEM")
-                          .FirstOrDefault(e => (string?)e.Attribute("Name") == "Text");
-            return item?.Attribute("Value")?.Value ?? string.Empty;
-        }
-        catch
-        {
-            return System.Text.RegularExpressions.Regex.Replace(elementDefinition, "<.*?>", string.Empty).Trim();
         }
     }
 

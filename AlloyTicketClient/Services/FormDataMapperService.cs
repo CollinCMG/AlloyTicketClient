@@ -1,5 +1,7 @@
 using AlloyTicketClient.Enums;
 using AlloyTicketClient.Models;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 namespace AlloyTicketClient.Services
 {
@@ -98,6 +100,49 @@ namespace AlloyTicketClient.Services
                         }
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Maps a FieldInputDto to a FormFieldDto for use in FieldInput components.
+        /// </summary>
+        public static FormFieldDto MapToFormFieldDto(FieldInputDto input)
+        {
+            return new FormFieldDto
+            {
+                Field_Num = input.Field_Num,
+                Field_Label = input.FieldLabel,
+                Field_Name = input.FieldName,
+                ID = input.DefinitionID ?? Guid.Empty,
+                Virtual = input.Virtual,
+                Mandatory = input.Mandatory,
+                Read_Only = input.Read_Only,
+                LookupValues = input.Lookup_Values,
+                TableName = input.Table_Name,
+                LookupID = input.Lookup_ID,
+                Filter = input.Filter,
+                FieldType = input.FieldType,
+                DisplayFields = input.DisplayFields
+            };
+        }
+
+        /// <summary>
+        /// Extracts text from an XML element definition, or strips tags if not valid XML.
+        /// </summary>
+        public static string GetTextValue(string? elementDefinition)
+        {
+            if (string.IsNullOrWhiteSpace(elementDefinition))
+                return string.Empty;
+            try
+            {
+                var doc = XDocument.Parse(elementDefinition);
+                var item = doc.Descendants("ITEM")
+                              .FirstOrDefault(e => (string?)e.Attribute("Name") == "Text");
+                return item?.Attribute("Value")?.Value ?? string.Empty;
+            }
+            catch
+            {
+                return Regex.Replace(elementDefinition, "<.*?>", string.Empty).Trim();
             }
         }
     }

@@ -25,28 +25,21 @@
     </div>
 }
 
-@if (dynamicPage != null && dynamicPage.ShowSlideOver)
+@if (dynamicPage != null)
 {
-    <FormSlideOver Show="showSlideOver"
-                   Title="@slideOverTitle"
-                   Payload="@slideOverPayload"
-                   OnClose="CloseSlideOver" />
-}
-else if (dynamicPage != null && !dynamicPage.ShowSlideOver)
-{
-    <FormModal Show="showSlideOver"
-              Title="@slideOverTitle"
-              Payload="@slideOverPayload"
-              OnClose="CloseSlideOver" />
+    <FormModal Show="showFormModal"
+              Title="@formModalTitle"
+              Payload="@formModalPayload"
+              OnClose="CloseFormModal" />
 }
 
 @code {
     [Parameter]
     public string? headerText { get; set; }
 
-    private bool showSlideOver = false;
-    private string? slideOverTitle;
-    private RequestActionPayload? slideOverPayload;
+    private bool showFormModal = false;
+    private string? formModalTitle;
+    private RequestActionPayload? formModalPayload;
     private DynamicPageConfig? dynamicPage;
 
     protected override void OnParametersSet()
@@ -67,21 +60,21 @@ else if (dynamicPage != null && !dynamicPage.ShowSlideOver)
 
     private void ShowDynamicButton(DynamicButtonConfig btn)
     {
-        slideOverTitle = btn.Name + " Request";
-        slideOverPayload = new RequestActionPayload
+        formModalTitle = btn.Name + " Request";
+        formModalPayload = new RequestActionPayload
         {
             FormId = btn.FormId,
             Data = new Dictionary<string, object?>(),
             CategoryId = btn.CategoryId,
             Route = btn.Route
         };
-        showSlideOver = true;
+        showFormModal = true;
     }
 
-    private void CloseSlideOver()
+    private void CloseFormModal()
     {
-        showSlideOver = false;
-        slideOverTitle = null;
-        slideOverPayload = null;
+        showFormModal = false;
+        formModalTitle = null;
+        formModalPayload = null;
     }
 }
