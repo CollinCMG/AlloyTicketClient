@@ -1,8 +1,5 @@
 @using AlloyTicketClient.Enums
-@using AlloyTicketClient
 @using Microsoft.AspNetCore.Components
-
-@inject FormFieldService FormFieldService
 
 @if (Field != null)
 {
@@ -14,7 +11,20 @@
                 <span class="required" title="Required">*</span>
             }
         </h4>
-        @if (Field.FieldType == FieldType.Input && !string.IsNullOrWhiteSpace(Field.LookupValues))
+        @* Special-case: Due_date *@
+        @if (Field.Field_Name?.Equals("Due_date", StringComparison.OrdinalIgnoreCase) ?? false)
+        {
+            <input type="date" class="form-control" @bind="DateValue" />
+        }
+        @* Special-case: Requester_Id *@
+        else if (Field.Field_Name?.Equals("Requester_Id", StringComparison.OrdinalIgnoreCase) ?? false)
+        {
+            <select class="form-control" @bind="CurrentValue">
+                <option value="">-- Select --</option>
+                <!-- TODO: Populate with actual Requester options -->
+            </select>
+        }
+        else if (Field.FieldType == FieldType.Input && !string.IsNullOrWhiteSpace(Field.LookupValues))
         {
             var options = ParseLookupValues(Field.LookupValues);
             <select class="form-control" @bind="CurrentValue">
@@ -39,11 +49,11 @@
         }
         else if (Field.FieldType == FieldType.MultiSelect && !string.IsNullOrWhiteSpace(Field.LookupValues))
         {
-            var options = ParseLookupValues(Field.LookupValues);
+            var multiOptions = ParseLookupValues(Field.LookupValues);
             <select class="form-control" multiple @onchange="OnMultiSelectChanged">
-                @foreach (var option in options)
+                @foreach (var option in multiOptions)
                 {
-                    <option value="@option" selected="@(SelectedMultiValues.Contains(option))">@option</option>
+                    <option value="@option" selected="@SelectedMultiValues.Contains(option)">@option</option>
                 }
             </select>
         }
@@ -78,17 +88,6 @@
                 }
             </select>
         }
-        else if (Field.FieldType == FieldType.Dropdown || (Field.Field_Name?.Equals("Requester_Id", StringComparison.OrdinalIgnoreCase) ?? false))
-        {
-            <select class="form-control" @bind="CurrentValue">
-                <option value="">-- Select --</option>
-                <!-- TODO: Populate with actual Requester options -->
-            </select>
-        }
-        else if (Field.Field_Name?.Equals("Due_date", StringComparison.OrdinalIgnoreCase) ?? false)
-        {
-            <input type="date" class="form-control" @bind="DateValue" />
-        }
         else
         {
             <input type="text" class="form-control" @bind="CurrentValue" @bind:event="oninput" />
@@ -98,12 +97,13 @@
 
 @code {
     [Parameter] public FormFieldDto? Field { get; set; }
-    [Parameter] public object? Value { get; set; } // Now supports DropdownOptionDto
+    [Parameter] public object? Value { get; set; }
     [Parameter] public EventCallback<object?> OnValueChanged { get; set; }
+
+    [Inject] private FormFieldService FormFieldService { get; set; } = default!;
 
     private List<DropdownOptionDto>? Options;
 
-    // For MultiSelect
     private List<string> SelectedMultiValues
     {
         get
@@ -136,15 +136,6 @@
             else if (e.Value is IEnumerable<string> many)
             {
                 selected.AddRange(many);
-            }
-            else if (e.Value is ChangeEventArgs ce && ce.Value is IEnumerable<string> ceMany)
-            {
-                selected.AddRange(ceMany);
-            }
-            else if (e.Value is System.Collections.Specialized.StringCollection sc)
-            {
-                foreach (var s in sc)
-                    selected.Add(s);
             }
             else if (e.Value is string[] arr)
             {
@@ -255,14 +246,10 @@
     }
 
     private string GetDisplayName(FormFieldDto field)
-    {
-        // Always use Field_Label as the display name if present, otherwise fallback to Field_Name
-        return string.IsNullOrWhiteSpace(field.Field_Label) ? field.Field_Name ?? string.Empty : field.Field_Label;
-    }
+        => string.IsNullOrWhiteSpace(field.Field_Label) ? field.Field_Name ?? string.Empty : field.Field_Label;
 
     private IEnumerable<string> ParseLookupValues(string lookupValues)
     {
-        // If the value contains a comma and a quote, extract the quoted part
         if (lookupValues.Contains('"'))
         {
             var quoteStart = lookupValues.IndexOf('"');
@@ -274,7 +261,6 @@
                     .Select(x => x.Replace("\"", string.Empty));
             }
         }
-        // Otherwise, treat as a simple CSV
         return lookupValues.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries)
             .Select(x => x.Replace("\"", string.Empty));
     }
