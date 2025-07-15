@@ -1,8 +1,6 @@
 ﻿@using Microsoft.AspNetCore.Authorization
 @using AlloyTicketClient.Models
-@inject IConfiguration Configuration
 @using Microsoft.AspNetCore.Components
-@inject NavigationManager NavigationManager
 
 @page "/request/{headerText}"
 @attribute [Authorize]
@@ -33,48 +31,4 @@
               OnClose="CloseFormModal" />
 }
 
-@code {
-    [Parameter]
-    public string? headerText { get; set; }
 
-    private bool showFormModal = false;
-    private string? formModalTitle;
-    private RequestActionPayload? formModalPayload;
-    private DynamicPageConfig? dynamicPage;
-
-    protected override void OnParametersSet()
-    {
-        // Read DynamicPages from appsettings.json
-        var dynamicPages = Configuration.GetSection("DynamicPages").Get<List<DynamicPageConfig>>() ?? new();
-        dynamicPage = null; // Reset dynamicPage on parameter set
-        if (!string.IsNullOrEmpty(headerText))
-        {
-            // Find the dynamic page by headerText (case-insensitive, decoded)
-            var match = dynamicPages.FirstOrDefault(p => string.Equals(p.HeaderText, Uri.UnescapeDataString(headerText), StringComparison.OrdinalIgnoreCase));
-            if (match != null)
-            {
-                dynamicPage = match;
-            }
-        }
-    }
-
-    private void ShowDynamicButton(DynamicButtonConfig btn)
-    {
-        formModalTitle = btn.Name + " Request";
-        formModalPayload = new RequestActionPayload
-        {
-            FormId = btn.FormId,
-            Data = new Dictionary<string, object?>(),
-            CategoryId = btn.CategoryId,
-            Route = btn.Route
-        };
-        showFormModal = true;
-    }
-
-    private void CloseFormModal()
-    {
-        showFormModal = false;
-        formModalTitle = null;
-        formModalPayload = null;
-    }
-}
