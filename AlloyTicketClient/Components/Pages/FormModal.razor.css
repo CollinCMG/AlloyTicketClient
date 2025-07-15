@@ -12,8 +12,8 @@
     background: #fff;
     max-width: 95vw;
     max-height: 90vh;
-    box-shadow: 0 8px 32px rgba(30,41,59,0.18);
-    border-radius: 16px;
+    box-shadow: 0 0.5rem 2rem rgba(30,41,59,0.18);
+    border-radius: 1rem;
     display: flex;
     flex-direction: column;
     animation: modalIn 0.32s cubic-bezier(.4,0,.2,1);
@@ -22,17 +22,17 @@
     z-index: 10000;
 }
 @keyframes modalIn {
-    from { transform: translateY(40px) scale(0.98); opacity: 0; }
+    from { transform: translateY(2.5rem) scale(0.98); opacity: 0; }
     to { transform: translateY(0) scale(1); opacity: 1; }
 }
 .modal-header {
     padding: 1.5rem 2rem 1rem 2rem;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 0.0625rem solid #e5e7eb;
     display: flex;
     align-items: center;
     justify-content: space-between;
     background: #f8fafc;
-    border-radius: 16px 16px 0 0;
+    border-radius: 1rem 1rem 0 0;
     pointer-events: auto;
 }
 .modal-header h2 {
@@ -41,7 +41,7 @@
     margin: 0;
     color: #2563eb;
     letter-spacing: 0.01em;
-    text-shadow: 0 2px 8px rgba(30,41,59,0.06);
+    text-shadow: 0 0.125rem 0.5rem rgba(30,41,59,0.06);
 }
 .modal-close {
     background: none;
@@ -70,11 +70,11 @@
 }
 .form-page {
     background: #fff;
-    border: 1.5px solid #e5e7eb;
+    border: 0.09375rem solid #e5e7eb;
     border-radius: 1rem;
     margin-bottom: 2.5rem;
     padding: 0 1.5rem 1.5rem 1.5rem;
-    box-shadow: 0 2px 8px rgba(30,41,59,0.04);
+    box-shadow: 0 0.125rem 0.5rem rgba(30,41,59,0.04);
     transition: box-shadow 0.18s;
 }
 .form-page:last-child {
@@ -85,12 +85,12 @@
     border-radius: 1rem 1rem 0 0;
     padding: 1.25rem 1rem 0.75rem 1rem;
     margin: 0 -1.5rem 1.25rem -1.5rem;
-    border-bottom: 1.5px solid #e0e7ef;
+    border-bottom: 0.09375rem solid #e0e7ef;
     font-size: 1.25rem;
     font-weight: 700;
     color: #2563eb;
     letter-spacing: 0.01em;
-    text-shadow: 0 2px 8px rgba(30,41,59,0.06);
+    text-shadow: 0 0.125rem 0.5rem rgba(30,41,59,0.06);
 }
 .form-page > * {
     margin-bottom: 1.25rem;
@@ -100,9 +100,9 @@
 }
 .modal-footer {
     padding: 1rem 2rem;
-    border-top: 1px solid #e5e7eb;
+    border-top: 0.0625rem solid #e5e7eb;
     background: #f8fafc;
-    border-radius: 0 0 16px 16px;
+    border-radius: 0 0 1rem 1rem;
     display: flex;
     align-items: center;
     gap: 1.25rem;
@@ -113,7 +113,7 @@
     font-weight: 700;
     padding: 0.75rem 2rem;
     border-radius: 0.75rem;
-    box-shadow: 0 2px 8px rgba(30,41,59,0.08);
+    box-shadow: 0 0.125rem 0.5rem rgba(30,41,59,0.08);
     transition: background 0.18s, color 0.18s, box-shadow 0.18s;
 }
 .modal-footer .btn-primary {
@@ -124,7 +124,7 @@
 .modal-footer .btn-primary:hover, .modal-footer .btn-primary:focus {
     background-color: #1d4ed8;
     color: #fff;
-    box-shadow: 0 4px 16px rgba(30,41,59,0.12);
+    box-shadow: 0 0.25rem 1rem rgba(30,41,59,0.12);
 }
 .modal-footer .btn-secondary {
     background-color: #f3f6fa;

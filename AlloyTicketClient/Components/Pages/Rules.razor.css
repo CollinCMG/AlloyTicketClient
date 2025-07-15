@@ -13,8 +13,8 @@ body, html {
 
 .request-setup-container {
     background: #fff;
-    border-radius: 18px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.07), 0 1.5px 4px rgba(0,0,0,0.03);
+    border-radius: 1.125rem;
+    box-shadow: 0 0.25rem 1.5rem rgba(0,0,0,0.07), 0 0.09375rem 0.25rem rgba(0,0,0,0.03);
     padding: 2.5rem 2rem 2rem 2rem;
     margin: 0;
     width: 100%;
@@ -23,61 +23,26 @@ body, html {
     flex-direction: column;
     transition: box-shadow 0.2s;
 }
+
 .request-setup-title {
     font-size: 2.2rem;
     font-weight: 700;
     color: #22223b;
     margin-bottom: 0.5rem;
-    letter-spacing: -1px;
+    letter-spacing: -0.0625rem;
 }
+
 .request-setup-subtitle {
     font-size: 1.1rem;
     color: #6c757d;
     margin-bottom: 2rem;
 }
-.rules-add-section {
-    background: none;
-    border-radius: 12px;
-    padding: 1.5rem 1rem 1rem 1rem;
-    margin-bottom: 2rem;
-    box-shadow: none;
-}
-.rules-add-section .form-label {
-    font-weight: 600;
-    color: #3a3a40;
-    margin-bottom: 0.3rem;
-}
-.rules-add-section .form-select, .rules-add-section select {
-    border-radius: 8px;
-    border: 1px solid #d1d5db;
-    font-size: 1rem;
-    padding: 0.5rem 0.75rem;
-    background: #fff;
-    transition: border-color 0.2s;
-}
-.rules-add-section .form-select:focus {
-    border-color: #6366f1;
-    outline: none;
-    box-shadow: 0 0 0 2px #6366f133;
-}
-.rules-add-section button.btn-primary, .rules-group .btn-primary {
-    background: #2563eb;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 1.1rem;
-    padding: 0.5rem;
-    color: #fff;
-    transition: background 0.2s;
-}
-.rules-add-section button.btn-primary:hover, .rules-group .btn-primary:hover {
-    background: #1d4ed8;
-}
+
 .rules-group {
     background: #f4f6fb;
-    border-radius: 14px;
-    border: 1.5px solid #e0e7ef;
-    box-shadow: 0 1px 6px rgba(99,102,241,0.07);
+    border-radius: 0.875rem;
+    border: 0.09375rem solid #e0e7ef;
+    box-shadow: 0 0.0625rem 0.375rem rgba(99,102,241,0.07);
     padding: 1.5rem 1.2rem 1.2rem 1.2rem;
     margin-bottom: 2rem;
 }
@@ -87,11 +52,15 @@ body, html {
     color: #3730a3;
     margin-bottom: 1rem;
 }
+.rules-group h5 span {
+    font-size: small;
+    color: gray;
+}
 .rules-group table {
     background: #fff;
-    border-radius: 8px;
+    border-radius: 0.5rem;
     overflow: hidden;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    box-shadow: 0 0.0625rem 0.125rem rgba(0,0,0,0.03);
 }
 .rules-group th, .rules-group td {
     vertical-align: middle;
@@ -102,18 +71,18 @@ body, html {
     background: #e0e7ef;
     color: #3730a3;
     font-weight: 700;
-    border-bottom: 2px solid #c7d2fe;
+    border-bottom: 0.125rem solid #c7d2fe;
 }
 .rules-group td {
     background: #fff;
     color: #22223b;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 0.0625rem solid #e5e7eb;
 }
 .rules-group tr:last-child td {
     border-bottom: none;
 }
 .rules-group .btn-danger {
-    border-radius: 6px;
+    border-radius: 0.375rem;
     font-size: 0.95rem;
     padding: 0.35rem 0.9rem;
     background: #ef4444;
@@ -125,19 +94,49 @@ body, html {
 .rules-group .btn-danger:hover {
     background: #b91c1c;
 }
+.rules-group .btn-primary {
+    background: #2563eb;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+    padding: 0.5rem;
+    color: #fff;
+    transition: background 0.2s;
+}
+.rules-group .btn-primary:hover {
+    background: #1d4ed8;
+}
 .rules-list-section {
     flex: 1 1 0;
     min-height: 0;
     overflow-y: auto;
     margin-top: 2.5rem;
 }
+.text-nowrap {
+    white-space: nowrap;
+}
+.rules-modal-bg {
+    background: rgba(34,34,59,0.12);
+}
+.form-select[multiple] {
+    min-height: 7.5rem;
+    height: auto;
+}
+.text-muted {
+    color: #6c757d;
+    font-size: smaller;
+}
+.d-flex { display: flex; }
+.flex-row { flex-direction: row; }
+.justify-content-between { justify-content: space-between; }
+.justify-content-center { justify-content: center; }
+.align-items-center { align-items: center; }
+.gap-1 { gap: 0.25rem; }
 
 @media (max-width: 900px) {
     .request-setup-container {
         padding: 1.2rem 0.5rem;
-    }
-    .rules-add-section {
-        padding: 1rem 0.2rem;
     }
     .rules-group {
         padding: 1rem 0.5rem;
