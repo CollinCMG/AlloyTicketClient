@@ -57,7 +57,11 @@ public class FormFieldService
                 f.Field_Type AS FieldType,
                 d.Mandatory,
                 Lookup_Values,
-                iif(f.Table_Name = 'Persons', 'Person_List', f.Table_Name) as Table_Name,
+                CASE 
+                    WHEN f.Table_Name = 'Persons' THEN 'Person_List'
+                    WHEN f.Table_Name = 'Organizational_Units' THEN 'Organizational_Unit_List'
+                    ELSE f.Table_Name
+                END AS Table_Name,
                 Virtual,
                 ct.Display_Fields as Display_Fields,
                 Filter
@@ -199,7 +203,7 @@ public class FormFieldService
         }
         else
         {
-             sql = $"SELECT {field.DisplayFields} FROM [{field.TableName}]";
+            sql = $"SELECT {field.DisplayFields} FROM [{field.TableName}]";
         }
 
         if (!string.IsNullOrWhiteSpace(field.Filter))
