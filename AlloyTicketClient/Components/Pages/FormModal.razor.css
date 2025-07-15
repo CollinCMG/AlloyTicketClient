@@ -10,7 +10,8 @@
 }
 .modal-dialog {
     background: #fff;
-    max-width: 95vw;
+    height: 90vh;
+    max-width: 90vw;
     max-height: 90vh;
     box-shadow: 0 0.5rem 2rem rgba(30,41,59,0.18);
     border-radius: 1rem;
@@ -34,6 +35,12 @@
     background: #f8fafc;
     border-radius: 1rem 1rem 0 0;
     pointer-events: auto;
+}
+.modal-header-flex {
+    flex: 0 0 15%;
+    min-height: 0;
+    max-height: 15%;
+    box-sizing: border-box;
 }
 .modal-header h2 {
     font-size: 1.5rem;
@@ -61,10 +68,30 @@
     color: #2563eb;
     background: #e0e7ef;
 }
+.field-content {
+    overflow-y:hidden;
+    height:90%;
+}
+.field-content-scroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    min-height: 0;
+    padding: 2rem;
+}
 .modal-content {
     flex: 1;
     padding: 2rem;
-    overflow-y: auto;
+    overflow-y: hidden;
+    background: #fff;
+    pointer-events: auto;
+}
+.modal-content-flex {
+    flex: 1 1 85%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-height: 85%;
+    padding: 0;
     background: #fff;
     pointer-events: auto;
 }
@@ -98,23 +125,26 @@
 .form-page > *:last-child {
     margin-bottom: 0;
 }
-.modal-footer {
-    padding: 1rem 2rem;
-    border-top: 0.0625rem solid #e5e7eb;
-    background: #f8fafc;
-    border-radius: 0 0 1rem 1rem;
+.modal-footer, .modal-footer-fixed {
+    height: 4.5rem;
+    min-height: 4.5rem;
+    max-height: 4.5rem;
+    padding-top: 0;
+    padding-bottom: 0;
     display: flex;
     align-items: center;
     gap: 1.25rem;
     pointer-events: auto;
+    border-top: 0.0625rem solid #e5e7eb;
+    background: #f8fafc;
+    border-radius: 0 0 1rem 1rem;
 }
-.modal-footer .btn {
-    font-size: 1.1rem;
-    font-weight: 700;
-    padding: 0.75rem 2rem;
-    border-radius: 0.75rem;
-    box-shadow: 0 0.125rem 0.5rem rgba(30,41,59,0.08);
-    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+.modal-footer .btn, .modal-footer-fixed .btn {
+    margin-top: 0;
+    margin-bottom: 0;
+    align-self: center;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
 }
 .modal-footer .btn-primary {
     background-color: #2563eb;
@@ -165,12 +195,13 @@
     .modal-header, .modal-content, .modal-footer {
         padding: 1rem;
     }
-    .form-row {
-        flex-direction: column;
-        gap: 1rem;
+    .field-content-scroll {
+        padding: 1rem;
     }
-    .textarea-col {
-        flex-basis: 100%;
-        max-width: 100%;
+    .modal-footer, .modal-footer-fixed {
+        height: 3.5rem;
+        min-height: 3.5rem;
+        max-height: 3.5rem;
+        padding: 0 1rem;
     }
 }
