@@ -1,13 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.Extensions.Configuration;
+using AlloyTicketClient.Enums;
 using AlloyTicketClient.Models;
 using AlloyTicketClient.Services;
-using AlloyTicketClient.Enums;
+using Microsoft.AspNetCore.Components;
 
 namespace AlloyTicketClient.Components.Pages
 {
@@ -162,54 +156,6 @@ namespace AlloyTicketClient.Components.Pages
             return !string.IsNullOrWhiteSpace(field?.FieldLabel) ? field.FieldLabel : (field?.FieldName ?? id);
         }
 
-        private void OnTargetFieldsChanged(ChangeEventArgs e)
-        {
-            if (e.Value is string single)
-                SelectedTargetFieldIds = new() { single };
-            else if (e.Value is IEnumerable<string> selectedOptions)
-                SelectedTargetFieldIds = selectedOptions.ToList();
-            else
-                SelectedTargetFieldIds = new();
-        }
-
-        private void AddRule()
-        {
-            if (!string.IsNullOrEmpty(SelectedFormId) && !string.IsNullOrEmpty(SelectedFieldId) && SelectedTargetFieldIds.Any())
-            {
-                var triggerFieldLabel = GetFieldLabelById(SelectedFieldId);
-                var targetFieldLabels = SelectedTargetFieldIds.Select(GetFieldLabelById).ToList();
-                var formName = Forms.FirstOrDefault(f => f.FormId == SelectedFormId)?.Name ?? SelectedFormId;
-                var targetList = SelectedTargetFieldIds
-                    .Select(id =>
-                    {
-                        var field = FormFields.FirstOrDefault(f => f.DefinitionID?.ToString() == id);
-                        return new TargetFieldInfo
-                        {
-                            FieldId = id,
-                            FieldName = field?.FieldName ?? id,
-                            FieldType = field?.FieldType ?? FieldType.Null
-                        };
-                    })
-                    .ToList();
-                var rule = new RuleConfig
-                {
-                    FormId = SelectedFormId,
-                    FormName = formName,
-                    TriggerField = SelectedFieldId,
-                    TriggerFieldLabel = triggerFieldLabel,
-                    Action = SelectedAction,
-                    TargetList = targetList,
-                    TargetFieldLabels = targetFieldLabels
-                };
-                RulesList.Add(rule);
-                RulesConfig.Instance.Rules.Add(rule);
-                SelectedFieldId = null;
-                SelectedAction = FilterAction.Hide;
-                SelectedTargetFieldIds.Clear();
-                StateHasChanged();
-            }
-        }
-
         private async void DeleteRule(RuleConfig rule)
         {
             if (rule.RuleId != default)
@@ -247,21 +193,6 @@ namespace AlloyTicketClient.Components.Pages
                 }
             }
             RulesList = await RulesService.GetAllRulesAsync();
-        }
-
-        private async Task OnFormSelected(ChangeEventArgs e)
-        {
-            SelectedFormId = e.Value?.ToString();
-            SelectedFieldId = null;
-            SelectedAction = FilterAction.Hide;
-            SelectedTargetFieldIds.Clear();
-            FormFields.Clear();
-            if (!string.IsNullOrEmpty(SelectedFormId) && Guid.TryParse(SelectedFormId, out var formGuid))
-            {
-                var pages = await FormFieldService.GetFormPagesAsync(formGuid);
-                FormFields = pages.SelectMany(p => p.Items).OfType<FieldInputDto>().ToList();
-            }
-            StateHasChanged();
         }
     }
 }

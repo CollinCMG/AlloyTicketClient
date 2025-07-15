@@ -57,9 +57,10 @@ public class FormFieldService
                 f.Field_Type AS FieldType,
                 d.Mandatory,
                 Lookup_Values,
-                f.Table_Name,
+                iif(f.Table_Name = 'Persons', 'Person_List', f.Table_Name) as Table_Name,
                 Virtual,
-                ct.Display_Fields as Display_Fields
+                ct.Display_Fields as Display_Fields,
+                Filter
             FROM cfgLCFormDefinition d
             LEFT JOIN cfgLCFormFields f
                 ON REPLACE(REPLACE(d.Field_Name, '{', ''), '}', '') = REPLACE(REPLACE(f.ID, '{', ''), '}', '')
@@ -92,7 +93,8 @@ public class FormFieldService
                 null as Lookup_Values,
                 null as Table_Name,
                 null as Virtual,
-                null as Display_Fields
+                null as Display_Fields,
+                null as Filter
             FROM cfgLCFormElements e
             OUTER APPLY (
                 SELECT TOP 1 pb2.PageName, pb2.PageRank, pb2.NextPageRank
@@ -120,7 +122,8 @@ public class FormFieldService
             Lookup_Values as LookupValues,
             Table_Name as TableName,
             Virtual,
-            Display_Fields as DisplayFields
+            Display_Fields as DisplayFields,
+            Filter
         FROM FieldAssignments
         UNION ALL
         SELECT
@@ -138,7 +141,8 @@ public class FormFieldService
             Lookup_Values as LookupValues,
             Table_Name as TableName,
             Virtual,
-            Display_Fields as DisplayFields
+            Display_Fields as DisplayFields,
+            Filter
         FROM ElementAssignments
         ORDER BY PageRank, SortOrder, DefinitionID
     ";
@@ -189,7 +193,7 @@ public class FormFieldService
         }
         var sql = string.Empty;
 
-        if (field.TableName == "Persons")
+        if (field.TableName == "Person_List")
         {
             sql = $"SELECT {field.DisplayFields + ", [Primary_Email]"} FROM [{field.TableName}]";
         }
@@ -260,7 +264,8 @@ public class FormFieldService
             LookupValues = reader["LookupValues"]?.ToString(),
             TableName = reader["TableName"]?.ToString(),
             Virtual = reader["Virtual"] != DBNull.Value ? (bool?)Convert.ToBoolean(reader["Virtual"]) : null,
-            DisplayFields = reader["DisplayFields"]?.ToString()
+            DisplayFields = reader["DisplayFields"]?.ToString(),
+            Filter = reader["Filter"]?.ToString()
         };
     }
 
@@ -280,7 +285,8 @@ public class FormFieldService
                 Lookup_Values = x.LookupValues,
                 Table_Name = x.TableName,
                 Virtual = x.Virtual,
-                DisplayFields = x.DisplayFields
+                DisplayFields = x.DisplayFields,
+                Filter = x.Filter
             };
         }
         else if (x.ElementType == 1)

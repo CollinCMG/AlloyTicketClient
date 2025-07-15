@@ -3,8 +3,6 @@ using AlloyTicketClient.Enums;
 using AlloyTicketClient.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.SqlServer.Server;
-using System.Text.Json;
 
 namespace AlloyTicketClient.Services
 {
@@ -82,14 +80,12 @@ namespace AlloyTicketClient.Services
 
             var hideRules = new List<RuleConfig>();
             var showRules = new List<RuleConfig>();
-            var modifyAppsRules = new List<RuleConfig>();
             foreach (var rule in rules)
             {
                 switch (rule.Action)
                 {
                     case FilterAction.Hide: hideRules.Add(rule); break;
                     case FilterAction.Show: showRules.Add(rule); break;
-                    case FilterAction.ModifyApps: modifyAppsRules.Add(rule); break;
                 }
             }
 
