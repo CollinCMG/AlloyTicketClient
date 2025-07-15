@@ -25,7 +25,7 @@
         }
         else if (Field.FieldType == FieldType.Input && !string.IsNullOrWhiteSpace(Field.LookupValues))
         {
-            var options = ParseLookupValues(Field.LookupValues);
+            var options = ParseLookupValues(Field.LookupValues).Distinct();
             <select class="form-control" @bind="CurrentValue" required="@(Field.Mandatory == true)">
                 <option value="">-- Select --</option>
                 @foreach (var option in options)
@@ -48,7 +48,7 @@
         }
         else if (Field.FieldType == FieldType.MultiSelect && !string.IsNullOrWhiteSpace(Field.LookupValues))
         {
-            var multiOptions = ParseLookupValues(Field.LookupValues);
+            var multiOptions = ParseLookupValues(Field.LookupValues).Distinct();
             <select class="form-control" multiple @onchange="OnMultiSelectChanged" required="@(Field.Mandatory == true)">
                 @foreach (var option in multiOptions)
                 {
