@@ -14,12 +14,12 @@
         @* Special-case: Due_date *@
         @if (Field.Field_Name?.Equals("Due_date", StringComparison.OrdinalIgnoreCase) ?? false)
         {
-            <input type="date" class="form-control" @bind="DateValue" />
+            <input type="date" class="form-control" @bind="DateValue" required="@(Field.Mandatory == true)" />
         }
         @* Special-case: Requester_Id *@
         else if (Field.Field_Name?.Equals("Requester_Id", StringComparison.OrdinalIgnoreCase) ?? false)
         {
-            <select class="form-control" @bind="CurrentValue">
+            <select class="form-control" @bind="CurrentValue" required="@(Field.Mandatory == true)">
                 <option value="">-- Select --</option>
                 <!-- TODO: Populate with actual Requester options -->
             </select>
@@ -27,7 +27,7 @@
         else if (Field.FieldType == FieldType.Input && !string.IsNullOrWhiteSpace(Field.LookupValues))
         {
             var options = ParseLookupValues(Field.LookupValues);
-            <select class="form-control" @bind="CurrentValue">
+            <select class="form-control" @bind="CurrentValue" required="@(Field.Mandatory == true)">
                 <option value="">-- Select --</option>
                 @foreach (var option in options)
                 {
@@ -37,7 +37,7 @@
         }
         else if (Field.FieldType == FieldType.Input)
         {
-            <input type="text" class="form-control" @bind="CurrentValue" @bind:event="oninput" />
+            <input type="text" class="form-control" @bind="CurrentValue" @bind:event="oninput" required="@(Field.Mandatory == true)" />
         }
         else if (Field.FieldType == FieldType.Checkbox)
         {
@@ -45,12 +45,12 @@
         }
         else if (Field.FieldType == FieldType.Memo)
         {
-            <textarea class="form-control" @bind="CurrentValue"></textarea>
+            <textarea class="form-control" @bind="CurrentValue" required="@(Field.Mandatory == true)"></textarea>
         }
         else if (Field.FieldType == FieldType.MultiSelect && !string.IsNullOrWhiteSpace(Field.LookupValues))
         {
             var multiOptions = ParseLookupValues(Field.LookupValues);
-            <select class="form-control" multiple @onchange="OnMultiSelectChanged">
+            <select class="form-control" multiple @onchange="OnMultiSelectChanged" required="@(Field.Mandatory == true)">
                 @foreach (var option in multiOptions)
                 {
                     <option value="@option" selected="@SelectedMultiValues.Contains(option)">@option</option>
@@ -65,7 +65,7 @@
             }
             else
             {
-                <select class="form-control" @onchange="OnDropdownChanged">
+                <select class="form-control" @onchange="OnDropdownChanged" required="@(Field.Mandatory == true)">
                     <option value="">-- Select --</option>
                     @foreach (var option in Options)
                     {
@@ -78,7 +78,7 @@
         }
         else if (Field.FieldType == FieldType.Dropdown && Options != null)
         {
-            <select class="form-control" @onchange="OnDropdownChanged">
+            <select class="form-control" @onchange="OnDropdownChanged" required="@(Field.Mandatory == true)">
                 <option value="">-- Select --</option>
                 @foreach (var option in Options)
                 {
@@ -90,7 +90,7 @@
         }
         else
         {
-            <input type="text" class="form-control" @bind="CurrentValue" @bind:event="oninput" />
+            <input type="text" class="form-control" @bind="CurrentValue" @bind:event="oninput" required="@(Field.Mandatory == true)" />
         }
     </div>
 }

@@ -185,12 +185,6 @@ namespace AlloyTicketClient.Components.Pages
 
         protected void RemoveAttachment(string key) => fieldValues.Remove(key);
 
-        protected bool AreAllRequiredFieldsFilled() =>
-            pages != null && pages.Count > 0 &&
-            pages.SelectMany(page => page.Items)
-                .OfType<FieldInputDto>()
-                .Where(f => f.Mandatory == true && !f.IsHidden)
-                .All(f => fieldValues.TryGetValue(f.DefinitionID?.ToString() ?? string.Empty, out var value) && !(value == null || string.IsNullOrWhiteSpace(value.ToString())));
 
         protected List<List<IPageItem>> GetFieldRows(List<IPageItem> items)
         {
