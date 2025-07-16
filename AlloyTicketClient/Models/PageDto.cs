@@ -26,7 +26,7 @@ namespace AlloyTicketClient.Models
         public int SortOrder { get; set; }
         public bool? Virtual { get; set; }
         public bool? Mandatory { get; set; }
-        public bool? Read_Only { get; set; }
+        public bool? ReadOnly { get; set; }
         public string? Lookup_Values { get; set; }
         public string? Table_Name { get; set; }
         public Guid? Lookup_ID { get; set; }

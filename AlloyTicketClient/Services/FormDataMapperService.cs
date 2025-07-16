@@ -116,7 +116,7 @@ namespace AlloyTicketClient.Services
                 ID = input.DefinitionID ?? Guid.Empty,
                 Virtual = input.Virtual,
                 Mandatory = input.Mandatory,
-                Read_Only = input.Read_Only,
+                Read_Only = input.ReadOnly,
                 LookupValues = input.Lookup_Values,
                 TableName = input.Table_Name,
                 LookupID = input.Lookup_ID,
