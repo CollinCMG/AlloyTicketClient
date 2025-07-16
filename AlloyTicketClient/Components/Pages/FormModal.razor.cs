@@ -37,6 +37,7 @@ namespace AlloyTicketClient.Components.Pages
             
             if (!string.IsNullOrWhiteSpace(Payload?.ObjectId))
             {
+                isLoading = true;
                 formId = await formFieldService.GetFormId(Payload.ObjectId);
             }
 
@@ -55,7 +56,6 @@ namespace AlloyTicketClient.Components.Pages
                 }
                 if (lastLoadedFormId != formId || pages == null)
                 {
-                    isLoading = true;
                     pages = null;
                     pages = await formFieldService.GetFormPagesAsync(formId.Value);
                     lastLoadedFormId = formId;

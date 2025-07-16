@@ -80,9 +80,11 @@
                         </div>
                     </EditForm>
                 }
-                else
+                else if (!isLoading)
                 {
-                    <p>No fields found for this form.</p>
+                    <div class="no-fields-message">
+                        <span>No fields found for this form.</span>
+                    </div>
                 }
             </div>
         </div>

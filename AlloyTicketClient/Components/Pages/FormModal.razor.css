@@ -206,3 +206,42 @@
         padding: 0 1rem;
     }
 }
+.modern-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: #2563eb;
+    font-size: 1.15rem;
+    font-weight: 500;
+    min-height: 8rem;
+}
+.modern-loading .modern-spinner {
+    margin-bottom: 1rem;
+    border: 0.25rem solid #e0e7ef;
+    border-top: 0.25rem solid #2563eb;
+    border-radius: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.no-fields-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: #64748b;
+    font-size: 1.1rem;
+    font-weight: 400;
+    background: #f8fafc;
+    border-radius: 0.75rem;
+    min-height: 8rem;
+    margin: 2rem 0;
+}
