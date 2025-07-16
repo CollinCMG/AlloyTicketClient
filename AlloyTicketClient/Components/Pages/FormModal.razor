@@ -3,6 +3,7 @@
 @using AlloyTicketClient.Models
 @using AlloyTicketClient.Enums
 @using AlloyTicketClient.Services
+@using AlloyTicketClient.Components.Forms
 
 @if (Show)
 {
@@ -13,79 +14,7 @@
                 <button class="modal-close" @onclick="HandleClose">&times;</button>
             </div>
             <div class="modal-content modal-content-flex">
-                @if (isLoading)
-                {
-                    <div class="modern-loading">
-                        <div class="modern-spinner"></div>
-                        <span>Loading, please wait...</span>
-                    </div>
-                }
-                else if (pages != null && pages.Count > 0)
-                {
-                    <EditForm Model="fieldValues" OnValidSubmit="SubmitForm" class="edit-form-flex" style="height: 100%">
-                        <DataAnnotationsValidator />
-                        <div class="field-content field-content-scroll">
-                            @foreach (var p in pages.Where(pg => !pg.IsHidden))
-                            {
-                                <div class="form-page">
-                                    <h3>@p.PageName</h3>
-                                    @foreach (var row in GetFieldRows(p.Items))
-                                    {
-                                        <div class="form-row">
-                                            @foreach (var item in row)
-                                            {
-                                                if (item is FieldInputDto fieldInput)
-                                                {
-                                                    var fieldKey = fieldInput.DefinitionID?.ToString();
-                                                    if (!fieldInput.IsHidden)
-                                                    {
-                                                        var isTextarea = fieldInput.FieldType == FieldType.Memo;
-                                                        <div class="form-col@(isTextarea ? " textarea-col" : "")">
-                                                            <FieldInput @key="fieldInput.DefinitionID"
-                                                                        Field="@(FormDataMapperService.MapToFormFieldDto(fieldInput))"
-                                                                        Value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : null)"
-                                                                        OnValueChanged="@(val => OnFieldValueChanged(val, fieldKey))" />
-                                                        </div>
-                                                    }
-                                                }
-                                                else if (item is FieldTextDto fieldText)
-                                                {
-                                                    <div class="form-col field-text">@FormDataMapperService.GetTextValue(fieldText.ElementDefinition)</div>
-                                                }
-                                                else if (item is AttachmentInputDto attachment)
-                                                {
-                                                    var attachmentKey = $"attachment_{pages.IndexOf(p)}_{p.Items.IndexOf(item)}";
-                                                    <div class="form-col">
-                                                        <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" />
-                                                    </div>
-                                                }
-                                            }
-                                        </div>
-                                    }
-                                </div>
-                            }
-                        </div>
-                        <div class="modal-footer modal-footer-fixed">
-                            <button class="btn btn-primary" type="submit" style="min-width: 100px; display: flex; align-items: center; justify-content: center; gap: 0.5rem;" disabled="@(isSubmitting)">
-                                @if (isSubmitting)
-                                {
-                                    <span>Submitting</span>
-                                    <span class="modern-spinner" style="width: 1.25rem; height: 1.25rem; border-width: 2.5px;"></span>
-                                }
-                                else
-                                {
-                                    <span>Submit</span>
-                                }
-                            </button>
-                        </div>
-                    </EditForm>
-                }
-                else if (!isLoading)
-                {
-                    <div class="no-fields-message">
-                        <span>No fields found for this form.</span>
-                    </div>
-                }
+                <RequestForm Show="Show" Title="@Title" Payload="@Payload" OnClose="OnClose" />
             </div>
         </div>
     </div>

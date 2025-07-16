@@ -1,0 +1,310 @@
+﻿@using AlloyTicketClient.Components.Fields
+@using AlloyTicketClient.Models
+@using AlloyTicketClient.Enums
+@using AlloyTicketClient.Services
+@inject FormFieldService formFieldService
+@inject AlloyApiService AlloyApiService
+@inject RulesService RulesService
+@inject IJSRuntime JSRuntime
+
+@code {
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public RequestActionPayload? Payload { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private bool isLoading = false;
+    private List<PageDto>? pages;
+    private Dictionary<string, object?> fieldValues = new();
+    private Guid? lastLoadedFormId = null;
+    private bool isSubmitting = false;
+    private bool showCancelConfirm = false;
+    private bool closeSidebarOnConfirm = false;
+    private RuleEvaluationResult? ruleResult;
+    private List<string> modifyAppsTriggerFields = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        Guid? formId = null;
+        isLoading = true;
+
+        if (!string.IsNullOrWhiteSpace(Payload?.ObjectId))
+        {
+            formId = await formFieldService.GetFormId(Payload.ObjectId);
+        }
+        else if (!string.IsNullOrWhiteSpace(Payload?.FormId) && Guid.TryParse(Payload.FormId, out var formGuid))
+        {
+            formId = formGuid;
+        }
+        if (Show && Payload != null && formId != null)
+        {
+            if (Payload.Data.ValueKind == System.Text.Json.JsonValueKind.Object)
+            {
+                try
+                {
+                    var dict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(Payload.Data.GetRawText());
+                    if (dict != null)
+                        fieldValues = dict;
+                }
+                catch { }
+            }
+            if (lastLoadedFormId != formId || pages == null)
+            {
+                pages = null;
+                pages = await formFieldService.GetFormPagesAsync(formId.Value);
+                lastLoadedFormId = formId;
+                ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
+                var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
+                modifyAppsTriggerFields = rules
+                    .Where(r => r.Action == FilterAction.ModifyApps)
+                    .Select(r => r.TriggerField)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .ToList();
+                if (ruleResult?.ModifiedApps != null)
+                {
+                    foreach (var kvp in ruleResult.ModifiedApps)
+                        fieldValues[kvp.Key] = kvp.Value;
+                }
+                await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, null);
+                isLoading = false;
+                StateHasChanged();
+            }
+        }
+        else if (!Show)
+        {
+            fieldValues.Clear();
+            pages = null;
+            isLoading = false;
+            lastLoadedFormId = null;
+            ruleResult = null;
+            modifyAppsTriggerFields = new();
+        }
+    }
+
+    private async Task SubmitForm()
+    {
+        isSubmitting = true;
+        StateHasChanged();
+        try
+        {
+            if (Payload != null)
+            {
+                FormDataMapperService.SetDefaultsForHiddenRequiredFields(pages, fieldValues);
+                var nameKeyed = FormDataMapperService.MapFieldValuesToNameKeyed(pages, fieldValues);
+                var json = System.Text.Json.JsonSerializer.Serialize(nameKeyed);
+                Payload.Data = System.Text.Json.JsonDocument.Parse(json).RootElement;
+                var (success, message) = await AlloyApiService.PostAsync(Payload);
+                await JSRuntime.InvokeVoidAsync("alert", $"API call result: {message}");
+            }
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnFieldValueChanged(object? value, string fieldKey)
+    {
+        fieldValues[fieldKey] = value;
+        if (Payload != null && pages != null)
+        {
+            ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
+            var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
+            if (rules.Any(r => r.Action == FilterAction.ModifyApps && r.TriggerField == fieldKey) && ruleResult?.ModifiedApps != null)
+            {
+                foreach (var kvp in ruleResult.ModifiedApps)
+                    fieldValues[kvp.Key] = kvp.Value;
+            }
+            await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, fieldKey);
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnAttachmentChanged(InputFileChangeEventArgs e, string key)
+    {
+        if (e.FileCount > 0)
+            fieldValues[key] = e.File;
+        else
+            fieldValues.Remove(key);
+        if (Payload != null && pages != null)
+        {
+            ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
+            if (ruleResult?.ModifiedApps != null)
+            {
+                foreach (var kvp in ruleResult.ModifiedApps)
+                    fieldValues[kvp.Key] = kvp.Value;
+            }
+            await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, key);
+            StateHasChanged();
+        }
+    }
+
+    private void HandleOverlayClick()
+    {
+        if (fieldValues.Count > 0)
+        {
+            showCancelConfirm = true;
+            closeSidebarOnConfirm = true;
+        }
+        else
+        {
+            fieldValues.Clear();
+            if (OnClose.HasDelegate)
+                OnClose.InvokeAsync();
+        }
+    }
+
+    private void ConfirmCancel()
+    {
+        showCancelConfirm = false;
+        if (closeSidebarOnConfirm)
+        {
+            fieldValues.Clear();
+            if (OnClose.HasDelegate)
+                OnClose.InvokeAsync();
+        }
+    }
+
+    private void CancelCancel()
+    {
+        showCancelConfirm = false;
+        closeSidebarOnConfirm = false;
+    }
+
+    private async Task HandleClose()
+    {
+        if (fieldValues.Count > 0)
+        {
+            showCancelConfirm = true;
+            closeSidebarOnConfirm = true;
+        }
+        else
+        {
+            fieldValues.Clear();
+            if (OnClose.HasDelegate)
+                await OnClose.InvokeAsync();
+        }
+    }
+
+    private List<List<IPageItem>> GetFieldRows(List<IPageItem> items)
+    {
+        var rows = new List<List<IPageItem>>();
+        var currentRow = new List<IPageItem>();
+        foreach (var item in items)
+        {
+            if (item is FieldInputDto fieldInput && (fieldInput.FieldType == FieldType.Memo || (fieldInput.DefinitionID != null && modifyAppsTriggerFields.Contains(fieldInput.DefinitionID.ToString()))))
+            {
+                if (currentRow.Count > 0)
+                {
+                    rows.Add(new List<IPageItem>(currentRow));
+                    currentRow.Clear();
+                }
+                rows.Add(new List<IPageItem> { item });
+            }
+            else
+            {
+                currentRow.Add(item);
+                if (currentRow.Count == 2)
+                {
+                    rows.Add(new List<IPageItem>(currentRow));
+                    currentRow.Clear();
+                }
+            }
+        }
+        if (currentRow.Count > 0)
+            rows.Add(currentRow);
+        return rows;
+    }
+}
+
+@if (Show)
+{
+    <div class="modal-overlay" @onclick="HandleOverlayClick">
+        <div class="modal-dialog" @onclick:stopPropagation>
+            <div class="modal-header modal-header-flex">
+                <h2>@Title</h2>
+                <button class="modal-close" @onclick="HandleClose">&times;</button>
+            </div>
+            <div class="modal-content modal-content-flex">
+                @if (isLoading)
+                {
+                    <div class="modern-loading">
+                        <div class="modern-spinner"></div>
+                        <span>Loading, please wait...</span>
+                    </div>
+                }
+                else if (pages != null && pages.Count > 0)
+                {
+                    <EditForm Model="fieldValues" OnValidSubmit="SubmitForm" class="edit-form-flex" style="height: 100%">
+                        <DataAnnotationsValidator />
+                        <div class="field-content field-content-scroll">
+                            @foreach (var p in pages.Where(pg => !pg.IsHidden))
+                            {
+                                <div class="form-page">
+                                    <h3>@p.PageName</h3>
+                                    @foreach (var row in GetFieldRows(p.Items))
+                                    {
+                                        <div class="form-row">
+                                            @foreach (var item in row)
+                                            {
+                                                if (item is FieldInputDto fieldInput)
+                                                {
+                                                    var fieldKey = fieldInput.DefinitionID?.ToString();
+                                                    if (!fieldInput.IsHidden)
+                                                    {
+                                                        var isTextarea = fieldInput.FieldType == FieldType.Memo;
+                                                        <div class="form-col@(isTextarea ? " textarea-col" : "")">
+                                                            <FieldInput @key="fieldInput.DefinitionID"
+                                                                        Field="@(FormDataMapperService.MapToFormFieldDto(fieldInput))"
+                                                                        Value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : null)"
+                                                                        OnValueChanged="@(val => OnFieldValueChanged(val, fieldKey))" />
+                                                        </div>
+                                                    }
+                                                }
+                                                else if (item is FieldTextDto fieldText)
+                                                {
+                                                    <div class="form-col field-text">@FormDataMapperService.GetTextValue(fieldText.ElementDefinition)</div>
+                                                }
+                                                else if (item is AttachmentInputDto attachment)
+                                                {
+                                                    var attachmentKey = $"attachment_{pages.IndexOf(p)}_{p.Items.IndexOf(item)}";
+                                                    <div class="form-col">
+                                                        <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" />
+                                                    </div>
+                                                }
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                        <div class="modal-footer modal-footer-fixed">
+                            <button class="btn btn-primary" type="submit" style="min-width: 100px; display: flex; align-items: center; justify-content: center; gap: 0.5rem;" disabled="@(isSubmitting)">
+                                @if (isSubmitting)
+                                {
+                                    <span>Submitting</span>
+                                    <span class="modern-spinner" style="width: 1.25rem; height: 1.25rem; border-width: 2.5px;"></span>
+                                }
+                                else
+                                {
+                                    <span>Submit</span>
+                                }
+                            </button>
+                        </div>
+                    </EditForm>
+                }
+                else if (!isLoading)
+                {
+                    <div class="no-fields-message">
+                        <span>No fields found for this form.</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+@if (showCancelConfirm)
+{
+    <CancelConfirmModal OnConfirm="ConfirmCancel" OnCancel="CancelCancel" />
+}

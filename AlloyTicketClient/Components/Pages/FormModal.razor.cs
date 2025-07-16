@@ -34,16 +34,17 @@ namespace AlloyTicketClient.Components.Pages
         protected override async Task OnParametersSetAsync()
         {
             Guid? formId = null;
-            
-            if (!string.IsNullOrWhiteSpace(Payload?.ObjectId))
+            if (!string.IsNullOrWhiteSpace(Payload?.ObjectId) && Guid.TryParse(Payload.ObjectId, out var objectGuid))
             {
                 isLoading = true;
-                formId = await formFieldService.GetFormId(Payload.ObjectId);
+                formId = objectGuid;
             }
-
+            else if (!string.IsNullOrWhiteSpace(Payload?.FormId) && Guid.TryParse(Payload.FormId, out var formGuid))
+            {
+                formId = formGuid;
+            }
             if (Show && Payload != null && formId != null)
             {
-                // Always treat Data as JsonElement and try to deserialize if it's an object
                 if (Payload.Data.ValueKind == JsonValueKind.Object)
                 {
                     try
