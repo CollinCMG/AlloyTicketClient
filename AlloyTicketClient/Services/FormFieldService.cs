@@ -24,6 +24,9 @@ public class FormFieldService
 
     public async Task<Guid> GetFormId(string objectId)
     {
+        if (string.IsNullOrWhiteSpace(objectId))
+            return Guid.Empty;  
+
         var sql = @"SELECT e.Form_ID FROM cfgLCEvents e INNER JOIN cfgLCActionList al ON e.EventID = al.EventID INNER JOIN Service_Request_Fulfillment_List fl ON fl.Request_Create_Action_ID = al.id INNER JOIN Service_Catalog_Item_List cil ON fl.ID = cil.Request_Fulfillment_ID WHERE OID = @ObjId";
         using (var command = _db.Database.GetDbConnection().CreateCommand())
         {

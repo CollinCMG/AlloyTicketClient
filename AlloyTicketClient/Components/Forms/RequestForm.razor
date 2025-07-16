@@ -23,20 +23,20 @@
     private RuleEvaluationResult? ruleResult;
     private List<string> modifyAppsTriggerFields = new();
 
+
     protected override async Task OnParametersSetAsync()
     {
-        Guid? formId = null;
-        isLoading = true;
+        if (Payload == null || Payload.Key == null)
+        {
+            isLoading = false;
+            return;
+        }
 
-        if (!string.IsNullOrWhiteSpace(Payload?.Key.ObjectId))
-        {
-            Payload.Key.FormId = await formFieldService.GetFormId(Payload.Key.ObjectId);
-            formId = Payload.Key.FormId;
-        }
-        else if (Payload?.Key.FormId != Guid.Empty)
-        {
-            formId = Payload.Key.FormId;
-        }
+        isLoading = true;
+        var objectId = Payload.Key?.ObjectId ?? string.Empty;
+        Payload.Key.FormId = await formFieldService.GetFormId(objectId);
+
+        Guid? formId = Payload.Key.FormId;
 
         if (Show && Payload != null && formId != null)
         {
@@ -71,8 +71,10 @@
                 isLoading = false;
                 StateHasChanged();
             }
+            isLoading = false;
+
         }
-        else if (!Show)
+        else if (!Show || formId == null)
         {
             fieldValues.Clear();
             pages = null;
