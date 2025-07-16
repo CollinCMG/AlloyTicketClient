@@ -28,14 +28,14 @@
         Guid? formId = null;
         isLoading = true;
 
-        if (!string.IsNullOrWhiteSpace(Payload?.ObjectId))
+        if (!string.IsNullOrWhiteSpace(Payload?.Key.ObjectId))
         {
-            Payload.FormId = await formFieldService.GetFormId(Payload.ObjectId);
-            formId = Payload.FormId;
+            Payload.Key.FormId = await formFieldService.GetFormId(Payload.Key.ObjectId);
+            formId = Payload.Key.FormId;
         }
-        else if (Payload.FormId != Guid.Empty)
+        else if (Payload?.Key.FormId != Guid.Empty)
         {
-            formId = Payload.FormId;
+            formId = Payload.Key.FormId;
         }
 
         if (Show && Payload != null && formId != null)
@@ -55,8 +55,8 @@
                 pages = null;
                 pages = await formFieldService.GetFormPagesAsync(formId.Value);
                 lastLoadedFormId = formId;
-                ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
-                var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
+                ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.Key, fieldValues);
+                var rules = await RulesService.GetRulesForFormAsync(Payload.Key);
                 modifyAppsTriggerFields = rules
                     .Where(r => r.Action == FilterAction.ModifyApps)
                     .Select(r => r.TriggerField)
@@ -67,7 +67,7 @@
                     foreach (var kvp in ruleResult.ModifiedApps)
                         fieldValues[kvp.Key] = kvp.Value;
                 }
-                await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, null);
+                await RulesService.EvaluateRulesAsync(Payload.Key, pages, fieldValues, null);
                 isLoading = false;
                 StateHasChanged();
             }
@@ -111,14 +111,14 @@
         fieldValues[fieldKey] = value;
         if (Payload != null && pages != null)
         {
-            ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
-            var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
+            ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.Key, fieldValues);
+            var rules = await RulesService.GetRulesForFormAsync(Payload.Key);
             if (rules.Any(r => r.Action == FilterAction.ModifyApps && r.TriggerField == fieldKey) && ruleResult?.ModifiedApps != null)
             {
                 foreach (var kvp in ruleResult.ModifiedApps)
                     fieldValues[kvp.Key] = kvp.Value;
             }
-            await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, fieldKey);
+            await RulesService.EvaluateRulesAsync(Payload.Key, pages, fieldValues, fieldKey);
             StateHasChanged();
         }
     }
@@ -131,13 +131,13 @@
             fieldValues.Remove(key);
         if (Payload != null && pages != null)
         {
-            ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
+            ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.Key, fieldValues);
             if (ruleResult?.ModifiedApps != null)
             {
                 foreach (var kvp in ruleResult.ModifiedApps)
                     fieldValues[kvp.Key] = kvp.Value;
             }
-            await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, key);
+            await RulesService.EvaluateRulesAsync(Payload.Key, pages, fieldValues, key);
             StateHasChanged();
         }
     }

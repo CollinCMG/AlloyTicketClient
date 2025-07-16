@@ -51,10 +51,9 @@ namespace AlloyTicketClient.Components.Pages
             var emptyJson = JsonDocument.Parse("{}").RootElement;
             formModalPayload = new RequestActionPayload
             {
-                FormId = btn.FormId,
+                Key = new RequestActionKey { FormId = btn.FormId, ObjectId = btn.ObjectId },
                 Data = emptyJson,
                 CategoryId = btn.CategoryId,
-                ObjectId = btn.ObjectId,
                 Route = btn.Route
             };
             showFormModal = true;
