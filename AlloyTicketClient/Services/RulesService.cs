@@ -53,9 +53,23 @@ namespace AlloyTicketClient.Services
 
         public async Task UpdateRuleAsync(RuleConfig rule)
         {
-            _db.AlloyTicketRules.Update(rule);
-            await _db.SaveChangesAsync();
-            InvalidateRuleCache(rule.FormId);
+            var existingRule = await _db.AlloyTicketRules.FirstOrDefaultAsync(r => r.RuleId == rule.RuleId);
+            if (existingRule != null)
+            {
+                // Update properties
+                existingRule.FormId = rule.FormId;
+                existingRule.FormName = rule.FormName;
+                existingRule.TriggerField = rule.TriggerField;
+                existingRule.TriggerFieldLabel = rule.TriggerFieldLabel;
+                existingRule.TriggerValue = rule.TriggerValue;
+                existingRule.Action = rule.Action;
+                existingRule.TargetList = rule.TargetList;
+                existingRule.TargetFieldLabels = rule.TargetFieldLabels;
+                existingRule.IsSet = rule.IsSet;
+                // Add any other properties that need to be updated
+                await _db.SaveChangesAsync();
+                InvalidateRuleCache(rule.FormId);
+            }
         }
 
         public async Task RemoveRuleAsync(Guid ruleId)

@@ -1,5 +1,6 @@
 using AlloyTicketClient.Models;
 using Microsoft.AspNetCore.Components;
+using System.Text.Json;
 
 namespace AlloyTicketClient.Components.Pages
 {
@@ -46,10 +47,12 @@ namespace AlloyTicketClient.Components.Pages
         private void ShowDynamicButton(DynamicButtonConfig btn)
         {
             formModalTitle = btn.Name + " Request";
+            // Create an empty JSON object for Data
+            var emptyJson = JsonDocument.Parse("{}").RootElement;
             formModalPayload = new RequestActionPayload
             {
                 FormId = btn.FormId,
-                Data = new Dictionary<string, object?>(),
+                Data = emptyJson,
                 CategoryId = btn.CategoryId,
                 Route = btn.Route
             };

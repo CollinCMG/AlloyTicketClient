@@ -4,6 +4,7 @@ using AlloyTicketClient.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.JSInterop;
+using System.Text.Json;
 
 namespace AlloyTicketClient.Components.Pages
 {
@@ -34,8 +35,17 @@ namespace AlloyTicketClient.Components.Pages
         {
             if (Show && Payload != null && Guid.TryParse(Payload.FormId, out var formId))
             {
-                if (Payload.Data is Dictionary<string, object?> data)
-                    fieldValues = data;
+                // Always treat Data as JsonElement and try to deserialize if it's an object
+                if (Payload.Data.ValueKind == JsonValueKind.Object)
+                {
+                    try
+                    {
+                        var dict = JsonSerializer.Deserialize<Dictionary<string, object?>>(Payload.Data.GetRawText());
+                        if (dict != null)
+                            fieldValues = dict;
+                    }
+                    catch { /* ignore deserialization errors, fallback to empty */ }
+                }
                 if (lastLoadedFormId != formId || pages == null)
                 {
                     isLoading = true;
@@ -82,9 +92,12 @@ namespace AlloyTicketClient.Components.Pages
                 {
                     FormDataMapperService.SetDefaultsForHiddenRequiredFields(pages, fieldValues);
                     var nameKeyed = FormDataMapperService.MapFieldValuesToNameKeyed(pages, fieldValues);
-                    Payload.Data = nameKeyed;
-                    var json = System.Text.Json.JsonSerializer.Serialize(Payload, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-                    await JSRuntime.InvokeVoidAsync("alert", json);
+                    // Convert the dictionary to JsonElement
+                    var json = JsonSerializer.Serialize(nameKeyed);
+                    Payload.Data = JsonDocument.Parse(json).RootElement;
+                    // Call AlloyApiService and show the result
+                    var (success, message) = await AlloyApiService.PostAsync(Payload);
+                    await JSRuntime.InvokeVoidAsync("alert", $"API call result: {message}");
                 }
             }
             finally
