@@ -7,17 +7,10 @@
 
 @if (Show)
 {
-    <div class="modal-overlay" @onclick="HandleOverlayClick">
-        <div class="modal-dialog" @onclick:stopPropagation>
-            <div class="modal-header modal-header-flex">
-                <h2>@Title</h2>
-                <button class="modal-close" @onclick="HandleClose">&times;</button>
-            </div>
-            <div class="modal-content modal-content-flex">
+
+          
                 <RequestForm Show="Show" Title="@Title" Payload="@Payload" OnClose="OnClose" />
-            </div>
-        </div>
-    </div>
+ 
 }
 @if (showCancelConfirm)
 {
