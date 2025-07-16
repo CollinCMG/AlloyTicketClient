@@ -46,5 +46,6 @@ namespace AlloyTicketClient.Models
     {
         public string ElementDefinition { get; set; } = string.Empty;
         public int SortOrder { get; set; }
+        public AttachmentConfig? Config { get; set; } // Parsed config from XML
     }
 }

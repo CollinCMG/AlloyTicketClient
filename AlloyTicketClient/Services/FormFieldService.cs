@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Data.Common;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 public class DropdownOptionDto
 {
@@ -299,6 +300,47 @@ public class FormFieldService
         };
     }
 
+    private AttachmentConfig? ParseAttachmentConfig(string? xml)
+    {
+        if (string.IsNullOrWhiteSpace(xml)) return null;
+        try
+        {
+            var doc = XDocument.Parse(xml);
+            var config = new AttachmentConfig();
+            foreach (var item in doc.Descendants("ITEM"))
+            {
+                var name = item.Attribute("Name")?.Value;
+                var value = item.Attribute("Value")?.Value;
+                switch (name)
+                {
+                    case "Caption":
+                        config.Caption = value ?? string.Empty;
+                        break;
+                    case "ForProgram":
+                        config.ForProgram = value == "true";
+                        break;
+                    case "Mandatory":
+                        config.Mandatory = value == "true";
+                        break;
+                    case "ReadOnly":
+                        config.ReadOnly = value == "true";
+                        break;
+                    case "InclFiles":
+                        config.InclFiles = value == "true";
+                        break;
+                    case "InclExisting":
+                        config.InclExisting = value == "true";
+                        break;
+                }
+            }
+            return config;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private IPageItem? MapToPageItem(dynamic x)
     {
         if (x.ElementType == null)
@@ -332,7 +374,8 @@ public class FormFieldService
             return new AttachmentInputDto
             {
                 ElementDefinition = x.ElementDefinition,
-                SortOrder = x.SortOrder
+                SortOrder = x.SortOrder,
+                Config = ParseAttachmentConfig(x.ElementDefinition)
             };
         }
         else

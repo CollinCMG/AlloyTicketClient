@@ -273,8 +273,17 @@
                                                 else if (item is AttachmentInputDto attachment)
                                                 {
                                                     var attachmentKey = $"attachment_{pages.IndexOf(p)}_{p.Items.IndexOf(item)}";
+                                                    var caption = attachment.Config?.Caption ?? "Attachment";
+                                                    var isRequired = attachment.Config?.Mandatory == true;
+                                                    var isReadOnly = attachment.Config?.ReadOnly == true;
                                                     <div class="form-col">
-                                                        <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" />
+                                                        <h4>
+                                                            @caption
+                                                            <span class="required" title="Required">
+                                                                @(isRequired ? "*" : "\u00A0")
+                                                            </span>
+                                                        </h4>
+                                                        <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" disabled="@isReadOnly" />
                                                     </div>
                                                 }
                                             }
