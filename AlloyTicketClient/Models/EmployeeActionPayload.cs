@@ -19,7 +19,7 @@ namespace AlloyTicketClient.Models
     {
         public RequestActionKey Key { get; set; } = new RequestActionKey();
         public JsonElement Data { get; set; } 
-        public string CategoryId { get; set; }
+        public string ObjectId { get; set; }
         public string Route { get; set; }
     }
 }
