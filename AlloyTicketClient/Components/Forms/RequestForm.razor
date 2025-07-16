@@ -197,7 +197,9 @@
         var currentRow = new List<IPageItem>();
         foreach (var item in items)
         {
-            if (item is FieldInputDto fieldInput && (fieldInput.FieldType == FieldType.Memo || (fieldInput.DefinitionID != null && modifyAppsTriggerFields.Contains(fieldInput.DefinitionID.ToString()))))
+            // Only FieldTextDto (ElementType 1) and AttachmentInputDto (ElementType 2) always get their own row
+            if (item is FieldTextDto || item is AttachmentInputDto ||
+                (item is FieldInputDto fieldInput && (fieldInput.FieldType == FieldType.Memo || (fieldInput.DefinitionID != null && modifyAppsTriggerFields.Contains(fieldInput.DefinitionID.ToString())))))
             {
                 if (currentRow.Count > 0)
                 {
@@ -227,7 +229,7 @@
     <div class="modal-overlay" @onclick="HandleOverlayClick">
         <div class="modal-dialog" @onclick:stopPropagation>
             <div class="modal-header modal-header-flex">
-                <h2>@Title</h2>
+                <h1>@Title</h1>
                 <button class="modal-close" @onclick="HandleClose">&times;</button>
             </div>
             <div class="modal-content modal-content-flex">
@@ -252,39 +254,81 @@
                                         <div class="form-row">
                                             @foreach (var item in row)
                                             {
-                                                if (item is FieldInputDto fieldInput)
+                                                if (item is FieldInputDto field)
                                                 {
-                                                    var fieldKey = fieldInput.DefinitionID?.ToString();
-                                                    if (!fieldInput.IsHidden)
+                                                    var fieldKey = field.DefinitionID?.ToString();
+                                                    if (!field.IsHidden)
                                                     {
-                                                        var isTextarea = fieldInput.FieldType == FieldType.Memo;
-                                                        <div class="form-col@(isTextarea ? " textarea-col" : "")">
-                                                            <FieldInput @key="fieldInput.DefinitionID"
-                                                                        Field="@(FormDataMapperService.MapToFormFieldDto(fieldInput))"
-                                                                        Value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : null)"
-                                                                        OnValueChanged="@(val => OnFieldValueChanged(val, fieldKey))" />
-                                                        </div>
+                                                        if (field.FieldType == FieldType.Input && !string.IsNullOrWhiteSpace(field.FieldLabel))
+                                                        {
+                                                        
+                                                                var isTextarea = field.FieldType == FieldType.Memo;
+                                                                <div class="form-col@(isTextarea ? " textarea-col" : "")">
+                                                                    <FieldInput @key="field.DefinitionID"
+                                                                                Field="@(FormDataMapperService.MapToFormFieldDto(field))"
+                                                                                Value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : null)"
+                                                                                OnValueChanged="@(val => OnFieldValueChanged(val, fieldKey))" />
+                                                                </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            var isTextarea = field.FieldType == FieldType.Memo;
+                                                            <div class="form-col@(isTextarea ? " textarea-col" : "")">
+                                                                <FieldInput @key="field.DefinitionID"
+                                                                            Field="@(FormDataMapperService.MapToFormFieldDto(field))"
+                                                                            Value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : null)"
+                                                                            OnValueChanged="@(val => OnFieldValueChanged(val, fieldKey))" />
+                                                            </div>
+                                                        }
                                                     }
                                                 }
                                                 else if (item is FieldTextDto fieldText)
                                                 {
-                                                    <div class="form-col field-text">@FormDataMapperService.GetTextValue(fieldText.ElementDefinition)</div>
+                                                    var (text, url) = FormDataMapperService.GetTextAndUrl(fieldText.ElementDefinition);
+                                                    // Move subheader outside form-col to take full row
+                                                    <div class="subheader-accent" style="width:100%;display:block;">
+                                                        @if (!string.IsNullOrWhiteSpace(url))
+                                                        {
+                                                            <a href="@url" target="_blank">@text</a>
+                                                        }
+                                                        else
+                                                        {
+                                                            <h4 style="margin:0;">@text</h4>
+                                                        }
+                                                    </div>
                                                 }
                                                 else if (item is AttachmentInputDto attachment)
                                                 {
-                                                    var attachmentKey = $"attachment_{pages.IndexOf(p)}_{p.Items.IndexOf(item)}";
-                                                    var caption = attachment.Config?.Caption ?? "Attachment";
-                                                    var isRequired = attachment.Config?.Mandatory == true;
-                                                    var isReadOnly = attachment.Config?.ReadOnly == true;
-                                                    <div class="form-col">
-                                                        <h4>
-                                                            @caption
-                                                            <span class="required" title="Required">
-                                                                @(isRequired ? "*" : "\u00A0")
-                                                            </span>
-                                                        </h4>
-                                                        <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" disabled="@isReadOnly" />
-                                                    </div>
+                                                    var (text, url) = FormDataMapperService.GetTextAndUrl(attachment.ElementDefinition);
+                                                    if (!string.IsNullOrWhiteSpace(text))
+                                                    {
+                                                        <div class="form-col field-text">
+                                                            @if (!string.IsNullOrWhiteSpace(url))
+                                                            {
+                                                                <a href="@url" target="_blank">@text</a>
+                                                            }
+                                                            else
+                                                            {
+                                                                @text
+                                                            }
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        var attachmentKey = $"attachment_{pages.IndexOf(p)}_{p.Items.IndexOf(item)}";
+                                                        var caption = attachment.Config?.Caption ?? "Attachment";
+                                                        var isRequired = attachment.Config?.Mandatory == true;
+                                                        var isReadOnly = attachment.Config?.ReadOnly == true;
+                                                        <div class="form-col">
+                                                            <h4>
+                                                                @caption
+                                                                <span class="required" title="Required">
+                                                                    @(isRequired ? "*" : "\u00A0")
+                                                                </span>
+                                                            </h4>
+                                                            <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" disabled="@isReadOnly" />
+                                                        </div>
+                                                    }
                                                 }
                                             }
                                         </div>

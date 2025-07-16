@@ -145,5 +145,27 @@ namespace AlloyTicketClient.Services
                 return Regex.Replace(elementDefinition, "<.*?>", string.Empty).Trim();
             }
         }
+
+        /// <summary>
+        /// Extracts text and URL from an XML element definition, for text/attachment rendering.
+        /// </summary>
+        public static (string? Text, string? Url) GetTextAndUrl(string? elementDefinition)
+        {
+            if (string.IsNullOrWhiteSpace(elementDefinition))
+                return (null, null);
+            try
+            {
+                var doc = XDocument.Parse(elementDefinition);
+                var textItem = doc.Descendants("ITEM").FirstOrDefault(e => (string?)e.Attribute("Name") == "Text");
+                var urlItem = doc.Descendants("ITEM").FirstOrDefault(e => (string?)e.Attribute("Name") == "URL");
+                var text = textItem?.Attribute("Value")?.Value;
+                var url = urlItem?.Attribute("Value")?.Value;
+                return (text, url);
+            }
+            catch
+            {
+                return (null, null);
+            }
+        }
     }
 }
