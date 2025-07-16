@@ -25,6 +25,7 @@ namespace AlloyTicketClient.Contexts
             {
                 entity.HasKey(e => e.RuleId);
                 entity.Property(e => e.FormId).IsRequired();
+                entity.Property(e => e.ObjectId).IsRequired();
                 entity.Property(e => e.TriggerField).IsRequired();
                 entity.Property(e => e.Action).IsRequired();
                 entity.Property(e => e.FormName);

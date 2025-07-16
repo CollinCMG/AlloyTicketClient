@@ -22,7 +22,7 @@
             <div class="rules-list-section mt-4">
                 @foreach (var group in RulesList.GroupBy(r => r.FormId))
                 {
-                    var formName = Forms.FirstOrDefault(f => f.FormId == group.Key)?.Name ?? group.First().FormName ?? group.Key;
+                    var formName = Forms.FirstOrDefault(f => f.FormId == group.Key)?.Name ?? group.First().FormName ?? group.Key.ToString();
                     <div class="rules-group mb-4 p-3 border rounded bg-light">
                         <h5 class="mb-3">@formName <span style="font-size:small;color:gray">(FormId: @group.Key)</span></h5>
                         <table class="table table-sm table-bordered mb-0">
@@ -77,11 +77,11 @@
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label class="form-label">Request (Form)</label>
-                                        <select class="form-select" @onchange="OnModalFormSelected" value="@ModalSelectedFormId" disabled="@IsEditMode">
+                                        <select class="form-select" @onchange="OnModalFormSelected" value="@ModalSelectedObjectId" disabled="@IsEditMode">
                                             <option value="">-- Select a Request --</option>
                                             @foreach (var form in Forms)
                                             {
-                                                <option value="@form.FormId">@form.Name</option>
+                                                <option value="@form.ObjectId">@form.Name</option>
                                             }
                                         </select>
                                     </div>

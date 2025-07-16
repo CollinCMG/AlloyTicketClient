@@ -30,12 +30,14 @@
 
         if (!string.IsNullOrWhiteSpace(Payload?.ObjectId))
         {
-            formId = await formFieldService.GetFormId(Payload.ObjectId);
+            Payload.FormId = await formFieldService.GetFormId(Payload.ObjectId);
+            formId = Payload.FormId;
         }
-        else if (!string.IsNullOrWhiteSpace(Payload?.FormId) && Guid.TryParse(Payload.FormId, out var formGuid))
+        else if (Payload.FormId != Guid.Empty)
         {
-            formId = formGuid;
+            formId = Payload.FormId;
         }
+
         if (Show && Payload != null && formId != null)
         {
             if (Payload.Data.ValueKind == System.Text.Json.JsonValueKind.Object)

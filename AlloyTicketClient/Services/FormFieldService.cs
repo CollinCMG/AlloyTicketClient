@@ -22,7 +22,7 @@ public class FormFieldService
         _db = db;
     }
 
-    public async Task<Guid?> GetFormId(string objectId)
+    public async Task<Guid> GetFormId(string objectId)
     {
         var sql = @"SELECT e.Form_ID FROM cfgLCEvents e INNER JOIN cfgLCActionList al ON e.EventID = al.EventID INNER JOIN Service_Request_Fulfillment_List fl ON fl.Request_Create_Action_ID = al.id INNER JOIN Service_Catalog_Item_List cil ON fl.ID = cil.Request_Fulfillment_ID WHERE OID = @ObjId";
         using (var command = _db.Database.GetDbConnection().CreateCommand())
@@ -41,7 +41,7 @@ public class FormFieldService
                 }
             }
         }
-        return null;
+        return Guid.Empty;
     }
 
     public async Task<List<PageDto>> GetFormPagesAsync(Guid formId)

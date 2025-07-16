@@ -12,7 +12,7 @@ namespace AlloyTicketClient.Services
         private readonly UserRoleService _userRoleService;
         private readonly IMemoryCache _cache;
         private static readonly string AllRulesCacheKey = "AlloyTicketRules_All";
-        private static string FormRulesCacheKey(string formId) => $"AlloyTicketRules_{formId}";
+        private static string FormRulesCacheKey(Guid formId) => $"AlloyTicketRules_{formId}";
 
         public RulesService(AlloyTicketRulesDbContext db, UserRoleService userRoleService, IMemoryCache cache)
         {
@@ -21,7 +21,7 @@ namespace AlloyTicketClient.Services
             _cache = cache;
         }
 
-        public async Task<List<RuleConfig>> GetRulesForFormAsync(string formId)
+        public async Task<List<RuleConfig>> GetRulesForFormAsync(Guid formId)
         {
             var cacheKey = FormRulesCacheKey(formId);
             if (!_cache.TryGetValue(cacheKey, out List<RuleConfig> rules))
@@ -58,6 +58,7 @@ namespace AlloyTicketClient.Services
             {
                 // Update properties
                 existingRule.FormId = rule.FormId;
+                existingRule.ObjectId = rule.ObjectId;
                 existingRule.FormName = rule.FormName;
                 existingRule.TriggerField = rule.TriggerField;
                 existingRule.TriggerFieldLabel = rule.TriggerFieldLabel;
@@ -83,12 +84,12 @@ namespace AlloyTicketClient.Services
             }
         }
 
-        public async Task<List<string>> GetAllFormIdsAsync()
+        public async Task<List<Guid>> GetAllFormIdsAsync()
         {
             return await _db.AlloyTicketRules.Select(r => r.FormId).Distinct().ToListAsync();
         }
 
-        public async Task EvaluateRulesAsync(string formId, List<PageDto> pages, Dictionary<string, object?> fieldValues, string? changedField = null)
+        public async Task EvaluateRulesAsync(Guid formId, List<PageDto> pages, Dictionary<string, object?> fieldValues, string? changedField = null)
         {
             var rules = await GetRulesForFormAsync(formId);
 
@@ -216,7 +217,7 @@ namespace AlloyTicketClient.Services
             }
         }
 
-        public async Task<RuleEvaluationResult> EvaluateModifyAppsRulesAsync(string formId, Dictionary<string, object?> fieldValues)
+        public async Task<RuleEvaluationResult> EvaluateModifyAppsRulesAsync(Guid formId, Dictionary<string, object?> fieldValues)
         {
             var rules = await GetRulesForFormAsync(formId);
             var modifyAppsRules = rules.Where(r => r.Action == FilterAction.ModifyApps).ToList();
@@ -270,7 +271,7 @@ namespace AlloyTicketClient.Services
             };
         }
 
-        private void InvalidateRuleCache(string formId)
+        private void InvalidateRuleCache(Guid formId)
         {
             _cache.Remove(FormRulesCacheKey(formId));
             _cache.Remove(AllRulesCacheKey);

@@ -10,7 +10,8 @@ namespace AlloyTicketClient.Components.Pages
         // Represents a form for display in the rules UI
         private class FormInfo
         {
-            public string FormId { get; set; } = string.Empty;
+            public Guid FormId { get; set; }
+            public string ObjectId { get; set; } = string.Empty;
             public string Name { get; set; } = string.Empty;
         }
 
@@ -28,7 +29,8 @@ namespace AlloyTicketClient.Components.Pages
         // Modal state
         private bool ShowRuleModal, IsEditMode;
         private RuleConfig? EditingRule;
-        private string? ModalSelectedFormId, ModalSelectedFieldId, ModalTriggerValue;
+        private string? ModalSelectedObjectId, ModalSelectedFieldId, ModalTriggerValue;
+        private Guid ModalSelectedFormId;
         private FilterAction ModalSelectedAction { get; set; } = FilterAction.Hide;
         private List<string> ModalSelectedTargetFieldIds { get; set; } = new();
         private List<FieldInputDto> ModalFormFields { get; set; } = new();
@@ -40,8 +42,9 @@ namespace AlloyTicketClient.Components.Pages
             if (rule == null)
             {
                 EditingRule = null;
-                ModalSelectedFormId = null;
+                ModalSelectedFormId = Guid.Empty;
                 ModalSelectedFieldId = null;
+                ModalSelectedObjectId = null;
                 ModalSelectedAction = FilterAction.Hide;
                 ModalSelectedTargetFieldIds.Clear();
                 ModalFormFields.Clear();
@@ -50,14 +53,15 @@ namespace AlloyTicketClient.Components.Pages
             else
             {
                 EditingRule = RulesList.FirstOrDefault(r => r.RuleId == rule.RuleId);
-                ModalSelectedFormId = EditingRule?.FormId;
+                ModalSelectedFormId = EditingRule?.FormId ?? Guid.Empty;
                 ModalSelectedFieldId = EditingRule?.TriggerField;
+                ModalSelectedObjectId = EditingRule?.ObjectId;
                 ModalSelectedAction = EditingRule?.Action ?? FilterAction.Hide;
                 ModalSelectedTargetFieldIds = EditingRule?.TargetList.Select(t => t.FieldId).ToList() ?? new();
                 ModalTriggerValue = EditingRule?.TriggerValue;
-                if (!string.IsNullOrEmpty(ModalSelectedFormId) && Guid.TryParse(ModalSelectedFormId, out var formGuid))
+                if (ModalSelectedFormId != Guid.Empty)
                 {
-                    var pages = await FormFieldService.GetFormPagesAsync(formGuid);
+                    var pages = await FormFieldService.GetFormPagesAsync(ModalSelectedFormId);
                     ModalFormFields = pages.SelectMany(p => p.Items).OfType<FieldInputDto>().ToList();
                 }
             }
@@ -71,13 +75,19 @@ namespace AlloyTicketClient.Components.Pages
 
         private async Task OnModalFormSelected(ChangeEventArgs e)
         {
-            ModalSelectedFormId = e.Value?.ToString();
+            ModalSelectedObjectId = e.Value?.ToString();
             ModalSelectedFieldId = null;
+
+            if (!string.IsNullOrWhiteSpace(ModalSelectedObjectId))
+            {
+                ModalSelectedFormId = await FormFieldService.GetFormId(ModalSelectedObjectId);
+            }
+
             ModalSelectedTargetFieldIds.Clear();
             ModalFormFields.Clear();
-            if (!string.IsNullOrEmpty(ModalSelectedFormId) && Guid.TryParse(ModalSelectedFormId, out var formGuid))
+            if (ModalSelectedFormId != Guid.Empty)
             {
-                var pages = await FormFieldService.GetFormPagesAsync(formGuid);
+                var pages = await FormFieldService.GetFormPagesAsync(ModalSelectedFormId);
                 ModalFormFields = pages.SelectMany(p => p.Items).OfType<FieldInputDto>().ToList();
             }
             StateHasChanged();
@@ -93,17 +103,18 @@ namespace AlloyTicketClient.Components.Pages
                 ModalSelectedTargetFieldIds = new();
         }
 
-        private bool CanAddRuleFromModal =>
-            !string.IsNullOrEmpty(ModalSelectedFormId) &&
+        private bool CanAddRuleFromModal => ModalSelectedFormId != Guid.Empty &&
             !string.IsNullOrEmpty(ModalSelectedFieldId) &&
             ModalSelectedTargetFieldIds.Any();
 
         private async Task SaveRuleFromModal()
         {
-            if (!CanAddRuleFromModal) return;
+            if (!CanAddRuleFromModal)
+                return;
+            
             var triggerFieldLabel = GetModalFieldLabelById(ModalSelectedFieldId);
             var targetFieldLabels = ModalSelectedTargetFieldIds.Select(GetModalFieldLabelById).ToList();
-            var formName = Forms.FirstOrDefault(f => f.FormId == ModalSelectedFormId)?.Name ?? ModalSelectedFormId;
+            var formName = Forms.FirstOrDefault(f => f.FormId == ModalSelectedFormId)?.Name ?? ModalSelectedFormId.ToString();
             var targetList = ModalSelectedTargetFieldIds
                 .Select(id =>
                 {
@@ -119,6 +130,7 @@ namespace AlloyTicketClient.Components.Pages
             if (IsEditMode && EditingRule != null)
             {
                 EditingRule.FormId = ModalSelectedFormId;
+                EditingRule.ObjectId = ModalSelectedObjectId;
                 EditingRule.FormName = formName;
                 EditingRule.TriggerField = ModalSelectedFieldId;
                 EditingRule.TriggerFieldLabel = triggerFieldLabel;
@@ -134,6 +146,7 @@ namespace AlloyTicketClient.Components.Pages
                 {
                     RuleId = Guid.NewGuid(),
                     FormId = ModalSelectedFormId,
+                    ObjectId = ModalSelectedObjectId,
                     FormName = formName,
                     TriggerField = ModalSelectedFieldId,
                     TriggerFieldLabel = triggerFieldLabel,
@@ -188,7 +201,7 @@ namespace AlloyTicketClient.Components.Pages
                 {
                     foreach (var btn in page.Buttons)
                     {
-                        Forms.Add(new FormInfo { FormId = btn.FormId, Name = btn.Name });
+                        Forms.Add(new FormInfo { FormId = btn.FormId, ObjectId = btn.ObjectId, Name = btn.Name });
                     }
                 }
             }

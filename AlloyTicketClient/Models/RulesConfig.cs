@@ -11,7 +11,8 @@ namespace AlloyTicketClient.Models
 
     public class RuleConfig
     {
-        public string FormId { get; set; } = string.Empty;
+        public Guid FormId { get; set; }
+        public string ObjectId { get; set; } = string.Empty;
         public Guid RuleId { get; set; }
         public string? FormName { get; set; } // Display name for the form
         public string TriggerField { get; set; } = string.Empty;

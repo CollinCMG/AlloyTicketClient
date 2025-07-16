@@ -39,9 +39,9 @@ namespace AlloyTicketClient.Components.Pages
                 isLoading = true;
                 formId = objectGuid;
             }
-            else if (!string.IsNullOrWhiteSpace(Payload?.FormId) && Guid.TryParse(Payload.FormId, out var formGuid))
+            else if (Payload?.FormId != Guid.Empty)
             {
-                formId = formGuid;
+                formId = Payload?.FormId;
             }
             if (Show && Payload != null && formId != null)
             {

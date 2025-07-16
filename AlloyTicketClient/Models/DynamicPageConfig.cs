@@ -2,7 +2,7 @@ namespace AlloyTicketClient.Models
 {
     public class DynamicButtonConfig
     {
-        public string FormId { get; set; } = string.Empty;
+        public Guid FormId { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Route { get; set; } = string.Empty;
         public string CategoryId { get; set; } = string.Empty;
