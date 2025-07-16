@@ -23,7 +23,7 @@ namespace AlloyTicketClient.Contexts
 
             modelBuilder.Entity<RuleConfig>(entity =>
             {
-                entity.HasKey(e => e.RuleId);
+                entity.HasKey(e => new { e.RuleId, e.ObjectId });
                 entity.Property(e => e.FormId).IsRequired();
                 entity.Property(e => e.ObjectId).IsRequired();
                 entity.Property(e => e.TriggerField).IsRequired();

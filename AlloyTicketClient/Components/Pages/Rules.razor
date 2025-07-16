@@ -20,11 +20,12 @@
         @if (RulesList.Any())
         {
             <div class="rules-list-section mt-4">
-                @foreach (var group in RulesList.GroupBy(r => r.FormId))
+                @foreach (var group in RulesList.GroupBy(r => new { r.FormId, r.ObjectId }))
                 {
-                    var formName = Forms.FirstOrDefault(f => f.FormId == group.Key)?.Name ?? group.First().FormName ?? group.Key.ToString();
+                    var formInfo = Forms.FirstOrDefault(f => f.FormId == group.Key.FormId && f.ObjectId == group.Key.ObjectId);
+                    var objectId = formInfo?.ObjectId ?? group.Key.ObjectId;
                     <div class="rules-group mb-4 p-3 border rounded bg-light">
-                        <h5 class="mb-3">@formName <span style="font-size:small;color:gray">(FormId: @group.Key)</span></h5>
+                        <h5 class="mb-3">@objectId <span style="font-size:small;color:gray">(FormId: @group.Key.FormId)</span></h5>
                         <table class="table table-sm table-bordered mb-0">
                             <thead>
                                 <tr>

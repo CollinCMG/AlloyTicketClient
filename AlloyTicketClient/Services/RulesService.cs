@@ -53,7 +53,8 @@ namespace AlloyTicketClient.Services
 
         public async Task UpdateRuleAsync(RuleConfig rule)
         {
-            var existingRule = await _db.AlloyTicketRules.FirstOrDefaultAsync(r => r.RuleId == rule.RuleId);
+            var key = new RuleKey(rule.RuleId, rule.ObjectId);
+            var existingRule = await _db.AlloyTicketRules.FirstOrDefaultAsync(r => r.RuleId == key.RuleId && r.ObjectId == key.ObjectId);
             if (existingRule != null)
             {
                 // Update properties
@@ -73,9 +74,9 @@ namespace AlloyTicketClient.Services
             }
         }
 
-        public async Task RemoveRuleAsync(Guid ruleId)
+        public async Task RemoveRuleAsync(RuleKey key)
         {
-            var rule = await _db.AlloyTicketRules.FirstOrDefaultAsync(r => r.RuleId == ruleId);
+            var rule = await _db.AlloyTicketRules.FirstOrDefaultAsync(r => r.RuleId == key.RuleId && r.ObjectId == key.ObjectId);
             if (rule != null)
             {
                 _db.AlloyTicketRules.Remove(rule);

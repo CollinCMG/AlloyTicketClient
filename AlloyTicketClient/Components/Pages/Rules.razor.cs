@@ -22,9 +22,6 @@ namespace AlloyTicketClient.Components.Pages
         private List<FormInfo> Forms { get; set; } = new();
         private List<RuleConfig> RulesList { get; set; } = new();
         private List<FieldInputDto> FormFields { get; set; } = new();
-        private string? SelectedFormId, SelectedFieldId;
-        private FilterAction SelectedAction { get; set; } = FilterAction.Hide;
-        private List<string> SelectedTargetFieldIds { get; set; } = new();
 
         // Modal state
         private bool ShowRuleModal, IsEditMode;
@@ -171,11 +168,12 @@ namespace AlloyTicketClient.Components.Pages
 
         private async void DeleteRule(RuleConfig rule)
         {
-            if (rule.RuleId != default)
+            if (rule.RuleId != default && !string.IsNullOrEmpty(rule.ObjectId))
             {
-                RulesList.RemoveAll(r => r.RuleId == rule.RuleId);
-                RulesConfig.Instance.Rules.RemoveAll(r => r.RuleId == rule.RuleId);
-                await RulesService.RemoveRuleAsync(rule.RuleId);
+                var key = new RuleKey(rule.RuleId, rule.ObjectId);
+                RulesList.RemoveAll(r => r.RuleId == key.RuleId && r.ObjectId == key.ObjectId);
+                RulesConfig.Instance.Rules.RemoveAll(r => r.RuleId == key.RuleId && r.ObjectId == key.ObjectId);
+                await RulesService.RemoveRuleAsync(key);
             }
             else
             {
@@ -185,12 +183,6 @@ namespace AlloyTicketClient.Components.Pages
             StateHasChanged();
         }
 
-        private string GetFieldLabelById(string? id)
-        {
-            if (string.IsNullOrEmpty(id)) return id ?? string.Empty;
-            var field = FormFields.FirstOrDefault(f => f.DefinitionID?.ToString() == id);
-            return !string.IsNullOrWhiteSpace(field?.FieldLabel) ? field.FieldLabel : (field?.FieldName ?? id);
-        }
 
         protected override async Task OnInitializedAsync()
         {
