@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 using System.Data.Common;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 public class DropdownOptionDto
 {
@@ -19,6 +20,28 @@ public class FormFieldService
     public FormFieldService(AlloyNavigatorDbContext db)
     {
         _db = db;
+    }
+
+    public async Task<Guid?> GetFormId(string objectId)
+    {
+        var sql = @"SELECT e.Form_ID FROM cfgLCEvents e INNER JOIN cfgLCActionList al ON e.EventID = al.EventID INNER JOIN Service_Request_Fulfillment_List fl ON fl.Request_Create_Action_ID = al.id INNER JOIN Service_Catalog_Item_List cil ON fl.ID = cil.Request_Fulfillment_ID WHERE OID = @ObjId";
+        using (var command = _db.Database.GetDbConnection().CreateCommand())
+        {
+            command.CommandText = sql;
+            var param = new SqlParameter("@ObjId", objectId);
+            command.Parameters.Add(param);
+            EnsureConnectionOpen(command);
+            using (var reader = await command.ExecuteReaderAsync())
+            {
+                if (await reader.ReadAsync())
+                {
+                    var formIdObj = reader["Form_ID"];
+                    if (formIdObj != DBNull.Value && Guid.TryParse(formIdObj.ToString(), out var formId))
+                        return formId;
+                }
+            }
+        }
+        return null;
     }
 
     public async Task<List<PageDto>> GetFormPagesAsync(Guid formId)

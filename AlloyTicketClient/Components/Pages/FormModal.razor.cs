@@ -15,7 +15,7 @@ namespace AlloyTicketClient.Components.Pages
         [Parameter] public RequestActionPayload? Payload { get; set; }
         [Parameter] public EventCallback OnClose { get; set; }
 
-        [Inject] private FormFieldService FormFieldService { get; set; } = default!;
+        [Inject] private FormFieldService formFieldService { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
         [Inject] private AlloyApiService AlloyApiService { get; set; } = default!;
         [Inject] private RulesService RulesService { get; set; } = default!;
@@ -33,7 +33,14 @@ namespace AlloyTicketClient.Components.Pages
         #region Lifecycle
         protected override async Task OnParametersSetAsync()
         {
-            if (Show && Payload != null && Guid.TryParse(Payload.FormId, out var formId))
+            Guid? formId = null;
+            
+            if (!string.IsNullOrWhiteSpace(Payload?.ObjectId))
+            {
+                formId = await formFieldService.GetFormId(Payload.ObjectId);
+            }
+
+            if (Show && Payload != null && formId != null)
             {
                 // Always treat Data as JsonElement and try to deserialize if it's an object
                 if (Payload.Data.ValueKind == JsonValueKind.Object)
@@ -50,7 +57,7 @@ namespace AlloyTicketClient.Components.Pages
                 {
                     isLoading = true;
                     pages = null;
-                    pages = await FormFieldService.GetFormPagesAsync(formId);
+                    pages = await formFieldService.GetFormPagesAsync(formId.Value);
                     lastLoadedFormId = formId;
                     ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
                     var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);

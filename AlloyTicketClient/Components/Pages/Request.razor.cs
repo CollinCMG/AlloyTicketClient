@@ -54,6 +54,7 @@ namespace AlloyTicketClient.Components.Pages
                 FormId = btn.FormId,
                 Data = emptyJson,
                 CategoryId = btn.CategoryId,
+                ObjectId = btn.ObjectId,
                 Route = btn.Route
             };
             showFormModal = true;
