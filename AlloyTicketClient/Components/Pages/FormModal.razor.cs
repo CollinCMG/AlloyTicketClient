@@ -20,15 +20,11 @@ namespace AlloyTicketClient.Components.Pages
         [Inject] private AlloyApiService AlloyApiService { get; set; } = default!;
         [Inject] private RulesService RulesService { get; set; } = default!;
 
-        private bool isLoading = false;
         private List<PageDto>? pages;
         private Dictionary<string, object?> fieldValues = new();
         private Guid? lastLoadedFormId = null;
-        private bool isSubmitting = false;
         private bool showCancelConfirm = false;
         private bool closeSidebarOnConfirm = false;
-        private RuleEvaluationResult? ruleResult;
-        private List<string> modifyAppsTriggerFields = new();
 
         #region Lifecycle
         protected override async Task OnParametersSetAsync()
@@ -36,7 +32,6 @@ namespace AlloyTicketClient.Components.Pages
             Guid? formId = null;
             if (!string.IsNullOrWhiteSpace(Payload?.ObjectId) && Guid.TryParse(Payload.ObjectId, out var objectGuid))
             {
-                isLoading = true;
                 formId = objectGuid;
             }
             else if (Payload?.FormId != Guid.Empty)
@@ -62,13 +57,8 @@ namespace AlloyTicketClient.Components.Pages
                     lastLoadedFormId = formId;
                     await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
                     var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
-                    modifyAppsTriggerFields = rules
-                        .Where(r => r.Action == FilterAction.ModifyApps)
-                        .Select(r => r.TriggerField)
-                        .Where(x => !string.IsNullOrWhiteSpace(x))
-                        .ToList();
+               
                     await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, null);
-                    isLoading = false;
                     StateHasChanged();
                 }
             }
@@ -76,10 +66,7 @@ namespace AlloyTicketClient.Components.Pages
             {
                 fieldValues.Clear();
                 pages = null;
-                isLoading = false;
                 lastLoadedFormId = null;
-                ruleResult = null;
-                modifyAppsTriggerFields = new();
             }
         }
         #endregion
@@ -87,7 +74,6 @@ namespace AlloyTicketClient.Components.Pages
         #region Event Handlers
         protected async Task SubmitForm()
         {
-            isSubmitting = true;
             StateHasChanged();
             try
             {
@@ -105,7 +91,6 @@ namespace AlloyTicketClient.Components.Pages
             }
             finally
             {
-                isSubmitting = false;
                 StateHasChanged();
             }
         }
@@ -197,7 +182,7 @@ namespace AlloyTicketClient.Components.Pages
             var currentRow = new List<IPageItem>();
             foreach (var item in items)
             {
-                if (item is FieldInputDto fieldInput && (fieldInput.FieldType == FieldType.Memo || (fieldInput.DefinitionID != null && modifyAppsTriggerFields.Contains(fieldInput.DefinitionID.ToString()))))
+                if (item is FieldInputDto fieldInput && (fieldInput.FieldType == FieldType.Memo || (fieldInput.DefinitionID != null)))
                 {
                     if (currentRow.Count > 0)
                     {
