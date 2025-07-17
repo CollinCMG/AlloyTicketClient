@@ -8,6 +8,7 @@
 @inject FormFieldService formFieldService
 @inject AlloyApiService AlloyApiService
 @inject RulesService RulesService
+@inject AttachmentService AttachmentService
 @inject IJSRuntime JSRuntime
 
 @code {
@@ -120,12 +121,15 @@
         }
     }
 
-    private async Task OnAttachmentChanged(InputFileChangeEventArgs e, string key)
+    protected async Task OnAttachmentChanged(InputFileChangeEventArgs e, string key)
     {
         var files = e.GetMultipleFiles();
-
         if (files.Count > 0)
-            fieldValues[key] = files;
+        {
+            var fileString = await AttachmentService.CreateAttachmentStringContentAsync(files);
+
+            fieldValues[key] = fileString;
+        }
         else
             fieldValues.Remove(key);
 
@@ -136,6 +140,7 @@
             StateHasChanged();
         }
     }
+
 
     private void ClearAttachment(string key)
     {

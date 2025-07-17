@@ -1,10 +1,6 @@
 using Microsoft.AspNetCore.Components.Forms;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
-using System.Net.Http;
-using System.Text.Json;
 using System.Text;
+using System.Text.Json;
 
 namespace AlloyTicketClient.Services
 {
@@ -18,16 +14,23 @@ namespace AlloyTicketClient.Services
             var attachments = new List<dynamic>();
             foreach (var file in files)
             {
-                using (var memoryStream = new MemoryStream())
+                try
                 {
-                    await file.OpenReadStream().CopyToAsync(memoryStream);
-                    var attachment = new
+                    using (var memoryStream = new MemoryStream())
                     {
-                        FileName = file.Name,
-                        Description = file.ContentType,
-                        Data = memoryStream.ToArray()
-                    };
-                    attachments.Add(attachment);
+                        await file.OpenReadStream().CopyToAsync(memoryStream);
+                        var attachment = new
+                        {
+                            FileName = file.Name,
+                            Description = file.ContentType,
+                            Data = memoryStream.ToArray()
+                        };
+                        attachments.Add(attachment);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
                 }
             }
             return attachments;

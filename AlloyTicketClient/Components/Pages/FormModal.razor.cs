@@ -57,7 +57,7 @@ namespace AlloyTicketClient.Components.Pages
                     lastLoadedFormId = formId;
                     await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
                     var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
-               
+
                     await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, null);
                     StateHasChanged();
                 }
@@ -103,21 +103,6 @@ namespace AlloyTicketClient.Components.Pages
             {
                 await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
                 await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, fieldKey);
-                StateHasChanged();
-            }
-        }
-
-        protected async Task OnAttachmentChanged(InputFileChangeEventArgs e, string key)
-        {
-            if (e.FileCount > 0)
-                fieldValues[key] = e.File;
-            else
-                fieldValues.Remove(key);
-
-            if (Payload != null && pages != null)
-            {
-                await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
-                await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, key);
                 StateHasChanged();
             }
         }
