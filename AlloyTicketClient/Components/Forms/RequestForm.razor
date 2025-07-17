@@ -50,18 +50,14 @@
                     pages = null;
                     pages = await formFieldService.GetFormPagesAsync(Payload.FormId);
                     lastLoadedFormId = Payload.FormId;
-                    ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
+                    await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
                     var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
                     modifyAppsTriggerFields = rules
                         .Where(r => r.Action == FilterAction.ModifyApps)
                         .Select(r => r.TriggerField)
                         .Where(x => !string.IsNullOrWhiteSpace(x))
                         .ToList();
-                    if (ruleResult?.ModifiedApps != null)
-                    {
-                        foreach (var kvp in ruleResult.ModifiedApps)
-                            fieldValues[kvp.Key] = kvp.Value;
-                    }
+
                     await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, null);
                     StateHasChanged();
                 }
@@ -109,13 +105,8 @@
         fieldValues[fieldKey] = value;
         if (Payload != null && pages != null)
         {
-            ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
+            await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
             var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
-            if (rules.Any(r => r.Action == FilterAction.ModifyApps && r.TriggerField == fieldKey) && ruleResult?.ModifiedApps != null)
-            {
-                foreach (var kvp in ruleResult.ModifiedApps)
-                    fieldValues[kvp.Key] = kvp.Value;
-            }
             await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, fieldKey);
             StateHasChanged();
         }
@@ -129,12 +120,7 @@
             fieldValues.Remove(key);
         if (Payload != null && pages != null)
         {
-            ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
-            if (ruleResult?.ModifiedApps != null)
-            {
-                foreach (var kvp in ruleResult.ModifiedApps)
-                    fieldValues[kvp.Key] = kvp.Value;
-            }
+            await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
             await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, key);
             StateHasChanged();
         }
@@ -295,9 +281,9 @@
                                     @foreach (var row in GetFieldRows(p.Items))
                                     {
                                         var isFullWidthRow =
-                                            (row.Count == 1 && row[0] is FieldInputDto fieldInputDto && fieldInputDto.FieldType == FieldType.Memo)
-                                            || (row.Count == 1 && row[0] is FieldTextDto)
-                                            || RowNeedsFullWidth(row);
+                                        (row.Count == 1 && row[0] is FieldInputDto fieldInputDto && fieldInputDto.FieldType == FieldType.Memo)
+                                        || (row.Count == 1 && row[0] is FieldTextDto)
+                                        || RowNeedsFullWidth(row);
                                         var isSingleInputRow = row.Count == 1 && row[0] is FieldInputDto singleInput && singleInput.FieldType != FieldType.Memo;
                                         <div class="form-row@(isFullWidthRow ? " full-width-row" : "")">
                                             @foreach (var item in row)

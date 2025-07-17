@@ -60,18 +60,13 @@ namespace AlloyTicketClient.Components.Pages
                     pages = null;
                     pages = await formFieldService.GetFormPagesAsync(formId.Value);
                     lastLoadedFormId = formId;
-                    ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
+                    await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
                     var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
                     modifyAppsTriggerFields = rules
                         .Where(r => r.Action == FilterAction.ModifyApps)
                         .Select(r => r.TriggerField)
                         .Where(x => !string.IsNullOrWhiteSpace(x))
                         .ToList();
-                    if (ruleResult?.ModifiedApps != null)
-                    {
-                        foreach (var kvp in ruleResult.ModifiedApps)
-                            fieldValues[kvp.Key] = kvp.Value;
-                    }
                     await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, null);
                     isLoading = false;
                     StateHasChanged();
@@ -120,13 +115,7 @@ namespace AlloyTicketClient.Components.Pages
             fieldValues[fieldKey] = value;
             if (Payload != null && pages != null)
             {
-                ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
-                var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
-                if (rules.Any(r => r.Action == FilterAction.ModifyApps && r.TriggerField == fieldKey) && ruleResult?.ModifiedApps != null)
-                {
-                    foreach (var kvp in ruleResult.ModifiedApps)
-                        fieldValues[kvp.Key] = kvp.Value;
-                }
+                await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
                 await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, fieldKey);
                 StateHasChanged();
             }
@@ -141,12 +130,7 @@ namespace AlloyTicketClient.Components.Pages
 
             if (Payload != null && pages != null)
             {
-                ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
-                if (ruleResult?.ModifiedApps != null)
-                {
-                    foreach (var kvp in ruleResult.ModifiedApps)
-                        fieldValues[kvp.Key] = kvp.Value;
-                }
+                await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
                 await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, key);
                 StateHasChanged();
             }

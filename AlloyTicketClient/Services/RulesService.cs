@@ -1,6 +1,7 @@
 using AlloyTicketClient.Contexts;
 using AlloyTicketClient.Enums;
 using AlloyTicketClient.Models;
+using Microsoft.AspNetCore.Rewrite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -217,7 +218,7 @@ namespace AlloyTicketClient.Services
             }
         }
 
-        public async Task<RuleEvaluationResult> EvaluateModifyAppsRulesAsync(Guid formId, Dictionary<string, object?> fieldValues)
+        public async Task EvaluateModifyAppsRulesAsync(Guid formId, Dictionary<string, object?> fieldValues)
         {
             var rules = await GetRulesForFormAsync(formId);
             var modifyAppsRules = rules.Where(r => r.Action == FilterAction.ModifyApps).ToList();
@@ -267,10 +268,11 @@ namespace AlloyTicketClient.Services
                 }
             }
 
-            return new RuleEvaluationResult
+            if (modifiedApps?.Count > 0)
             {
-                ModifiedApps = modifiedApps
-            };
+                foreach (var kvp in modifiedApps)
+                    fieldValues[kvp.Key] = kvp.Value;
+            }
         }
 
         private void InvalidateRuleCache(Guid formId)
