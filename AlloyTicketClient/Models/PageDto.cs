@@ -15,7 +15,15 @@ namespace AlloyTicketClient.Models
 
     public interface IPageItem
     {
+        public Guid? DefinitionID { get; set; }
+
         int SortOrder { get; set; }
+        string FieldName { get; set; }
+        bool IsHidden { get; set; }
+        FieldType? FieldType { get; set; }
+        bool? Mandatory { get; set; }
+
+
     }
 
     public class FieldInputDto : IPageItem
@@ -48,6 +56,11 @@ namespace AlloyTicketClient.Models
         public string ElementDefinition { get; set; } = string.Empty;
         public int SortOrder { get; set; }
         public FieldTextConfig? Config { get; set; } // Parsed config from XML
+        public Guid? DefinitionID { get; set; }
+        public string FieldName { get; set; }
+        public bool IsHidden { get; set; } = false;
+        public FieldType? FieldType { get; set; } = Enums.FieldType.Text;
+        public bool? Mandatory { get; set; } = false;
 
         public static FieldTextConfig? ParseConfigFromXml(string xml)
         {
@@ -77,6 +90,9 @@ namespace AlloyTicketClient.Models
         // Added for file upload mapping
         public string? UploadedFileName { get; set; }
         public string? UploadedFileContentBase64 { get; set; }
+        public bool IsHidden { get; set; } = false;
+        public FieldType? FieldType { get; set; } = Enums.FieldType.Attachment;
+        public bool? Mandatory { get; set; }
 
         public static AttachmentConfig? ParseConfigFromXml(string xml)
         {

@@ -109,9 +109,9 @@ FieldAssignments AS (
 ),
 ElementAssignments AS (
     SELECT
-        NULL AS DefinitionID,
+        e.ID AS DefinitionID,
         fd.Field_Num AS Field_Num,
-        NULL AS Field_Name,
+        e.Name AS Field_Name,
         NULL AS Field_Label,
         e.Form_ID,
         NULL AS Field_Caption,
@@ -384,6 +384,8 @@ ORDER BY PageRank, SortOrder, DefinitionID
         {
             return new AttachmentInputDto
             {
+                DefinitionID = x.DefinitionID,
+                FieldName = x.FieldName,
                 ElementDefinition = x.ElementDefinition,
                 SortOrder = x.SortOrder,
                 Config = ParseAttachmentConfig(x.ElementDefinition)

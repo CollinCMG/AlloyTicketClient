@@ -14,6 +14,8 @@ namespace AlloyTicketClient.Enums
         Eleven = 11,
         Twelve = 12,
         Fourteen = 14,
-        MultiSelect = 17
+        MultiSelect = 17,
+        Text = 101,
+        Attachment = 102
     }
 }

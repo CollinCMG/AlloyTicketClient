@@ -24,16 +24,33 @@ namespace AlloyTicketClient.Services
                 {
                     foreach (var item in page.Items)
                     {
-                        if (item is FieldInputDto fieldInput && fieldInput.DefinitionID != null && !string.IsNullOrWhiteSpace(fieldInput.FieldName))
+                        if (item.FieldType == FieldType.Text)
                         {
-                            var guid = fieldInput.DefinitionID.ToString()!;
-                            guidToName[guid] = fieldInput.FieldName;
-                            guidToType[guid] = fieldInput.FieldType;
-                            if (fieldInput.Mandatory == true)
+                            continue;
+                        }
+
+                        if (item.DefinitionID != null && !string.IsNullOrWhiteSpace(item.FieldName))
+                        {
+                            var guid = item.DefinitionID.ToString()!;
+                            guidToName[guid] = item.FieldName;
+                            guidToType[guid] = item.FieldType;
+                            if (item.Mandatory == true)
                                 requiredFieldGuids.Add(guid);
-                            if (!fieldInput.IsHidden)
+                            if (!item.IsHidden)
                                 visibleFieldGuids.Add(guid);
                         }
+
+
+                        //if (item is FieldInputDto fieldInput && fieldInput.DefinitionID != null && !string.IsNullOrWhiteSpace(fieldInput.FieldName))
+                        //{
+                        //    var guid = fieldInput.DefinitionID.ToString()!;
+                        //    guidToName[guid] = fieldInput.FieldName;
+                        //    guidToType[guid] = fieldInput.FieldType;
+                        //    if (fieldInput.Mandatory == true)
+                        //        requiredFieldGuids.Add(guid);
+                        //    if (!fieldInput.IsHidden)
+                        //        visibleFieldGuids.Add(guid);
+                        //}
                     }
                 }
             }
