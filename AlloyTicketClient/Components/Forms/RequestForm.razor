@@ -23,22 +23,16 @@
     private RuleEvaluationResult? ruleResult;
     private List<string> modifyAppsTriggerFields = new();
 
-
     protected override async Task OnParametersSetAsync()
     {
-        if (Payload == null || Payload.Key == null)
-        {
-            isLoading = false;
-            return;
-        }
-
         isLoading = true;
-        var objectId = Payload.Key?.ObjectId ?? string.Empty;
-        Payload.Key.FormId = await formFieldService.GetFormId(objectId);
 
-        Guid? formId = Payload.Key.FormId;
-
-        if (Show && Payload != null && formId != null)
+        if (!string.IsNullOrWhiteSpace(Payload?.ObjectId))
+        {
+            Payload.FormId = await formFieldService.GetFormId(Payload.ObjectId);
+        }
+       
+        if (Show && Payload != null && Payload.FormId != Guid.Empty)
         {
             if (Payload.Data.ValueKind == System.Text.Json.JsonValueKind.Object)
             {
@@ -50,31 +44,29 @@
                 }
                 catch { }
             }
-            if (lastLoadedFormId != formId || pages == null)
+            if (lastLoadedFormId != Payload.FormId || pages == null)
             {
                 pages = null;
-                pages = await formFieldService.GetFormPagesAsync(formId.Value);
-                lastLoadedFormId = formId;
-                ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.Key, fieldValues);
-                var rules = await RulesService.GetRulesForFormAsync(Payload.Key);
+                pages = await formFieldService.GetFormPagesAsync(Payload.FormId);
+                lastLoadedFormId = Payload.FormId;
+                ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
+                var rules = await RulesService.GetRulesForFormAsync(Payload.FormId );
                 modifyAppsTriggerFields = rules
-                    .Where(r => r.Action == FilterAction.ModifyApps)
-                    .Select(r => r.TriggerField)
-                    .Where(x => !string.IsNullOrWhiteSpace(x))
-                    .ToList();
+                .Where(r => r.Action == FilterAction.ModifyApps)
+                .Select(r => r.TriggerField)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
                 if (ruleResult?.ModifiedApps != null)
                 {
                     foreach (var kvp in ruleResult.ModifiedApps)
                         fieldValues[kvp.Key] = kvp.Value;
                 }
-                await RulesService.EvaluateRulesAsync(Payload.Key, pages, fieldValues, null);
+                await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, null);
                 isLoading = false;
                 StateHasChanged();
             }
-            isLoading = false;
-
         }
-        else if (!Show || formId == null)
+        else if (!Show)
         {
             fieldValues.Clear();
             pages = null;
@@ -113,14 +105,14 @@
         fieldValues[fieldKey] = value;
         if (Payload != null && pages != null)
         {
-            ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.Key, fieldValues);
-            var rules = await RulesService.GetRulesForFormAsync(Payload.Key);
+            ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
+            var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
             if (rules.Any(r => r.Action == FilterAction.ModifyApps && r.TriggerField == fieldKey) && ruleResult?.ModifiedApps != null)
             {
                 foreach (var kvp in ruleResult.ModifiedApps)
                     fieldValues[kvp.Key] = kvp.Value;
             }
-            await RulesService.EvaluateRulesAsync(Payload.Key, pages, fieldValues, fieldKey);
+            await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, fieldKey);
             StateHasChanged();
         }
     }
@@ -133,13 +125,13 @@
             fieldValues.Remove(key);
         if (Payload != null && pages != null)
         {
-            ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.Key, fieldValues);
+            ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
             if (ruleResult?.ModifiedApps != null)
             {
                 foreach (var kvp in ruleResult.ModifiedApps)
                     fieldValues[kvp.Key] = kvp.Value;
             }
-            await RulesService.EvaluateRulesAsync(Payload.Key, pages, fieldValues, key);
+            await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, key);
             StateHasChanged();
         }
     }
@@ -197,9 +189,7 @@
         var currentRow = new List<IPageItem>();
         foreach (var item in items)
         {
-            // Only FieldTextDto (ElementType 1) and AttachmentInputDto (ElementType 2) always get their own row
-            if (item is FieldTextDto || item is AttachmentInputDto ||
-                (item is FieldInputDto fieldInput && (fieldInput.FieldType == FieldType.Memo || (fieldInput.DefinitionID != null && modifyAppsTriggerFields.Contains(fieldInput.DefinitionID.ToString())))))
+            if (item is FieldInputDto fieldInput && (fieldInput.FieldType == FieldType.Memo || (fieldInput.DefinitionID != null && modifyAppsTriggerFields.Contains(fieldInput.DefinitionID.ToString()))))
             {
                 if (currentRow.Count > 0)
                 {
@@ -229,7 +219,7 @@
     <div class="modal-overlay" @onclick="HandleOverlayClick">
         <div class="modal-dialog" @onclick:stopPropagation>
             <div class="modal-header modal-header-flex">
-                <h1>@Title</h1>
+                <h2>@Title</h2>
                 <button class="modal-close" @onclick="HandleClose">&times;</button>
             </div>
             <div class="modal-content modal-content-flex">
@@ -254,81 +244,30 @@
                                         <div class="form-row">
                                             @foreach (var item in row)
                                             {
-                                                if (item is FieldInputDto field)
+                                                if (item is FieldInputDto fieldInput)
                                                 {
-                                                    var fieldKey = field.DefinitionID?.ToString();
-                                                    if (!field.IsHidden)
+                                                    var fieldKey = fieldInput.DefinitionID?.ToString();
+                                                    if (!fieldInput.IsHidden)
                                                     {
-                                                        if (field.FieldType == FieldType.Input && !string.IsNullOrWhiteSpace(field.FieldLabel))
-                                                        {
-                                                        
-                                                                var isTextarea = field.FieldType == FieldType.Memo;
-                                                                <div class="form-col@(isTextarea ? " textarea-col" : "")">
-                                                                    <FieldInput @key="field.DefinitionID"
-                                                                                Field="@(FormDataMapperService.MapToFormFieldDto(field))"
-                                                                                Value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : null)"
-                                                                                OnValueChanged="@(val => OnFieldValueChanged(val, fieldKey))" />
-                                                                </div>
-                                                        }
-                                                        else
-                                                        {
-                                                            var isTextarea = field.FieldType == FieldType.Memo;
-                                                            <div class="form-col@(isTextarea ? " textarea-col" : "")">
-                                                                <FieldInput @key="field.DefinitionID"
-                                                                            Field="@(FormDataMapperService.MapToFormFieldDto(field))"
-                                                                            Value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : null)"
-                                                                            OnValueChanged="@(val => OnFieldValueChanged(val, fieldKey))" />
-                                                            </div>
-                                                        }
+                                                        var isTextarea = fieldInput.FieldType == FieldType.Memo;
+                                                        <div class="form-col@(isTextarea ? " textarea-col" : "")">
+                                                            <FieldInput @key="fieldInput.DefinitionID"
+                                                                        Field="@(FormDataMapperService.MapToFormFieldDto(fieldInput))"
+                                                                        Value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : null)"
+                                                                        OnValueChanged="@(val => OnFieldValueChanged(val, fieldKey))" />
+                                                        </div>
                                                     }
                                                 }
                                                 else if (item is FieldTextDto fieldText)
                                                 {
-                                                    var (text, url) = FormDataMapperService.GetTextAndUrl(fieldText.ElementDefinition);
-                                                    // Move subheader outside form-col to take full row
-                                                    <div class="subheader-accent" style="width:100%;display:block;">
-                                                        @if (!string.IsNullOrWhiteSpace(url))
-                                                        {
-                                                            <a href="@url" target="_blank">@text</a>
-                                                        }
-                                                        else
-                                                        {
-                                                            <h4 style="margin:0;">@text</h4>
-                                                        }
-                                                    </div>
+                                                    <div class="form-col field-text">@FormDataMapperService.GetTextValue(fieldText.ElementDefinition)</div>
                                                 }
                                                 else if (item is AttachmentInputDto attachment)
                                                 {
-                                                    var (text, url) = FormDataMapperService.GetTextAndUrl(attachment.ElementDefinition);
-                                                    if (!string.IsNullOrWhiteSpace(text))
-                                                    {
-                                                        <div class="form-col field-text">
-                                                            @if (!string.IsNullOrWhiteSpace(url))
-                                                            {
-                                                                <a href="@url" target="_blank">@text</a>
-                                                            }
-                                                            else
-                                                            {
-                                                                @text
-                                                            }
-                                                        </div>
-                                                    }
-                                                    else
-                                                    {
-                                                        var attachmentKey = $"attachment_{pages.IndexOf(p)}_{p.Items.IndexOf(item)}";
-                                                        var caption = attachment.Config?.Caption ?? "Attachment";
-                                                        var isRequired = attachment.Config?.Mandatory == true;
-                                                        var isReadOnly = attachment.Config?.ReadOnly == true;
-                                                        <div class="form-col">
-                                                            <h4>
-                                                                @caption
-                                                                <span class="required" title="Required">
-                                                                    @(isRequired ? "*" : "\u00A0")
-                                                                </span>
-                                                            </h4>
-                                                            <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" disabled="@isReadOnly" />
-                                                        </div>
-                                                    }
+                                                    var attachmentKey = $"attachment_{pages.IndexOf(p)}_{p.Items.IndexOf(item)}";
+                                                    <div class="form-col">
+                                                        <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" />
+                                                    </div>
                                                 }
                                             }
                                         </div>

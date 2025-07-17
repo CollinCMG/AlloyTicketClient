@@ -207,6 +207,14 @@
     flex-wrap: wrap;
 }
 
+.form-row.full-width-row {
+    width: 100% !important;
+    max-width: 100%;
+    display: block;
+    flex: 0 0 100%;
+    margin-bottom: 1.25rem;
+}
+
 .form-col {
     flex: 1 1 0;
     min-width: 0;

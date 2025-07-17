@@ -14,7 +14,17 @@
     min-width: 0;
 }
 
-.field-block.full-width {
+.field-block.full-width,
+.field-block .full-row {
     width: 100% !important;
     max-width: 100%;
+    display: block;
+}
+
+.field-block textarea.full-row {
+    width: 100% !important;
+    min-width: 0;
+    max-width: 100%;
+    display: block;
+    resize: vertical;
 }

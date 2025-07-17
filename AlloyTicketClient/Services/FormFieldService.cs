@@ -6,7 +6,6 @@ using System.Collections.Concurrent;
 using System.Data.Common;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 public class DropdownOptionDto
 {
@@ -25,9 +24,6 @@ public class FormFieldService
 
     public async Task<Guid> GetFormId(string objectId)
     {
-        if (string.IsNullOrWhiteSpace(objectId))
-            return Guid.Empty;  
-
         var sql = @"SELECT e.Form_ID FROM cfgLCEvents e INNER JOIN cfgLCActionList al ON e.EventID = al.EventID INNER JOIN Service_Request_Fulfillment_List fl ON fl.Request_Create_Action_ID = al.id INNER JOIN Service_Catalog_Item_List cil ON fl.ID = cil.Request_Fulfillment_ID WHERE OID = @ObjId";
         using (var command = _db.Database.GetDbConnection().CreateCommand())
         {
@@ -51,142 +47,133 @@ public class FormFieldService
     public async Task<List<PageDto>> GetFormPagesAsync(Guid formId)
     {
         var sql = @"
-WITH PageBreaks AS (
-    SELECT
-        e.Field_ID AS PageFieldID,
-        e.Name AS PageName,
-        e.Form_ID,
-        e.Rank AS PageRank,
-        fd.Field_Num AS StartFieldNum,
-        LEAD(e.Rank, 1, 999999) OVER (ORDER BY e.Rank) AS NextPageRank
-    FROM cfgLCFormElements e
-    LEFT JOIN cfgLCFormDefinition fd
-        ON REPLACE(REPLACE(e.Field_ID, '{', ''), '}', '') = REPLACE(REPLACE(fd.ID, '{', ''), '}', '')
-    WHERE e.Type = 0
-      AND e.Form_ID = @FormId
-),
-FieldAssignments AS (
-    SELECT
-        d.ID AS DefinitionID,
-        d.Field_Num,
-        CASE
-            WHEN d.Virtual = 0 THEN d.Field_Name
-            ELSE f.Field_Caption
-        END AS Field_Name,
-        d.Field_Label,
-        d.Form_ID,
-        f.Field_Caption,
-        pb.PageName,
-        pb.PageRank,
-        NULL AS ElementType,
-        d.Field_Num AS SortOrder,
-        NULL AS ElementDefinition,
-        f.Field_Type AS FieldType,
-        d.Mandatory,
-        d.Read_Only as ReadOnly,
-        Lookup_Values,
-        CASE 
-            WHEN f.Table_Name = 'Persons' THEN 'Person_List'
-            WHEN f.Table_Name = 'Organizational_Units' THEN 'Organizational_Unit_List'
-            ELSE f.Table_Name
-        END AS Table_Name,
-        Virtual,
-        ct.Display_Fields as Display_Fields,
-        Filter
-    FROM cfgLCFormDefinition d
-    LEFT JOIN cfgLCFormFields f
-        ON REPLACE(REPLACE(d.Field_Name, '{', ''), '}', '') = REPLACE(REPLACE(f.ID, '{', ''), '}', '')
-    LEFT JOIN cfgCustTables ct
-        ON f.Table_Name = ct.Table_Name
-    OUTER APPLY (
-        SELECT TOP 1 pb2.PageName, pb2.PageRank
-        FROM PageBreaks pb2
-        WHERE pb2.Form_ID = d.Form_ID
-          AND pb2.StartFieldNum <= d.Field_Num
-        ORDER BY pb2.StartFieldNum DESC
-    ) pb
-    WHERE d.Form_ID = @FormId
-),
-ElementAssignments AS (
-    SELECT
-        NULL AS DefinitionID,
-        fd.Field_Num AS Field_Num,
-        NULL AS Field_Name,
-        NULL AS Field_Label,
-        e.Form_ID,
-        NULL AS Field_Caption,
-        pb.PageName,
-        pb.PageRank,
-        e.Type AS ElementType,
-        fd.Field_Num AS SortOrder,
-        e.Definition AS ElementDefinition,
-        NULL AS FieldType,
-        NULL AS Mandatory,
-        NULL as ReadOnly,
-        NULL AS Lookup_Values,
-        NULL AS Table_Name,
-        NULL AS Virtual,
-        NULL AS Display_Fields,
-        NULL AS Filter
-    FROM cfgLCFormElements e
-    LEFT JOIN cfgLCFormDefinition fd
-        ON REPLACE(REPLACE(e.Field_ID, '{', ''), '}', '') = REPLACE(REPLACE(fd.ID, '{', ''), '}', '')
-    OUTER APPLY (
-        SELECT TOP 1 pb2.PageName, pb2.PageRank, pb2.NextPageRank
-        FROM PageBreaks pb2
-        WHERE pb2.Form_ID = e.Form_ID
-          AND pb2.PageRank <= e.Rank
-          AND e.Rank < pb2.NextPageRank
-        ORDER BY pb2.PageRank DESC
-    ) pb
-    WHERE e.Type IN (1, 2)
-      AND e.Form_ID = @FormId
-)
-SELECT
-    PageName,
-    PageRank,
-    Field_Num,
-    Field_Name,
-    Field_Label,
-    DefinitionID,
-    ElementType,
-    ElementDefinition,
-    SortOrder,
-    FieldType,
-    Mandatory,
-    ReadOnly,
-    Lookup_Values as LookupValues,
-    Table_Name as TableName,
-    Virtual,
-    Display_Fields as DisplayFields,
-    Filter
-FROM FieldAssignments
-
-UNION ALL
-
-SELECT
-    PageName,
-    PageRank,
-    Field_Num,
-    Field_Name,
-    Field_Label,
-    DefinitionID,
-    ElementType,
-    ElementDefinition,
-    SortOrder,
-    FieldType,
-    Mandatory,
-    ReadOnly,
-    Lookup_Values as LookupValues,
-    Table_Name as TableName,
-    Virtual,
-    Display_Fields as DisplayFields,
-    Filter
-FROM ElementAssignments
-
-ORDER BY PageRank, SortOrder, DefinitionID
+        WITH PageBreaks AS (
+            SELECT
+                e.Field_ID AS PageFieldID,
+                e.Name AS PageName,
+                e.Form_ID,
+                e.Rank AS PageRank,
+                fd.Field_Num AS StartFieldNum,
+                LEAD(e.Rank, 1, 999999) OVER (ORDER BY e.Rank) AS NextPageRank
+            FROM cfgLCFormElements e
+            LEFT JOIN cfgLCFormDefinition fd
+                ON REPLACE(REPLACE(e.Field_ID, '{', ''), '}', '') = REPLACE(REPLACE(fd.ID, '{', ''), '}', '')
+            WHERE e.Type = 0
+              AND e.Form_ID = @FieldId
+        ),
+        FieldAssignments AS (
+            SELECT
+                d.ID AS DefinitionID,
+                d.Field_Num,
+                CASE
+                    WHEN d.Virtual = 0 THEN d.Field_Name
+                    ELSE f.Field_Caption
+                END AS Field_Name,
+                d.Field_Label,
+                d.Form_ID,
+                f.Field_Caption,
+                pb.PageName,
+                pb.PageRank,
+                NULL AS ElementType,
+                d.Field_Num AS SortOrder,
+                NULL AS ElementDefinition,
+                f.Field_Type AS FieldType,
+                d.Mandatory,
+                Lookup_Values,
+                CASE 
+                    WHEN f.Table_Name = 'Persons' THEN 'Person_List'
+                    WHEN f.Table_Name = 'Organizational_Units' THEN 'Organizational_Unit_List'
+                    ELSE f.Table_Name
+                END AS Table_Name,
+                Virtual,
+                ct.Display_Fields as Display_Fields,
+                Filter
+            FROM cfgLCFormDefinition d
+            LEFT JOIN cfgLCFormFields f
+                ON REPLACE(REPLACE(d.Field_Name, '{', ''), '}', '') = REPLACE(REPLACE(f.ID, '{', ''), '}', '')
+            LEFT JOIN cfgCustTables ct
+                ON f.Table_Name = ct.Table_Name
+            OUTER APPLY (
+                SELECT TOP 1 pb2.PageName, pb2.PageRank
+                FROM PageBreaks pb2
+                WHERE pb2.Form_ID = d.Form_ID
+                  AND pb2.StartFieldNum <= d.Field_Num
+                ORDER BY pb2.StartFieldNum DESC
+            ) pb
+            WHERE d.Form_ID = @FieldId
+        ),
+        ElementAssignments AS (
+            SELECT
+                NULL AS DefinitionID,
+                NULL AS Field_Num,
+                NULL AS Field_Name,
+                NULL as Field_Label,
+                e.Form_ID,
+                NULL AS Field_Caption,
+                pb.PageName,
+                pb.PageRank,
+                e.Type AS ElementType,
+                e.Rank AS SortOrder,
+                e.Definition AS ElementDefinition,
+                NULL AS FieldType,
+                NULL AS Mandatory,
+                null as Lookup_Values,
+                null as Table_Name,
+                null as Virtual,
+                null as Display_Fields,
+                null as Filter
+            FROM cfgLCFormElements e
+            OUTER APPLY (
+                SELECT TOP 1 pb2.PageName, pb2.PageRank, pb2.NextPageRank
+                FROM PageBreaks pb2
+                WHERE pb2.Form_ID = e.Form_ID
+                  AND pb2.PageRank <= e.Rank
+                  AND e.Rank < pb2.NextPageRank
+                ORDER BY pb2.PageRank DESC
+            ) pb
+            WHERE e.Type IN (2)
+              AND e.Form_ID = @FieldId
+        )
+        SELECT
+            PageName,
+            PageRank,
+            Field_Num,
+            Field_Name,
+            Field_Label,
+            DefinitionID,
+            ElementType,
+            ElementDefinition,
+            SortOrder,
+            FieldType,
+            Mandatory,
+            Lookup_Values as LookupValues,
+            Table_Name as TableName,
+            Virtual,
+            Display_Fields as DisplayFields,
+            Filter
+        FROM FieldAssignments
+        UNION ALL
+        SELECT
+            PageName,
+            PageRank,
+            NULL AS FieldNum,
+            NULL AS FieldName,
+            NULL AS FieldLabel,
+            NULL AS DefinitionID,
+            ElementType,
+            ElementDefinition,
+            SortOrder,
+            FieldType,
+            Mandatory,
+            Lookup_Values as LookupValues,
+            Table_Name as TableName,
+            Virtual,
+            Display_Fields as DisplayFields,
+            Filter
+        FROM ElementAssignments
+        ORDER BY PageRank, SortOrder, DefinitionID
     ";
-        var param = new SqlParameter("@FormId", formId);
+        var param = new SqlParameter("@FieldId", formId);
         var results = new List<dynamic>();
         // Read all data into memory before further processing (no MARS required)
         using (var command = _db.Database.GetDbConnection().CreateCommand())
@@ -301,54 +288,12 @@ ORDER BY PageRank, SortOrder, DefinitionID
             SortOrder = reader["SortOrder"] != DBNull.Value ? Convert.ToInt32(reader["SortOrder"]) : 0,
             FieldType = reader["FieldType"] != DBNull.Value ? (FieldType?)Enum.ToObject(typeof(FieldType), reader["FieldType"]) : null,
             Mandatory = reader["Mandatory"] != DBNull.Value ? (bool?)Convert.ToBoolean(reader["Mandatory"]) : null,
-            ReadOnly = reader["ReadOnly"] != DBNull.Value ? (bool?)Convert.ToBoolean(reader["ReadOnly"]) : null,
             LookupValues = reader["LookupValues"]?.ToString(),
             TableName = reader["TableName"]?.ToString(),
             Virtual = reader["Virtual"] != DBNull.Value ? (bool?)Convert.ToBoolean(reader["Virtual"]) : null,
             DisplayFields = reader["DisplayFields"]?.ToString(),
             Filter = reader["Filter"]?.ToString()
         };
-    }
-
-    private AttachmentConfig? ParseAttachmentConfig(string? xml)
-    {
-        if (string.IsNullOrWhiteSpace(xml)) return null;
-        try
-        {
-            var doc = XDocument.Parse(xml);
-            var config = new AttachmentConfig();
-            foreach (var item in doc.Descendants("ITEM"))
-            {
-                var name = item.Attribute("Name")?.Value;
-                var value = item.Attribute("Value")?.Value;
-                switch (name)
-                {
-                    case "Caption":
-                        config.Caption = value ?? string.Empty;
-                        break;
-                    case "ForProgram":
-                        config.ForProgram = value == "true";
-                        break;
-                    case "Mandatory":
-                        config.Mandatory = value == "true";
-                        break;
-                    case "ReadOnly":
-                        config.ReadOnly = value == "true";
-                        break;
-                    case "InclFiles":
-                        config.InclFiles = value == "true";
-                        break;
-                    case "InclExisting":
-                        config.InclExisting = value == "true";
-                        break;
-                }
-            }
-            return config;
-        }
-        catch
-        {
-            return null;
-        }
     }
 
     private IPageItem? MapToPageItem(dynamic x)
@@ -364,7 +309,6 @@ ORDER BY PageRank, SortOrder, DefinitionID
                 SortOrder = x.SortOrder,
                 FieldType = x.FieldType,
                 Mandatory = x.Mandatory,
-                ReadOnly = x.ReadOnly,
                 Lookup_Values = x.LookupValues,
                 Table_Name = x.TableName,
                 Virtual = x.Virtual,
@@ -385,8 +329,7 @@ ORDER BY PageRank, SortOrder, DefinitionID
             return new AttachmentInputDto
             {
                 ElementDefinition = x.ElementDefinition,
-                SortOrder = x.SortOrder,
-                Config = ParseAttachmentConfig(x.ElementDefinition)
+                SortOrder = x.SortOrder
             };
         }
         else

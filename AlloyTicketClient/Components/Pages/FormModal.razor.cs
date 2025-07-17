@@ -34,14 +34,14 @@ namespace AlloyTicketClient.Components.Pages
         protected override async Task OnParametersSetAsync()
         {
             Guid? formId = null;
-            if (!string.IsNullOrWhiteSpace(Payload?.Key.ObjectId) && Guid.TryParse(Payload.Key.ObjectId, out var objectGuid))
+            if (!string.IsNullOrWhiteSpace(Payload?.ObjectId) && Guid.TryParse(Payload.ObjectId, out var objectGuid))
             {
                 isLoading = true;
                 formId = objectGuid;
             }
-            else if (Payload?.Key.FormId != Guid.Empty)
+            else if (Payload?.FormId != Guid.Empty)
             {
-                formId = Payload?.Key.FormId;
+                formId = Payload?.FormId;
             }
             if (Show && Payload != null && formId != null)
             {
@@ -60,8 +60,8 @@ namespace AlloyTicketClient.Components.Pages
                     pages = null;
                     pages = await formFieldService.GetFormPagesAsync(formId.Value);
                     lastLoadedFormId = formId;
-                    ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.Key, fieldValues);
-                    var rules = await RulesService.GetRulesForFormAsync(Payload.Key);
+                    ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
+                    var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
                     modifyAppsTriggerFields = rules
                         .Where(r => r.Action == FilterAction.ModifyApps)
                         .Select(r => r.TriggerField)
@@ -72,7 +72,7 @@ namespace AlloyTicketClient.Components.Pages
                         foreach (var kvp in ruleResult.ModifiedApps)
                             fieldValues[kvp.Key] = kvp.Value;
                     }
-                    await RulesService.EvaluateRulesAsync(Payload.Key, pages, fieldValues, null);
+                    await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, null);
                     isLoading = false;
                     StateHasChanged();
                 }
@@ -120,14 +120,14 @@ namespace AlloyTicketClient.Components.Pages
             fieldValues[fieldKey] = value;
             if (Payload != null && pages != null)
             {
-                ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.Key, fieldValues);
-                var rules = await RulesService.GetRulesForFormAsync(Payload.Key);
+                ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
+                var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
                 if (rules.Any(r => r.Action == FilterAction.ModifyApps && r.TriggerField == fieldKey) && ruleResult?.ModifiedApps != null)
                 {
                     foreach (var kvp in ruleResult.ModifiedApps)
                         fieldValues[kvp.Key] = kvp.Value;
                 }
-                await RulesService.EvaluateRulesAsync(Payload.Key, pages, fieldValues, fieldKey);
+                await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, fieldKey);
                 StateHasChanged();
             }
         }
@@ -141,13 +141,13 @@ namespace AlloyTicketClient.Components.Pages
 
             if (Payload != null && pages != null)
             {
-                ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.Key, fieldValues);
+                ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
                 if (ruleResult?.ModifiedApps != null)
                 {
                     foreach (var kvp in ruleResult.ModifiedApps)
                         fieldValues[kvp.Key] = kvp.Value;
                 }
-                await RulesService.EvaluateRulesAsync(Payload.Key, pages, fieldValues, key);
+                await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, key);
                 StateHasChanged();
             }
         }

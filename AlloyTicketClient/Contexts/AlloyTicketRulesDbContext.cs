@@ -23,9 +23,9 @@ namespace AlloyTicketClient.Contexts
 
             modelBuilder.Entity<RuleConfig>(entity =>
             {
-                entity.HasKey(e => new { e.FormId, e.ObjectId }); // Composite key: FormId + ObjectId
+                entity.HasKey(e => e.RuleId);
                 entity.Property(e => e.FormId).IsRequired();
-                entity.Property(e => e.ObjectId).IsRequired();
+
                 entity.Property(e => e.TriggerField).IsRequired();
                 entity.Property(e => e.Action).IsRequired();
                 entity.Property(e => e.FormName);
