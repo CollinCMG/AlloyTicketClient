@@ -260,6 +260,11 @@
         }
         return (type, options.Distinct().ToList());
     }
+
+    private Dictionary<string, object>? GetAttachmentRequiredAttr(AttachmentInputDto attachment)
+    {
+        return attachment.Config?.Mandatory == true ? new Dictionary<string, object> { { "required", true } } : null;
+    }
 }
 
 @if (Show)
@@ -334,14 +339,16 @@
                                                 else if (item is AttachmentInputDto attachment)
                                                 {
                                                     var attachmentKey = $"attachment_{pages.IndexOf(p)}_{p.Items.IndexOf(item)}";
-                                                    <div class="form-col">
-                                                        @if (attachment.Config != null && !string.IsNullOrWhiteSpace(attachment.Config.Caption))
-                                                        {
-                                                            <div class="field-block">
-                                                                <h4>@attachment.Config.Caption</h4>
-                                                            </div>
-                                                        }
-                                                        <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" />
+                                                    <div class="form-col single-col">
+                                                        <div class="field-block">
+                                                            <h4>
+                                                                @attachment.Config?.Caption
+                                                                <span class="required" title="Required">
+                                                                    @(attachment.Config?.Mandatory == true ? "*" : "\u00A0")
+                                                                </span>
+                                                            </h4>
+                                                        </div>
+                                                        <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" @attributes="GetAttachmentRequiredAttr(attachment)" />
                                                     </div>
                                                 }
                                             }

@@ -227,6 +227,7 @@
     flex: 1 1 0;
 }
 
+/* Undo .attachment-col changes */
 .form-row.full-width-row {
     width: 100% !important;
     max-width: 100%;
@@ -247,7 +248,7 @@
 }
 
 @media (max-width: 900px) {
-    .form-col, .form-col.single-col {
+    .form-col, .form-col.single-col, .form-col.attachment-col {
         max-width: 100%;
         width: 100%;
     }
