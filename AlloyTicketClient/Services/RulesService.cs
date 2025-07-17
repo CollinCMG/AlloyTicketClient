@@ -252,8 +252,10 @@ namespace AlloyTicketClient.Services
                     bool triggerMatch = string.IsNullOrWhiteSpace(rule.TriggerValue) || string.Equals(valueStr, rule.TriggerValue, StringComparison.OrdinalIgnoreCase);
                     if (isActive && triggerMatch)
                     {
-                        var result = await _userRoleService.GetRolesForUserAsync(username);
-                        var apps = result.Select(x => x.AppCode).Distinct();
+                        var roles = await _userRoleService.GetRolesForUserAsync(username);
+                        var queues = await _userRoleService.GetUserQueuesAsync(username);
+                        var apps = roles.Select(x => x.AppCode).Distinct();
+                        //var roles = roles.Select(x => x.RoleName).Distinct();
                         foreach (var target in rule.TargetList)
                         {
                             var targetValue = target.FieldType == Enums.FieldType.Checkbox
