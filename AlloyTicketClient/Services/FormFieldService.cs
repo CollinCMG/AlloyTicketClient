@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Data.Common;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 public class DropdownOptionDto
 {
@@ -24,6 +25,9 @@ public class FormFieldService
 
     public async Task<Guid> GetFormId(string objectId)
     {
+        if (string.IsNullOrWhiteSpace(objectId))
+            return Guid.Empty;  
+
         var sql = @"SELECT e.Form_ID FROM cfgLCEvents e INNER JOIN cfgLCActionList al ON e.EventID = al.EventID INNER JOIN Service_Request_Fulfillment_List fl ON fl.Request_Create_Action_ID = al.id INNER JOIN Service_Catalog_Item_List cil ON fl.ID = cil.Request_Fulfillment_ID WHERE OID = @ObjId";
         using (var command = _db.Database.GetDbConnection().CreateCommand())
         {
@@ -79,7 +83,7 @@ FieldAssignments AS (
         NULL AS ElementDefinition,
         f.Field_Type AS FieldType,
         d.Mandatory,
-        d.Read_Only,
+        d.Read_Only as ReadOnly,
         Lookup_Values,
         CASE 
             WHEN f.Table_Name = 'Persons' THEN 'Person_List'
@@ -118,6 +122,7 @@ ElementAssignments AS (
         e.Definition AS ElementDefinition,
         NULL AS FieldType,
         NULL AS Mandatory,
+        NULL as ReadOnly,
         NULL AS Lookup_Values,
         NULL AS Table_Name,
         NULL AS Virtual,
@@ -149,6 +154,7 @@ SELECT
     SortOrder,
     FieldType,
     Mandatory,
+    ReadOnly,
     Lookup_Values as LookupValues,
     Table_Name as TableName,
     Virtual,
@@ -170,13 +176,15 @@ SELECT
     SortOrder,
     FieldType,
     Mandatory,
+    ReadOnly,
     Lookup_Values as LookupValues,
     Table_Name as TableName,
     Virtual,
     Display_Fields as DisplayFields,
     Filter
 FROM ElementAssignments
-ORDER BY PageRank, SortOrder, DefinitionID;
+
+ORDER BY PageRank, SortOrder, DefinitionID
     ";
         var param = new SqlParameter("@FormId", formId);
         var results = new List<dynamic>();
@@ -293,12 +301,54 @@ ORDER BY PageRank, SortOrder, DefinitionID;
             SortOrder = reader["SortOrder"] != DBNull.Value ? Convert.ToInt32(reader["SortOrder"]) : 0,
             FieldType = reader["FieldType"] != DBNull.Value ? (FieldType?)Enum.ToObject(typeof(FieldType), reader["FieldType"]) : null,
             Mandatory = reader["Mandatory"] != DBNull.Value ? (bool?)Convert.ToBoolean(reader["Mandatory"]) : null,
+            ReadOnly = reader["ReadOnly"] != DBNull.Value ? (bool?)Convert.ToBoolean(reader["ReadOnly"]) : null,
             LookupValues = reader["LookupValues"]?.ToString(),
             TableName = reader["TableName"]?.ToString(),
             Virtual = reader["Virtual"] != DBNull.Value ? (bool?)Convert.ToBoolean(reader["Virtual"]) : null,
             DisplayFields = reader["DisplayFields"]?.ToString(),
             Filter = reader["Filter"]?.ToString()
         };
+    }
+
+    private AttachmentConfig? ParseAttachmentConfig(string? xml)
+    {
+        if (string.IsNullOrWhiteSpace(xml)) return null;
+        try
+        {
+            var doc = XDocument.Parse(xml);
+            var config = new AttachmentConfig();
+            foreach (var item in doc.Descendants("ITEM"))
+            {
+                var name = item.Attribute("Name")?.Value;
+                var value = item.Attribute("Value")?.Value;
+                switch (name)
+                {
+                    case "Caption":
+                        config.Caption = value ?? string.Empty;
+                        break;
+                    case "ForProgram":
+                        config.ForProgram = value == "true";
+                        break;
+                    case "Mandatory":
+                        config.Mandatory = value == "true";
+                        break;
+                    case "ReadOnly":
+                        config.ReadOnly = value == "true";
+                        break;
+                    case "InclFiles":
+                        config.InclFiles = value == "true";
+                        break;
+                    case "InclExisting":
+                        config.InclExisting = value == "true";
+                        break;
+                }
+            }
+            return config;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private IPageItem? MapToPageItem(dynamic x)
@@ -314,6 +364,7 @@ ORDER BY PageRank, SortOrder, DefinitionID;
                 SortOrder = x.SortOrder,
                 FieldType = x.FieldType,
                 Mandatory = x.Mandatory,
+                ReadOnly = x.ReadOnly,
                 Lookup_Values = x.LookupValues,
                 Table_Name = x.TableName,
                 Virtual = x.Virtual,
@@ -326,8 +377,7 @@ ORDER BY PageRank, SortOrder, DefinitionID;
             return new FieldTextDto
             {
                 ElementDefinition = x.ElementDefinition,
-                SortOrder = x.SortOrder,
-                Config = FieldTextDto.ParseConfigFromXml(x.ElementDefinition)
+                SortOrder = x.SortOrder
             };
         }
         else if (x.ElementType == 2)
@@ -336,7 +386,7 @@ ORDER BY PageRank, SortOrder, DefinitionID;
             {
                 ElementDefinition = x.ElementDefinition,
                 SortOrder = x.SortOrder,
-                Config = AttachmentInputDto.ParseConfigFromXml(x.ElementDefinition)
+                Config = ParseAttachmentConfig(x.ElementDefinition)
             };
         }
         else

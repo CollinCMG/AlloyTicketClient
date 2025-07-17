@@ -67,9 +67,16 @@ namespace AlloyTicketClient.Models
 
     public class AttachmentInputDto : IPageItem
     {
+        public Guid? DefinitionID { get; set; }
+
+        public string FieldName { get; set; } = string.Empty;
         public string ElementDefinition { get; set; } = string.Empty;
         public int SortOrder { get; set; }
         public AttachmentConfig? Config { get; set; } // Parsed config from XML
+
+        // Added for file upload mapping
+        public string? UploadedFileName { get; set; }
+        public string? UploadedFileContentBase64 { get; set; }
 
         public static AttachmentConfig? ParseConfigFromXml(string xml)
         {

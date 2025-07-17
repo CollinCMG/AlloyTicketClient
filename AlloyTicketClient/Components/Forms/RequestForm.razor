@@ -1,7 +1,10 @@
-﻿@using AlloyTicketClient.Components.Fields
+﻿@using System.Collections.Generic
+@using AlloyTicketClient.Components.Fields
 @using AlloyTicketClient.Models
 @using AlloyTicketClient.Enums
 @using AlloyTicketClient.Services
+@using Newtonsoft.Json
+@using System.Text.Json
 @inject FormFieldService formFieldService
 @inject AlloyApiService AlloyApiService
 @inject RulesService RulesService
@@ -16,6 +19,7 @@
     private bool isLoading = false;
     private List<PageDto>? pages;
     private Dictionary<string, object?> fieldValues = new();
+    private Dictionary<string, Guid> attachmentInputKeys = new();
     private Guid? lastLoadedFormId = null;
     private bool isSubmitting = false;
     private bool showCancelConfirm = false;
@@ -87,8 +91,12 @@
             {
                 FormDataMapperService.SetDefaultsForHiddenRequiredFields(pages, fieldValues);
                 var nameKeyed = FormDataMapperService.MapFieldValuesToNameKeyed(pages, fieldValues);
+
                 var json = System.Text.Json.JsonSerializer.Serialize(nameKeyed);
-                Payload.Data = System.Text.Json.JsonDocument.Parse(json).RootElement;
+                JsonDocument doc = JsonDocument.Parse(json);
+                var element = doc.RootElement;
+
+                Payload.Data = element;
                 var (success, message) = await AlloyApiService.PostAsync(Payload);
                 await JSRuntime.InvokeVoidAsync("alert", $"API call result: {message}");
             }
@@ -114,16 +122,26 @@
 
     private async Task OnAttachmentChanged(InputFileChangeEventArgs e, string key)
     {
-        if (e.FileCount > 0)
-            fieldValues[key] = e.File;
+        var files = e.GetMultipleFiles();
+
+        if (files.Count > 0)
+            fieldValues[key] = files;
         else
             fieldValues.Remove(key);
+
         if (Payload != null && pages != null)
         {
             await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
             await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, key);
             StateHasChanged();
         }
+    }
+
+    private void ClearAttachment(string key)
+    {
+        fieldValues.Remove(key);
+        attachmentInputKeys[key] = Guid.NewGuid(); // force InputFile to re-render
+        StateHasChanged();
     }
 
     private void HandleOverlayClick()
@@ -324,18 +342,22 @@
                                                 }
                                                 else if (item is AttachmentInputDto attachment)
                                                 {
-                                                    var attachmentKey = $"attachment_{pages.IndexOf(p)}_{p.Items.IndexOf(item)}";
-                                                    <div class="form-col single-col">
-                                                        <div class="field-block">
-                                                            <h4>
-                                                                @attachment.Config?.Caption
-                                                                <span class="required" title="Required">
-                                                                    @(attachment.Config?.Mandatory == true ? "*" : "\u00A0")
-                                                                </span>
-                                                            </h4>
+                                                    var fieldKey = attachment.DefinitionID?.ToString();
+                                                    if (!string.IsNullOrEmpty(fieldKey))
+                                                    {
+                                                        <div class="form-col single-col">
+                                                            <div class="field-block">
+                                                                <h4>
+                                                                    @attachment.Config?.Caption
+                                                                    <span class="required" title="Required">
+                                                                        @(attachment.Config?.Mandatory == true ? "*" : "\u00A0")
+                                                                    </span>
+                                                                </h4>
+                                                            </div>
+                                                            <InputFile @key="attachmentInputKeys.ContainsKey(fieldKey) ? attachmentInputKeys[fieldKey] : (attachmentInputKeys[fieldKey] = Guid.NewGuid())" class="form-control" OnChange="e => OnAttachmentChanged(e, fieldKey)" @attributes="GetAttachmentRequiredAttr(attachment)" multiple />
+                                                            <button type="button" class="btn btn-secondary btn-sm" @onclick="() => ClearAttachment(fieldKey)">Clear</button>
                                                         </div>
-                                                        <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" @attributes="GetAttachmentRequiredAttr(attachment)" />
-                                                    </div>
+                                                    }
                                                 }
                                             }
                                         </div>

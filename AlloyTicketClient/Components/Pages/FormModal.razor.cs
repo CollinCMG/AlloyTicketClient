@@ -81,6 +81,24 @@ namespace AlloyTicketClient.Components.Pages
                 {
                     FormDataMapperService.SetDefaultsForHiddenRequiredFields(pages, fieldValues);
                     var nameKeyed = FormDataMapperService.MapFieldValuesToNameKeyed(pages, fieldValues);
+
+                    // Add attachments to payload using FieldName as key and UploadedFileContentBase64 as value
+                    if (pages != null)
+                    {
+                        foreach (var page in pages)
+                        {
+                            foreach (var item in page.Items)
+                            {
+                                if (item is AttachmentInputDto attachment &&
+                                    !string.IsNullOrWhiteSpace(attachment.FieldName) &&
+                                    !string.IsNullOrWhiteSpace(attachment.UploadedFileContentBase64))
+                                {
+                                    nameKeyed[attachment.FieldName] = attachment.UploadedFileContentBase64;
+                                }
+                            }
+                        }
+                    }
+
                     // Convert the dictionary to JsonElement
                     var json = JsonSerializer.Serialize(nameKeyed);
                     Payload.Data = JsonDocument.Parse(json).RootElement;
