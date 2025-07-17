@@ -119,11 +119,12 @@
 }
 
 .form-page {
+    max-width: 48rem;
+    margin: 0 auto;
+    padding: 0 1.5rem 1.5rem 1.5rem;
     background: #fff;
     border: 0.09375rem solid #e5e7eb;
     border-radius: 1rem;
-    margin-bottom: 2.5rem;
-    padding: 0 1.5rem 1.5rem 1.5rem;
     box-shadow: 0 0.125rem 0.5rem rgba(30,41,59,0.04);
     transition: box-shadow 0.18s;
 }
@@ -198,6 +199,107 @@
             color: #334155;
         }
 
+/* --- Responsive 2-column form layout --- */
+.form-row {
+    display: flex;
+    flex-direction: row;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.form-col {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 50%;
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    box-sizing: border-box;
+}
+
+.form-col.single-col {
+    /* Match the width of a two-column field including the gap */
+    width: calc(50% - 0.625rem); /* 0.625rem is half of the 1.25rem gap */
+    max-width: calc(50% - 0.625rem);
+    flex: 1 1 0;
+}
+
+.form-row.full-width-row {
+    width: 100% !important;
+    max-width: 100%;
+    display: block;
+    flex: 0 0 100%;
+    margin-bottom: 1.25rem;
+}
+
+.form-row.full-width-row > .form-col,
+.form-row.full-width-row > .textarea-col,
+.textarea-col {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+    .form-col, .form-col.single-col {
+        max-width: 100%;
+        width: 100%;
+    }
+}
+
+.modal-footer, .modal-footer-fixed {
+    height: 4.5rem;
+    min-height: 4.5rem;
+    max-height: 4.5rem;
+    padding-top: 0;
+    padding-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    pointer-events: auto;
+    border-top: 0.0625rem solid #e5e7eb;
+    background: #f8fafc;
+    border-radius: 0 0 1rem 1rem;
+}
+
+    .modal-footer .btn, .modal-footer-fixed .btn {
+        margin-top: 0;
+        margin-bottom: 0;
+        align-self: center;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+    }
+
+    .modal-footer .btn-primary {
+        background-color: #2563eb;
+        color: #fff;
+        border: none;
+    }
+
+        .modal-footer .btn-primary:hover, .modal-footer .btn-primary:focus {
+            background-color: #1d4ed8;
+            color: #fff;
+            box-shadow: 0 0.25rem 1rem rgba(30,41,59,0.12);
+        }
+
+    .modal-footer .btn-secondary {
+        background-color: #f3f6fa;
+        color: #64748b;
+        border: none;
+    }
+
+        .modal-footer .btn-secondary:hover, .modal-footer .btn-secondary:focus {
+            background-color: #e0e7ef;
+            color: #334155;
+        }
+
 .form-row {
     display: flex;
     flex-direction: row;
@@ -223,13 +325,13 @@
     flex: 0 0 100% !important;
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
 }
 
 .form-col {
     flex: 1 1 0;
     min-width: 0;
-    max-width: calc(50% - 1rem);
-    width: calc(50% - 1rem);
+ 
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -322,3 +424,4 @@
     box-shadow: none;
     transition: none;
 }
+

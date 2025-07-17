@@ -253,6 +253,7 @@
                                             (row.Count == 1 && row[0] is FieldInputDto fieldInputDto && fieldInputDto.FieldType == FieldType.Memo)
                                             || (row.Count == 1 && row[0] is FieldTextDto)
                                             ;
+                                        var isSingleInputRow = row.Count == 1 && row[0] is FieldInputDto singleInput && singleInput.FieldType != FieldType.Memo;
                                         <div class="form-row@(isFullWidthRow ? " full-width-row" : "")">
                                             @foreach (var item in row)
                                             {
@@ -262,7 +263,8 @@
                                                     if (!fieldInput.IsHidden)
                                                     {
                                                         var isTextarea = fieldInput.FieldType == FieldType.Memo;
-                                                        <div class="form-col@(isTextarea ? " textarea-col" : "")">
+                                                        var formColClass = "form-col" + (isTextarea ? " textarea-col" : "") + (isSingleInputRow ? " single-col" : "");
+                                                        <div class="@formColClass">
                                                             <FieldInput @key="fieldInput.DefinitionID"
                                                                         Field="@(FormDataMapperService.MapToFormFieldDto(fieldInput))"
                                                                         Value="@(fieldValues.ContainsKey(fieldKey) ? fieldValues[fieldKey]?.ToString() : null)"
@@ -273,18 +275,20 @@
                                                 else if (item is FieldTextDto fieldText)
                                                 {
                                                     <div class="form-col field-text">
-                                                        @if (fieldText.Config != null && !string.IsNullOrWhiteSpace(fieldText.Config.Url))
-                                                        {
-                                                            <a href="@fieldText.Config.Url" target="_blank" rel="noopener noreferrer">@fieldText.Config.Text</a>
-                                                        }
-                                                        else if (fieldText.Config != null)
-                                                        {
-                                                            @fieldText.Config.Text
-                                                        }
-                                                        else
-                                                        {
-                                                            @FormDataMapperService.GetTextValue(fieldText.ElementDefinition)
-                                                        }
+                                                        <h4>
+                                                            @if (fieldText.Config != null && !string.IsNullOrWhiteSpace(fieldText.Config.Url))
+                                                            {
+                                                                <a href="@fieldText.Config.Url" target="_blank" rel="noopener noreferrer">@fieldText.Config.Text</a>
+                                                            }
+                                                            else if (fieldText.Config != null)
+                                                            {
+                                                                @fieldText.Config.Text
+                                                            }
+                                                            else
+                                                            {
+                                                                @FormDataMapperService.GetTextValue(fieldText.ElementDefinition)
+                                                            }
+                                                        </h4>
                                                     </div>
                                                 }
                                                 else if (item is AttachmentInputDto attachment)
