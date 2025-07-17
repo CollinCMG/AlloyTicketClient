@@ -25,14 +25,29 @@
         }
         else if (Field.FieldType == FieldType.Input && !string.IsNullOrWhiteSpace(Field.LookupValues))
         {
-            var options = ParseLookupValues(Field.LookupValues).Distinct();
-            <select class="form-control" @bind="CurrentValue" required="@(Field.Mandatory == true)" disabled="@(Field.Read_Only == true)">
-                <option value="">-- Select --</option>
-                @foreach (var option in options)
-                {
-                    <option value="@option">@option</option>
-                }
-            </select>
+            var (lookupType, options) = ParseLookupTypeAndValues(Field.LookupValues);
+            if (lookupType == 1)
+            {
+                <div class="radio-group-inline">
+                    @foreach (var option in options)
+                    {
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="@Field.Field_Name" value="@option" checked="@(CurrentValue == option)" @onchange="() => OnRadioChanged(option)" disabled="@(Field.Read_Only == true)" />
+                            <label class="form-check-label">@option</label>
+                        </div>
+                    }
+                </div>
+            }
+            else 
+            {
+                <select class="form-control" @bind="CurrentValue" required="@(Field.Mandatory == true)" disabled="@(Field.Read_Only == true)">
+                    <option value="">-- Select --</option>
+                    @foreach (var option in options)
+                    {
+                        <option value="@option">@option</option>
+                    }
+                </select>
+            }
         }
         else if (Field.FieldType == FieldType.Input)
         {
@@ -182,6 +197,15 @@
         }
     }
 
+    private void OnRadioChanged(string option)
+    {
+        if (!Equals(Value, option))
+        {
+            Value = option;
+            OnValueChanged.InvokeAsync(option);
+        }
+    }
+
     private void OnDropdownChanged(ChangeEventArgs e)
     {
         var selectedValue = e.Value?.ToString();
@@ -246,6 +270,34 @@
 
     private string GetDisplayName(FormFieldDto field)
         => string.IsNullOrWhiteSpace(field.Field_Label) ? field.Field_Name ?? string.Empty : field.Field_Label;
+
+    private (int lookupType, List<string> options) ParseLookupTypeAndValues(string lookupValues)
+    {
+        // Example: 1,"No,Yes","No,Yes" or 2,"A,B,C"
+        var parts = lookupValues.Split(',', 2);
+        if (parts.Length < 2 || !int.TryParse(parts[0], out var type))
+        {
+            // fallback: treat as type 2 (dropdown) and parse as before
+            return (2, ParseLookupValues(lookupValues).ToList());
+        }
+        var rest = parts[1];
+        var options = new List<string>();
+        // Try to extract quoted string(s)
+        var quoteStart = rest.IndexOf('"');
+        var quoteEnd = rest.LastIndexOf('"');
+        if (quoteStart >= 0 && quoteEnd > quoteStart)
+        {
+            var quoted = rest.Substring(quoteStart + 1, quoteEnd - quoteStart - 1);
+            options = quoted.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries)
+                .Select(x => x.Replace("\"", string.Empty)).ToList();
+        }
+        else
+        {
+            options = rest.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries)
+                .Select(x => x.Replace("\"", string.Empty)).ToList();
+        }
+        return (type, options.Distinct().ToList());
+    }
 
     private IEnumerable<string> ParseLookupValues(string lookupValues)
     {
