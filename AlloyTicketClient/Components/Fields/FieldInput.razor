@@ -28,7 +28,8 @@
             var (lookupType, options) = ParseLookupTypeAndValues(Field.LookupValues);
             if (lookupType == 1)
             {
-                <div class="radio-group-inline">
+                var radioGroupClass = $"radio-group-inline{(options.Count > 2 ? " full-width-row" : string.Empty)}";
+                <div class="@radioGroupClass">
                     @foreach (var option in options)
                     {
                         <div class="form-check form-check-inline">

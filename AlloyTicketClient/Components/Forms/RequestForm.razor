@@ -220,6 +220,46 @@
             rows.Add(currentRow);
         return rows;
     }
+
+    private bool RowNeedsFullWidth(List<IPageItem> row)
+    {
+        if (row.Count == 1 && row[0] is FieldInputDto fieldInput)
+        {
+            var mapped = FormDataMapperService.MapToFormFieldDto(fieldInput);
+            if (mapped.FieldType == FieldType.Input && !string.IsNullOrWhiteSpace(mapped.LookupValues))
+            {
+                var (lookupType, options) = ParseLookupTypeAndValues(mapped.LookupValues);
+                if (lookupType == 1 && options.Count > 2)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    private (int lookupType, List<string> options) ParseLookupTypeAndValues(string lookupValues)
+    {
+        var parts = lookupValues.Split(',', 2);
+        if (parts.Length < 2 || !int.TryParse(parts[0], out var type))
+        {
+            return (2, lookupValues.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries).ToList());
+        }
+        var rest = parts[1];
+        var options = new List<string>();
+        var quoteStart = rest.IndexOf('"');
+        var quoteEnd = rest.LastIndexOf('"');
+        if (quoteStart >= 0 && quoteEnd > quoteStart)
+        {
+            var quoted = rest.Substring(quoteStart + 1, quoteEnd - quoteStart - 1);
+            options = quoted.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries)
+                .Select(x => x.Replace("\"", string.Empty)).ToList();
+        }
+        else
+        {
+            options = rest.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries)
+                .Select(x => x.Replace("\"", string.Empty)).ToList();
+        }
+        return (type, options.Distinct().ToList());
+    }
 }
 
 @if (Show)
@@ -252,7 +292,7 @@
                                         var isFullWidthRow =
                                             (row.Count == 1 && row[0] is FieldInputDto fieldInputDto && fieldInputDto.FieldType == FieldType.Memo)
                                             || (row.Count == 1 && row[0] is FieldTextDto)
-                                            ;
+                                            || RowNeedsFullWidth(row);
                                         var isSingleInputRow = row.Count == 1 && row[0] is FieldInputDto singleInput && singleInput.FieldType != FieldType.Memo;
                                         <div class="form-row@(isFullWidthRow ? " full-width-row" : "")">
                                             @foreach (var item in row)

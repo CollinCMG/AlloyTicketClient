@@ -51,3 +51,22 @@
     margin-right: 1em;
     white-space: nowrap;
 }
+
+.radio-group-red {
+    border: 2px solid #d32f2f;
+    background-color: #ffeaea;
+    border-radius: 0.5em;
+}
+
+.radio-group-red .form-check-label {
+    color: #d32f2f;
+}
+
+.full-width-row {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
