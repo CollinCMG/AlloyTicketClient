@@ -26,54 +26,58 @@
     protected override async Task OnParametersSetAsync()
     {
         isLoading = true;
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(Payload?.ObjectId))
+            {
+                Payload.FormId = await formFieldService.GetFormId(Payload.ObjectId);
+            }
 
-        if (!string.IsNullOrWhiteSpace(Payload?.ObjectId))
-        {
-            Payload.FormId = await formFieldService.GetFormId(Payload.ObjectId);
-        }
-       
-        if (Show && Payload != null && Payload.FormId != Guid.Empty)
-        {
-            if (Payload.Data.ValueKind == System.Text.Json.JsonValueKind.Object)
+            if (Show && Payload != null && Payload.FormId != Guid.Empty)
             {
-                try
+                if (Payload.Data.ValueKind == System.Text.Json.JsonValueKind.Object)
                 {
-                    var dict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(Payload.Data.GetRawText());
-                    if (dict != null)
-                        fieldValues = dict;
+                    try
+                    {
+                        var dict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(Payload.Data.GetRawText());
+                        if (dict != null)
+                            fieldValues = dict;
+                    }
+                    catch { }
                 }
-                catch { }
+                if (lastLoadedFormId != Payload.FormId || pages == null)
+                {
+                    pages = null;
+                    pages = await formFieldService.GetFormPagesAsync(Payload.FormId);
+                    lastLoadedFormId = Payload.FormId;
+                    ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
+                    var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
+                    modifyAppsTriggerFields = rules
+                        .Where(r => r.Action == FilterAction.ModifyApps)
+                        .Select(r => r.TriggerField)
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .ToList();
+                    if (ruleResult?.ModifiedApps != null)
+                    {
+                        foreach (var kvp in ruleResult.ModifiedApps)
+                            fieldValues[kvp.Key] = kvp.Value;
+                    }
+                    await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, null);
+                    StateHasChanged();
+                }
             }
-            if (lastLoadedFormId != Payload.FormId || pages == null)
+            else if (!Show)
             {
+                fieldValues.Clear();
                 pages = null;
-                pages = await formFieldService.GetFormPagesAsync(Payload.FormId);
-                lastLoadedFormId = Payload.FormId;
-                ruleResult = await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
-                var rules = await RulesService.GetRulesForFormAsync(Payload.FormId );
-                modifyAppsTriggerFields = rules
-                .Where(r => r.Action == FilterAction.ModifyApps)
-                .Select(r => r.TriggerField)
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .ToList();
-                if (ruleResult?.ModifiedApps != null)
-                {
-                    foreach (var kvp in ruleResult.ModifiedApps)
-                        fieldValues[kvp.Key] = kvp.Value;
-                }
-                await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, null);
-                isLoading = false;
-                StateHasChanged();
+                lastLoadedFormId = null;
+                ruleResult = null;
+                modifyAppsTriggerFields = new();
             }
         }
-        else if (!Show)
+        finally
         {
-            fieldValues.Clear();
-            pages = null;
             isLoading = false;
-            lastLoadedFormId = null;
-            ruleResult = null;
-            modifyAppsTriggerFields = new();
         }
     }
 
@@ -189,7 +193,11 @@
         var currentRow = new List<IPageItem>();
         foreach (var item in items)
         {
-            if (item is FieldInputDto fieldInput && (fieldInput.FieldType == FieldType.Memo || (fieldInput.DefinitionID != null && modifyAppsTriggerFields.Contains(fieldInput.DefinitionID.ToString()))))
+            if (
+                (item is FieldInputDto fieldInput && (fieldInput.FieldType == FieldType.Memo || (fieldInput.DefinitionID != null && modifyAppsTriggerFields.Contains(fieldInput.DefinitionID.ToString()))))
+                || item is AttachmentInputDto
+                || item is FieldTextDto
+            )
             {
                 if (currentRow.Count > 0)
                 {
@@ -241,7 +249,11 @@
                                     <h3>@p.PageName</h3>
                                     @foreach (var row in GetFieldRows(p.Items))
                                     {
-                                        <div class="form-row">
+                                        var isFullWidthRow =
+                                            (row.Count == 1 && row[0] is FieldInputDto fieldInputDto && fieldInputDto.FieldType == FieldType.Memo)
+                                            || (row.Count == 1 && row[0] is FieldTextDto)
+                                            ;
+                                        <div class="form-row@(isFullWidthRow ? " full-width-row" : "")">
                                             @foreach (var item in row)
                                             {
                                                 if (item is FieldInputDto fieldInput)
@@ -260,12 +272,31 @@
                                                 }
                                                 else if (item is FieldTextDto fieldText)
                                                 {
-                                                    <div class="form-col field-text">@FormDataMapperService.GetTextValue(fieldText.ElementDefinition)</div>
+                                                    <div class="form-col field-text">
+                                                        @if (fieldText.Config != null && !string.IsNullOrWhiteSpace(fieldText.Config.Url))
+                                                        {
+                                                            <a href="@fieldText.Config.Url" target="_blank" rel="noopener noreferrer">@fieldText.Config.Text</a>
+                                                        }
+                                                        else if (fieldText.Config != null)
+                                                        {
+                                                            @fieldText.Config.Text
+                                                        }
+                                                        else
+                                                        {
+                                                            @FormDataMapperService.GetTextValue(fieldText.ElementDefinition)
+                                                        }
+                                                    </div>
                                                 }
                                                 else if (item is AttachmentInputDto attachment)
                                                 {
                                                     var attachmentKey = $"attachment_{pages.IndexOf(p)}_{p.Items.IndexOf(item)}";
                                                     <div class="form-col">
+                                                        @if (attachment.Config != null && !string.IsNullOrWhiteSpace(attachment.Config.Caption))
+                                                        {
+                                                            <div class="field-block">
+                                                                <h4>@attachment.Config.Caption</h4>
+                                                            </div>
+                                                        }
                                                         <InputFile class="form-control" OnChange="e => OnAttachmentChanged(e, attachmentKey)" />
                                                     </div>
                                                 }

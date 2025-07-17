@@ -47,133 +47,138 @@ public class FormFieldService
     public async Task<List<PageDto>> GetFormPagesAsync(Guid formId)
     {
         var sql = @"
-        WITH PageBreaks AS (
-            SELECT
-                e.Field_ID AS PageFieldID,
-                e.Name AS PageName,
-                e.Form_ID,
-                e.Rank AS PageRank,
-                fd.Field_Num AS StartFieldNum,
-                LEAD(e.Rank, 1, 999999) OVER (ORDER BY e.Rank) AS NextPageRank
-            FROM cfgLCFormElements e
-            LEFT JOIN cfgLCFormDefinition fd
-                ON REPLACE(REPLACE(e.Field_ID, '{', ''), '}', '') = REPLACE(REPLACE(fd.ID, '{', ''), '}', '')
-            WHERE e.Type = 0
-              AND e.Form_ID = @FieldId
-        ),
-        FieldAssignments AS (
-            SELECT
-                d.ID AS DefinitionID,
-                d.Field_Num,
-                CASE
-                    WHEN d.Virtual = 0 THEN d.Field_Name
-                    ELSE f.Field_Caption
-                END AS Field_Name,
-                d.Field_Label,
-                d.Form_ID,
-                f.Field_Caption,
-                pb.PageName,
-                pb.PageRank,
-                NULL AS ElementType,
-                d.Field_Num AS SortOrder,
-                NULL AS ElementDefinition,
-                f.Field_Type AS FieldType,
-                d.Mandatory,
-                Lookup_Values,
-                CASE 
-                    WHEN f.Table_Name = 'Persons' THEN 'Person_List'
-                    WHEN f.Table_Name = 'Organizational_Units' THEN 'Organizational_Unit_List'
-                    ELSE f.Table_Name
-                END AS Table_Name,
-                Virtual,
-                ct.Display_Fields as Display_Fields,
-                Filter
-            FROM cfgLCFormDefinition d
-            LEFT JOIN cfgLCFormFields f
-                ON REPLACE(REPLACE(d.Field_Name, '{', ''), '}', '') = REPLACE(REPLACE(f.ID, '{', ''), '}', '')
-            LEFT JOIN cfgCustTables ct
-                ON f.Table_Name = ct.Table_Name
-            OUTER APPLY (
-                SELECT TOP 1 pb2.PageName, pb2.PageRank
-                FROM PageBreaks pb2
-                WHERE pb2.Form_ID = d.Form_ID
-                  AND pb2.StartFieldNum <= d.Field_Num
-                ORDER BY pb2.StartFieldNum DESC
-            ) pb
-            WHERE d.Form_ID = @FieldId
-        ),
-        ElementAssignments AS (
-            SELECT
-                NULL AS DefinitionID,
-                NULL AS Field_Num,
-                NULL AS Field_Name,
-                NULL as Field_Label,
-                e.Form_ID,
-                NULL AS Field_Caption,
-                pb.PageName,
-                pb.PageRank,
-                e.Type AS ElementType,
-                e.Rank AS SortOrder,
-                e.Definition AS ElementDefinition,
-                NULL AS FieldType,
-                NULL AS Mandatory,
-                null as Lookup_Values,
-                null as Table_Name,
-                null as Virtual,
-                null as Display_Fields,
-                null as Filter
-            FROM cfgLCFormElements e
-            OUTER APPLY (
-                SELECT TOP 1 pb2.PageName, pb2.PageRank, pb2.NextPageRank
-                FROM PageBreaks pb2
-                WHERE pb2.Form_ID = e.Form_ID
-                  AND pb2.PageRank <= e.Rank
-                  AND e.Rank < pb2.NextPageRank
-                ORDER BY pb2.PageRank DESC
-            ) pb
-            WHERE e.Type IN (2)
-              AND e.Form_ID = @FieldId
-        )
-        SELECT
-            PageName,
-            PageRank,
-            Field_Num,
-            Field_Name,
-            Field_Label,
-            DefinitionID,
-            ElementType,
-            ElementDefinition,
-            SortOrder,
-            FieldType,
-            Mandatory,
-            Lookup_Values as LookupValues,
-            Table_Name as TableName,
-            Virtual,
-            Display_Fields as DisplayFields,
-            Filter
-        FROM FieldAssignments
-        UNION ALL
-        SELECT
-            PageName,
-            PageRank,
-            NULL AS FieldNum,
-            NULL AS FieldName,
-            NULL AS FieldLabel,
-            NULL AS DefinitionID,
-            ElementType,
-            ElementDefinition,
-            SortOrder,
-            FieldType,
-            Mandatory,
-            Lookup_Values as LookupValues,
-            Table_Name as TableName,
-            Virtual,
-            Display_Fields as DisplayFields,
-            Filter
-        FROM ElementAssignments
-        ORDER BY PageRank, SortOrder, DefinitionID
+WITH PageBreaks AS (
+    SELECT
+        e.Field_ID AS PageFieldID,
+        e.Name AS PageName,
+        e.Form_ID,
+        e.Rank AS PageRank,
+        fd.Field_Num AS StartFieldNum,
+        LEAD(e.Rank, 1, 999999) OVER (ORDER BY e.Rank) AS NextPageRank
+    FROM cfgLCFormElements e
+    LEFT JOIN cfgLCFormDefinition fd
+        ON REPLACE(REPLACE(e.Field_ID, '{', ''), '}', '') = REPLACE(REPLACE(fd.ID, '{', ''), '}', '')
+    WHERE e.Type = 0
+      AND e.Form_ID = @FormId
+),
+FieldAssignments AS (
+    SELECT
+        d.ID AS DefinitionID,
+        d.Field_Num,
+        CASE
+            WHEN d.Virtual = 0 THEN d.Field_Name
+            ELSE f.Field_Caption
+        END AS Field_Name,
+        d.Field_Label,
+        d.Form_ID,
+        f.Field_Caption,
+        pb.PageName,
+        pb.PageRank,
+        NULL AS ElementType,
+        d.Field_Num AS SortOrder,
+        NULL AS ElementDefinition,
+        f.Field_Type AS FieldType,
+        d.Mandatory,
+        d.Read_Only,
+        Lookup_Values,
+        CASE 
+            WHEN f.Table_Name = 'Persons' THEN 'Person_List'
+            WHEN f.Table_Name = 'Organizational_Units' THEN 'Organizational_Unit_List'
+            ELSE f.Table_Name
+        END AS Table_Name,
+        Virtual,
+        ct.Display_Fields as Display_Fields,
+        Filter
+    FROM cfgLCFormDefinition d
+    LEFT JOIN cfgLCFormFields f
+        ON REPLACE(REPLACE(d.Field_Name, '{', ''), '}', '') = REPLACE(REPLACE(f.ID, '{', ''), '}', '')
+    LEFT JOIN cfgCustTables ct
+        ON f.Table_Name = ct.Table_Name
+    OUTER APPLY (
+        SELECT TOP 1 pb2.PageName, pb2.PageRank
+        FROM PageBreaks pb2
+        WHERE pb2.Form_ID = d.Form_ID
+          AND pb2.StartFieldNum <= d.Field_Num
+        ORDER BY pb2.StartFieldNum DESC
+    ) pb
+    WHERE d.Form_ID = @FormId
+),
+ElementAssignments AS (
+    SELECT
+        NULL AS DefinitionID,
+        fd.Field_Num AS Field_Num,
+        NULL AS Field_Name,
+        NULL AS Field_Label,
+        e.Form_ID,
+        NULL AS Field_Caption,
+        pb.PageName,
+        pb.PageRank,
+        e.Type AS ElementType,
+        fd.Field_Num AS SortOrder,
+        e.Definition AS ElementDefinition,
+        NULL AS FieldType,
+        NULL AS Mandatory,
+        NULL AS Lookup_Values,
+        NULL AS Table_Name,
+        NULL AS Virtual,
+        NULL AS Display_Fields,
+        NULL AS Filter
+    FROM cfgLCFormElements e
+    LEFT JOIN cfgLCFormDefinition fd
+        ON REPLACE(REPLACE(e.Field_ID, '{', ''), '}', '') = REPLACE(REPLACE(fd.ID, '{', ''), '}', '')
+    OUTER APPLY (
+        SELECT TOP 1 pb2.PageName, pb2.PageRank, pb2.NextPageRank
+        FROM PageBreaks pb2
+        WHERE pb2.Form_ID = e.Form_ID
+          AND pb2.PageRank <= e.Rank
+          AND e.Rank < pb2.NextPageRank
+        ORDER BY pb2.PageRank DESC
+    ) pb
+    WHERE e.Type IN (1, 2)
+      AND e.Form_ID = @FormId
+)
+SELECT
+    PageName,
+    PageRank,
+    Field_Num,
+    Field_Name,
+    Field_Label,
+    DefinitionID,
+    ElementType,
+    ElementDefinition,
+    SortOrder,
+    FieldType,
+    Mandatory,
+    Lookup_Values as LookupValues,
+    Table_Name as TableName,
+    Virtual,
+    Display_Fields as DisplayFields,
+    Filter
+FROM FieldAssignments
+
+UNION ALL
+
+SELECT
+    PageName,
+    PageRank,
+    Field_Num,
+    Field_Name,
+    Field_Label,
+    DefinitionID,
+    ElementType,
+    ElementDefinition,
+    SortOrder,
+    FieldType,
+    Mandatory,
+    Lookup_Values as LookupValues,
+    Table_Name as TableName,
+    Virtual,
+    Display_Fields as DisplayFields,
+    Filter
+FROM ElementAssignments
+ORDER BY PageRank, SortOrder, DefinitionID;
     ";
-        var param = new SqlParameter("@FieldId", formId);
+        var param = new SqlParameter("@FormId", formId);
         var results = new List<dynamic>();
         // Read all data into memory before further processing (no MARS required)
         using (var command = _db.Database.GetDbConnection().CreateCommand())
@@ -321,7 +326,8 @@ public class FormFieldService
             return new FieldTextDto
             {
                 ElementDefinition = x.ElementDefinition,
-                SortOrder = x.SortOrder
+                SortOrder = x.SortOrder,
+                Config = FieldTextDto.ParseConfigFromXml(x.ElementDefinition)
             };
         }
         else if (x.ElementType == 2)
@@ -329,7 +335,8 @@ public class FormFieldService
             return new AttachmentInputDto
             {
                 ElementDefinition = x.ElementDefinition,
-                SortOrder = x.SortOrder
+                SortOrder = x.SortOrder,
+                Config = AttachmentInputDto.ParseConfigFromXml(x.ElementDefinition)
             };
         }
         else

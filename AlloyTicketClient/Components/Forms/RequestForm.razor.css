@@ -215,6 +215,16 @@
     margin-bottom: 1.25rem;
 }
 
+.form-row.full-width-row > .form-col,
+.form-row.full-width-row > .textarea-col,
+.textarea-col {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+    display: flex;
+    flex-direction: column;
+}
+
 .form-col {
     flex: 1 1 0;
     min-width: 0;

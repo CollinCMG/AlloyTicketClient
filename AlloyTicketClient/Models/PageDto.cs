@@ -1,4 +1,5 @@
 using AlloyTicketClient.Enums;
+using System.Xml.Linq;
 
 namespace AlloyTicketClient.Models
 {
@@ -36,10 +37,32 @@ namespace AlloyTicketClient.Models
         public bool IsHidden { get; set; } = false;
     }
 
+    public class FieldTextConfig
+    {
+        public string? Text { get; set; }
+        public string? Url { get; set; }
+    }
+
     public class FieldTextDto : IPageItem
     {
         public string ElementDefinition { get; set; } = string.Empty;
         public int SortOrder { get; set; }
+        public FieldTextConfig? Config { get; set; } // Parsed config from XML
+
+        public static FieldTextConfig? ParseConfigFromXml(string xml)
+        {
+            if (string.IsNullOrWhiteSpace(xml)) return null;
+            try
+            {
+                // Use FormDataMapperService.GetTextAndUrl
+                var (text, url) = AlloyTicketClient.Services.FormDataMapperService.GetTextAndUrl(xml);
+                return new FieldTextConfig { Text = text, Url = url };
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
 
     public class AttachmentInputDto : IPageItem
@@ -47,5 +70,47 @@ namespace AlloyTicketClient.Models
         public string ElementDefinition { get; set; } = string.Empty;
         public int SortOrder { get; set; }
         public AttachmentConfig? Config { get; set; } // Parsed config from XML
+
+        public static AttachmentConfig? ParseConfigFromXml(string xml)
+        {
+            if (string.IsNullOrWhiteSpace(xml)) return null;
+            try
+            {
+                var doc = XDocument.Parse(xml);
+                var config = new AttachmentConfig();
+                foreach (var item in doc.Descendants("ITEM"))
+                {
+                    var name = (string?)item.Attribute("Name");
+                    var value = item.Attribute("Value")?.Value;
+                    if (string.IsNullOrEmpty(name) || value == null) continue;
+                    switch (name)
+                    {
+                        case "Caption":
+                            config.Caption = value;
+                            break;
+                        case "ForProgram":
+                            config.ForProgram = value == "1" || value.ToLower() == "true";
+                            break;
+                        case "Mandatory":
+                            config.Mandatory = value == "1" || value.ToLower() == "true";
+                            break;
+                        case "ReadOnly":
+                            config.ReadOnly = value == "1" || value.ToLower() == "true";
+                            break;
+                        case "InclFiles":
+                            config.InclFiles = value == "1" || value.ToLower() == "true";
+                            break;
+                        case "InclExisting":
+                            config.InclExisting = value == "1" || value.ToLower() == "true";
+                            break;
+                    }
+                }
+                return config;
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
 }
