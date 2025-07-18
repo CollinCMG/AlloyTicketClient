@@ -55,7 +55,7 @@
                     pages = null;
                     pages = await formFieldService.GetFormPagesAsync(Payload.FormId);
                     lastLoadedFormId = Payload.FormId;
-                    await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
+                   
                     var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
                     modifyAppsTriggerFields = rules
                         .Where(r => r.Action == FilterAction.ModifyApps)
@@ -114,7 +114,7 @@
         fieldValues[fieldKey] = value;
         if (Payload != null && pages != null)
         {
-            await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
+            await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues, fieldKey);
             var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
             await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, fieldKey);
             StateHasChanged();
@@ -135,7 +135,6 @@
 
         if (Payload != null && pages != null)
         {
-            await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
             await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, key);
             StateHasChanged();
         }

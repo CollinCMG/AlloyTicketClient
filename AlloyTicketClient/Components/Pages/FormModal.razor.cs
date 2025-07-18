@@ -55,7 +55,7 @@ namespace AlloyTicketClient.Components.Pages
                     pages = null;
                     pages = await formFieldService.GetFormPagesAsync(formId.Value);
                     lastLoadedFormId = formId;
-                    await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
+
                     var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
 
                     await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, null);
@@ -72,54 +72,6 @@ namespace AlloyTicketClient.Components.Pages
         #endregion
 
         #region Event Handlers
-        protected async Task SubmitForm()
-        {
-            StateHasChanged();
-            try
-            {
-                if (Payload != null)
-                {
-                    FormDataMapperService.SetDefaultsForHiddenRequiredFields(pages, fieldValues);
-                    var nameKeyed = FormDataMapperService.MapFieldValuesToNameKeyed(pages, fieldValues);
-
-                    // Convert the dictionary to JsonElement
-                    var json = JsonSerializer.Serialize(nameKeyed);
-                    Payload.Data = JsonDocument.Parse(json).RootElement;
-                    // Call AlloyApiService and show the result
-                    var (success, message) = await AlloyApiService.PostAsync(Payload);
-                    await JSRuntime.InvokeVoidAsync("alert", $"API call result: {message}");
-                }
-            }
-            finally
-            {
-                StateHasChanged();
-            }
-        }
-
-        protected async Task OnFieldValueChanged(object? value, string fieldKey)
-        {
-            fieldValues[fieldKey] = value;
-            if (Payload != null && pages != null)
-            {
-                await RulesService.EvaluateModifyAppsRulesAsync(Payload.FormId, fieldValues);
-                await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, fieldKey);
-                StateHasChanged();
-            }
-        }
-
-        protected void HandleOverlayClick()
-        {
-            if (fieldValues.Count > 0)
-            {
-                showCancelConfirm = true;
-                closeSidebarOnConfirm = true;
-            }
-            else
-            {
-                fieldValues.Clear();
-                OnClose.InvokeAsync();
-            }
-        }
 
         protected void ConfirmCancel()
         {
@@ -137,60 +89,6 @@ namespace AlloyTicketClient.Components.Pages
             closeSidebarOnConfirm = false;
         }
 
-        protected async Task HandleClose()
-        {
-            if (fieldValues.Count > 0)
-            {
-                showCancelConfirm = true;
-                closeSidebarOnConfirm = true;
-            }
-            else
-            {
-                fieldValues.Clear();
-                await OnClose.InvokeAsync();
-            }
-        }
-        #endregion
-
-        #region Helpers
-        protected T? GetFieldValue<T>(string key) => fieldValues.TryGetValue(key, out var value) && value is T t ? t : default;
-
-        protected void SetFieldValue<T>(string key, T value) => fieldValues[key] = value;
-
-        protected string GetOrSetFieldValue(string key) => fieldValues.TryGetValue(key, out var value) ? value?.ToString() ?? string.Empty : string.Empty;
-
-        protected void RemoveAttachment(string key) => fieldValues.Remove(key);
-
-
-        protected List<List<IPageItem>> GetFieldRows(List<IPageItem> items)
-        {
-            var rows = new List<List<IPageItem>>();
-            var currentRow = new List<IPageItem>();
-            foreach (var item in items)
-            {
-                if (item is FieldInputDto fieldInput && (fieldInput.FieldType == FieldType.Memo || (fieldInput.DefinitionID != null)))
-                {
-                    if (currentRow.Count > 0)
-                    {
-                        rows.Add(new List<IPageItem>(currentRow));
-                        currentRow.Clear();
-                    }
-                    rows.Add(new List<IPageItem> { item });
-                }
-                else
-                {
-                    currentRow.Add(item);
-                    if (currentRow.Count == 2)
-                    {
-                        rows.Add(new List<IPageItem>(currentRow));
-                        currentRow.Clear();
-                    }
-                }
-            }
-            if (currentRow.Count > 0)
-                rows.Add(currentRow);
-            return rows;
-        }
         #endregion
     }
 }

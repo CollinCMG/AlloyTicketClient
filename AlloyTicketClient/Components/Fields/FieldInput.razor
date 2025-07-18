@@ -1,4 +1,5 @@
 @using AlloyTicketClient.Enums
+@using AlloyTicketClient.Services
 @using Microsoft.AspNetCore.Components
 
 @if (Field != null)
@@ -64,7 +65,7 @@
         }
         else if (Field.FieldType == FieldType.MultiSelect && !string.IsNullOrWhiteSpace(Field.LookupValues))
         {
-            var multiOptions = ParseLookupValues(Field.LookupValues).Distinct();
+            var multiOptions = FormDataMapperService.ParseLookupValues(Field.LookupValues).Distinct();
             <select class="form-control" multiple @onchange="OnMultiSelectChanged" required="@(Field.Mandatory == true)" disabled="@(Field.Read_Only == true)">
                 @foreach (var option in multiOptions)
                 {
@@ -102,6 +103,10 @@
                     <option value="@value">@display</option>
                 }
             </select>
+        }
+        else if (Field.FieldType == FieldType.Date)
+        {
+            <input type="date" class="form-control" @bind="DateValue" required="@(Field.Mandatory == true)" disabled="@(Field.Read_Only == true)" />
         }
         else
         {
@@ -279,7 +284,7 @@
         if (parts.Length < 2 || !int.TryParse(parts[0], out var type))
         {
             // fallback: treat as type 2 (dropdown) and parse as before
-            return (2, ParseLookupValues(lookupValues).ToList());
+            return (2, FormDataMapperService.ParseLookupValues(lookupValues).ToList());
         }
         var rest = parts[1];
         var options = new List<string>();
@@ -298,23 +303,6 @@
                 .Select(x => x.Replace("\"", string.Empty)).ToList();
         }
         return (type, options.Distinct().ToList());
-    }
-
-    private IEnumerable<string> ParseLookupValues(string lookupValues)
-    {
-        if (lookupValues.Contains('"'))
-        {
-            var quoteStart = lookupValues.IndexOf('"');
-            var quoteEnd = lookupValues.LastIndexOf('"');
-            if (quoteStart >= 0 && quoteEnd > quoteStart)
-            {
-                var quoted = lookupValues.Substring(quoteStart + 1, quoteEnd - quoteStart - 1);
-                return quoted.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries)
-                    .Select(x => x.Replace("\"", string.Empty));
-            }
-        }
-        return lookupValues.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries)
-            .Select(x => x.Replace("\"", string.Empty));
     }
 
     private Dictionary<string, object> GetRequiredAttribute()

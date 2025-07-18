@@ -39,18 +39,6 @@ namespace AlloyTicketClient.Services
                             if (!item.IsHidden)
                                 visibleFieldGuids.Add(guid);
                         }
-
-
-                        //if (item is FieldInputDto fieldInput && fieldInput.DefinitionID != null && !string.IsNullOrWhiteSpace(fieldInput.FieldName))
-                        //{
-                        //    var guid = fieldInput.DefinitionID.ToString()!;
-                        //    guidToName[guid] = fieldInput.FieldName;
-                        //    guidToType[guid] = fieldInput.FieldType;
-                        //    if (fieldInput.Mandatory == true)
-                        //        requiredFieldGuids.Add(guid);
-                        //    if (!fieldInput.IsHidden)
-                        //        visibleFieldGuids.Add(guid);
-                        //}
                     }
                 }
             }
@@ -66,6 +54,8 @@ namespace AlloyTicketClient.Services
                 if (guidToType.TryGetValue(guid, out var t))
                     fieldType = t;
                 object? value = fieldValues.TryGetValue(guid, out var v) ? v : null;
+
+
                 if (fieldType == FieldType.Dropdown && value is DropdownOptionDto dto)
                 {
                     if (dto.Properties.TryGetValue("Full_Name", out var fullNameVal) && fullNameVal != null)
@@ -73,6 +63,7 @@ namespace AlloyTicketClient.Services
                     else
                         value = dto.Properties.Values.FirstOrDefault();
                 }
+
                 nameKeyed[fieldName ?? guid] = value;
             }
             return nameKeyed;
@@ -104,14 +95,24 @@ namespace AlloyTicketClient.Services
                                     object? dropdownDefault = null;
                                     if (!string.IsNullOrWhiteSpace(fieldInput.Lookup_Values))
                                     {
-                                        var options = fieldInput.Lookup_Values.Split(';').Select(x => x.Trim()).Where(x => !string.IsNullOrEmpty(x)).ToList();
+                                        var options = ParseLookupValues(fieldInput.Lookup_Values).Distinct().ToList();
                                         if (options.Count > 0)
                                             dropdownDefault = options[0];
                                     }
                                     fieldValues[guid] = dropdownDefault;
                                     break;
+                                case FieldType.Input:
+                                    var result = "NA";
+                                    if (!string.IsNullOrWhiteSpace(fieldInput.Lookup_Values))
+                                    {
+                                        var options = ParseLookupValues(fieldInput.Lookup_Values).Distinct().ToList();
+                                        if (options.Count > 0)
+                                            result = options[0];
+                                    }
+                                    fieldValues[guid] = result;
+                                    break;
                                 default:
-                                    fieldValues[guid] = string.Empty;
+                                    fieldValues[guid] = "NA";
                                     break;
                             }
                         }
@@ -183,6 +184,23 @@ namespace AlloyTicketClient.Services
             {
                 return (null, null);
             }
+        }
+
+        public static IEnumerable<string> ParseLookupValues(string lookupValues)
+        {
+            if (lookupValues.Contains('"'))
+            {
+                var quoteStart = lookupValues.IndexOf('"');
+                var quoteEnd = lookupValues.LastIndexOf('"');
+                if (quoteStart >= 0 && quoteEnd > quoteStart)
+                {
+                    var quoted = lookupValues.Substring(quoteStart + 1, quoteEnd - quoteStart - 1);
+                    return quoted.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries)
+                        .Select(x => x.Replace("\"", string.Empty));
+                }
+            }
+            return lookupValues.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries)
+                .Select(x => x.Replace("\"", string.Empty));
         }
     }
 }

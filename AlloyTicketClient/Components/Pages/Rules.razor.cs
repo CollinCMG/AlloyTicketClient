@@ -2,6 +2,7 @@ using AlloyTicketClient.Enums;
 using AlloyTicketClient.Models;
 using AlloyTicketClient.Services;
 using Microsoft.AspNetCore.Components;
+using System.Linq;
 
 namespace AlloyTicketClient.Components.Pages
 {
@@ -30,7 +31,7 @@ namespace AlloyTicketClient.Components.Pages
         // Modal state
         private bool ShowRuleModal, IsEditMode;
         private RuleConfig? EditingRule;
-        private Guid ModalSelectedFormId;
+        private Guid? ModalSelectedFormId;
         private string? ModalSelectedFieldId, ModalTriggerValue;
 
         private FilterAction ModalSelectedAction { get; set; } = FilterAction.Hide;
@@ -45,7 +46,7 @@ namespace AlloyTicketClient.Components.Pages
             {
                 EditingRule = null;
                 ModalSelectedFieldId = null;
-
+                ModalSelectedFormId = null;
                 ModalSelectedAction = FilterAction.Hide;
                 ModalSelectedTargetFieldIds.Clear();
                 ModalFormFields.Clear();
@@ -60,10 +61,13 @@ namespace AlloyTicketClient.Components.Pages
                 ModalSelectedAction = EditingRule?.Action ?? FilterAction.Hide;
                 ModalSelectedTargetFieldIds = EditingRule?.TargetList.Select(t => t.FieldId).ToList() ?? new();
                 ModalTriggerValue = EditingRule?.TriggerValue;
-                if (ModalSelectedFormId != Guid.Empty)
+                if (ModalSelectedFormId != null && ModalSelectedFormId != Guid.Empty)
                 {
-                    var pages = await FormFieldService.GetFormPagesAsync(ModalSelectedFormId);
-                    ModalFormFields = pages.SelectMany(p => p.Items).OfType<FieldInputDto>().ToList();
+                    var pages = await FormFieldService.GetFormPagesAsync(ModalSelectedFormId.Value);
+                    var fields = pages.SelectMany(p => p.Items).OfType<FieldInputDto>();
+                    ModalFormFields = fields
+                        .Where(f => f.FieldType != FieldType.Text && f.FieldType != FieldType.Attachment)
+                        .ToList();
                 }
             }
         }
@@ -76,7 +80,7 @@ namespace AlloyTicketClient.Components.Pages
 
         private async Task OnModalFormSelected(ChangeEventArgs e)
         {
-            if (e.Value == null || string.IsNullOrEmpty(e.Value.ToString()) 
+            if (e.Value == null || string.IsNullOrEmpty(e.Value.ToString())
                                 || !Guid.TryParse(e.Value.ToString(), out var formId))
             {
                 ModalSelectedFormId = Guid.Empty;
@@ -90,9 +94,9 @@ namespace AlloyTicketClient.Components.Pages
 
             ModalSelectedTargetFieldIds.Clear();
             ModalFormFields.Clear();
-            if (ModalSelectedFormId != Guid.Empty)
+            if (ModalSelectedFormId != null && ModalSelectedFormId != Guid.Empty)
             {
-                var pages = await FormFieldService.GetFormPagesAsync(ModalSelectedFormId);
+                var pages = await FormFieldService.GetFormPagesAsync(ModalSelectedFormId.Value);
                 ModalFormFields = pages.SelectMany(p => p.Items).OfType<FieldInputDto>().ToList();
             }
             StateHasChanged();
@@ -135,7 +139,7 @@ namespace AlloyTicketClient.Components.Pages
                 .ToList();
             if (IsEditMode && EditingRule != null)
             {
-                EditingRule.FormId = ModalSelectedFormId;
+                EditingRule.FormId = ModalSelectedFormId ?? Guid.Empty;
 
                 EditingRule.FormName = formName;
                 EditingRule.TriggerField = ModalSelectedFieldId;
@@ -151,7 +155,7 @@ namespace AlloyTicketClient.Components.Pages
                 var rule = new RuleConfig
                 {
                     RuleId = Guid.NewGuid(),
-                    FormId = ModalSelectedFormId,
+                    FormId = ModalSelectedFormId ?? Guid.Empty,
 
                     FormName = formName,
                     TriggerField = ModalSelectedFieldId,

@@ -4,8 +4,6 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 using System.Data.Common;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Xml.Linq;
 
 public class DropdownOptionDto

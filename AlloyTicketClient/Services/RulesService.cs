@@ -1,7 +1,6 @@
 using AlloyTicketClient.Contexts;
 using AlloyTicketClient.Enums;
 using AlloyTicketClient.Models;
-using Microsoft.AspNetCore.Rewrite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -40,7 +39,7 @@ namespace AlloyTicketClient.Services
                 rules = await _db.AlloyTicketRules.ToListAsync();
                 _cache.Set(AllRulesCacheKey, rules, TimeSpan.FromMinutes(10));
             }
-            return rules;
+            return rules ?? new List<RuleConfig>();
         }
 
         public async Task AddRuleAsync(RuleConfig rule)
@@ -218,7 +217,7 @@ namespace AlloyTicketClient.Services
             }
         }
 
-        public async Task EvaluateModifyAppsRulesAsync(Guid formId, Dictionary<string, object?> fieldValues)
+        public async Task EvaluateModifyAppsRulesAsync(Guid formId, Dictionary<string, object?> fieldValues, string? changedField = null)
         {
             var rules = await GetRulesForFormAsync(formId);
             var modifyAppsRules = rules.Where(r => r.Action == FilterAction.ModifyApps).ToList();
@@ -226,6 +225,10 @@ namespace AlloyTicketClient.Services
             var modifiedApps = new Dictionary<string, string>();
             foreach (var rule in modifyAppsRules)
             {
+                // Only trigger if changedField matches the rule's TriggerField
+                if (changedField != null && rule.TriggerField != changedField)
+                    continue;
+
                 if (fieldValues.TryGetValue(rule.TriggerField, out var value))
                 {
                     bool isActive = false;

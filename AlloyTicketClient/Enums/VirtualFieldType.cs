@@ -12,7 +12,7 @@ namespace AlloyTicketClient.Enums
         Seven = 7,
         Dropdown = 8, 
         Eleven = 11,
-        Twelve = 12,
+        Date = 12,
         Fourteen = 14,
         MultiSelect = 17,
         Text = 101,
