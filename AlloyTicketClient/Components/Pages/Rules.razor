@@ -153,6 +153,13 @@
                                             <input class="form-control" @bind="ModalTargetValueOverride" placeholder="Override value for target field (optional)" />
                                         </div>
                                     }
+                                    @if (ModalSelectedAction == FilterAction.FieldsByRole || ModalSelectedAction == FilterAction.ModifyApps)
+                                    {
+                                        <div class="col-md-6">
+                                            <label class="form-label">Target Value Override <span class="text-muted" style="font-size:smaller">(optional)</span></label>
+                                            <input class="form-control" @bind="ModalTargetValueOverride" placeholder="Override value for target field (optional)" />
+                                        </div>
+                                    }
                                 </div>
                             </div>
                         </div>

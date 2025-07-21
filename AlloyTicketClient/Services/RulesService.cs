@@ -264,9 +264,14 @@ namespace AlloyTicketClient.Services
 
                         foreach (var target in rule.TargetList)
                         {
-                            var targetValue = target.FieldType == Enums.FieldType.Checkbox
-                                ? (apps.Contains(target.FieldName) ? "True" : "False")
-                                : (apps.Contains(target.FieldName) ? "Yes" : "No");
+                            // Use TargetValueOverride if present for ModifyApps
+                            string? overrideValue = null;
+                            if (!string.IsNullOrWhiteSpace(rule.TargetValueOverride))
+                            {
+                                overrideValue = rule.TargetValueOverride;
+                            }
+
+                            var targetValue = apps.Contains(target.FieldName) ? overrideValue ?? target.FieldValue : target.FieldValue;
                             modifiedApps[target.FieldId] = targetValue;
 
                             var fieldByRoleRules = rules.Where(r => r.Action == FilterAction.FieldsByRole && r.TriggerField.Equals(target.FieldId) && (string.IsNullOrWhiteSpace(r.TriggerValue) || r.TriggerValue.Equals(targetValue))).ToList();

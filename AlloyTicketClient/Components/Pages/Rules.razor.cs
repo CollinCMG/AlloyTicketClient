@@ -71,7 +71,11 @@ namespace AlloyTicketClient.Components.Pages
                 ModalSelectedAction = EditingRule?.Action ?? FilterAction.Hide;
                 ModalSelectedTargetFieldIds = EditingRule?.TargetList.Select(t => t.FieldId).ToList() ?? new();
                 ModalTriggerValue = EditingRule?.TriggerValue;
-                if (ModalSelectedAction == FilterAction.FieldsByRole)
+                if (ModalSelectedAction == FilterAction.ModifyApps)
+                {
+                    ModalTargetValueOverride = EditingRule?.TargetValueOverride;
+                }
+                else if (ModalSelectedAction == FilterAction.FieldsByRole)
                 {
                     ModalSelectedRoleName = EditingRule?.RoleName;
                     ModalIsQueue = EditingRule?.IsQueue ?? false;
@@ -166,17 +170,18 @@ namespace AlloyTicketClient.Components.Pages
                     {
                         FieldId = id,
                         FieldName = field?.FieldName ?? id,
-                        FieldType = field?.FieldType ?? FieldType.Null
+                        FieldType = field?.FieldType ?? FieldType.Null,
+                        FieldValue = field?.FieldValue 
                     };
                 })
                 .ToList();
             RoleName? roleNameToSave = null;
             bool isQueueToSave = false;
             string? targetValueOverrideToSave = null;
-            if (ModalSelectedAction == FilterAction.FieldsByRole)
+            if (ModalSelectedAction == FilterAction.FieldsByRole || ModalSelectedAction == FilterAction.ModifyApps)
             {
-                roleNameToSave = ModalSelectedRoleName;
-                isQueueToSave = ModalIsQueue;
+                roleNameToSave = ModalSelectedAction == FilterAction.FieldsByRole ? ModalSelectedRoleName : null;
+                isQueueToSave = ModalSelectedAction == FilterAction.FieldsByRole ? ModalIsQueue : false;
                 targetValueOverrideToSave = string.IsNullOrWhiteSpace(ModalTargetValueOverride) ? null : ModalTargetValueOverride;
             }
             if (IsEditMode && EditingRule != null)
