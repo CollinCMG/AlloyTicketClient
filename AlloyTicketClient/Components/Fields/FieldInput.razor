@@ -166,7 +166,18 @@ else
 
     private string? CurrentValue
     {
-        get => Value is DropdownOptionDto dto ? dto.Properties.ContainsKey("Id") ? dto.Properties["Id"]?.ToString() : dto.Properties.Values.FirstOrDefault()?.ToString() : Value?.ToString();
+        get
+        {
+            // Prefer Value, but if null/empty, use Field.FieldValue
+            var val = Value is DropdownOptionDto dto
+                ? dto.Properties.ContainsKey("Id") ? dto.Properties["Id"]?.ToString() : dto.Properties.Values.FirstOrDefault()?.ToString()
+                : Value?.ToString();
+            if (string.IsNullOrEmpty(val) && Field != null && !string.IsNullOrEmpty(Field.Field_Value))
+            {
+                return Field.Field_Value;
+            }
+            return val;
+        }
         set
         {
             if (Field?.FieldType == FieldType.Dropdown && Options != null)

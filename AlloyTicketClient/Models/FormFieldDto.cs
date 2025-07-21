@@ -5,6 +5,7 @@ public class FormFieldDto
     public Guid ID { get; set; }
     public string? Field_Name { get; set; }
     public string? Field_Label { get; set; }
+    public string? Field_Value { get; set; }
     public int? Field_Num { get; set; }
     public bool? Virtual { get; set; }
     public bool? Mandatory { get; set; }

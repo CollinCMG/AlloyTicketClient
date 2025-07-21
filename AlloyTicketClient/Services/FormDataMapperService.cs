@@ -130,6 +130,7 @@ namespace AlloyTicketClient.Services
             {
                 Field_Num = input.Field_Num,
                 Field_Label = input.FieldLabel,
+                Field_Value = input.FieldValue,
                 Field_Name = input.FieldName,
                 ID = input.DefinitionID ?? Guid.Empty,
                 Virtual = input.Virtual,

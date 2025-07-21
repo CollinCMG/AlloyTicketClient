@@ -30,6 +30,7 @@ namespace AlloyTicketClient.Models
     {
         public int? Field_Num { get; set; }
         public string FieldLabel { get; set; } = string.Empty;
+        public string FieldValue { get; set; } = string.Empty;
         public string FieldName { get; set; } = string.Empty;
         public Guid? DefinitionID { get; set; }
         public int SortOrder { get; set; }
