@@ -2,9 +2,9 @@
 @using AlloyTicketClient.Services
 @using Microsoft.AspNetCore.Components
 
-@if (Field == null || Field.Field_Name == "Requester_Id")
+@if (Field == null || Field.Field_Name == "Requester_ID")
 {
-    <!-- Do not render anything for Requester_Id -->
+    <!-- Do not render anything for Requester_ID -->
 }
 else
 {
@@ -15,7 +15,6 @@ else
                 @(Field.Mandatory == true ? "*" : "\u00A0")
             </span>
         </h4>
-        @* Special-case: Requester_Id *@
         @if (Field.FieldType == FieldType.Input && !string.IsNullOrWhiteSpace(Field.LookupValues))
         {
             var (lookupType, options) = ParseLookupTypeAndValues(Field.LookupValues);

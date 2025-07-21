@@ -278,7 +278,7 @@
                             {
                                 <div class="form-page">
                                     <h3>@p.PageName</h3>
-                                    @foreach (var row in GetFieldRows(p.Items.Where(i => !(i is FieldInputDto fi && fi.FieldName == "Requester_Id")).ToList()))
+                                    @foreach (var row in GetFieldRows(p.Items.Where(i => !(i is FieldInputDto fi && fi.FieldName == "Requester_ID")).ToList()))
                                     {
                                         var isFullWidthRow =
                                         (row.Count == 1 && row[0] is FieldInputDto fieldInputDto && fieldInputDto.FieldType == FieldType.Memo)
