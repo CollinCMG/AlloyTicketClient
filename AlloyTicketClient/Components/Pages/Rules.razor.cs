@@ -38,6 +38,13 @@ namespace AlloyTicketClient.Components.Pages
         private List<string> ModalSelectedTargetFieldIds { get; set; } = new();
         private List<FieldInputDto> ModalFormFields { get; set; } = new();
 
+        // Modal state for FieldsByRole
+        private RoleName? ModalSelectedRoleName { get; set; } = null;
+        private bool ModalIsQueue { get; set; } = false;
+        private string? ModalTargetValueOverride { get; set; } = null;
+
+        private IEnumerable<RoleName> AllRoles => Enum.GetValues(typeof(RoleName)).Cast<RoleName>();
+
         private async Task OpenRuleModal(RuleConfig? rule)
         {
             ShowRuleModal = true;
@@ -51,6 +58,9 @@ namespace AlloyTicketClient.Components.Pages
                 ModalSelectedTargetFieldIds.Clear();
                 ModalFormFields.Clear();
                 ModalTriggerValue = null;
+                ModalSelectedRoleName = null;
+                ModalIsQueue = false;
+                ModalTargetValueOverride = null;
             }
             else
             {
@@ -61,12 +71,24 @@ namespace AlloyTicketClient.Components.Pages
                 ModalSelectedAction = EditingRule?.Action ?? FilterAction.Hide;
                 ModalSelectedTargetFieldIds = EditingRule?.TargetList.Select(t => t.FieldId).ToList() ?? new();
                 ModalTriggerValue = EditingRule?.TriggerValue;
+                if (ModalSelectedAction == FilterAction.FieldsByRole)
+                {
+                    ModalSelectedRoleName = EditingRule?.RoleName;
+                    ModalIsQueue = EditingRule?.IsQueue ?? false;
+                    ModalTargetValueOverride = EditingRule?.TargetValueOverride;
+                }
+                else
+                {
+                    ModalSelectedRoleName = null;
+                    ModalIsQueue = false;
+                    ModalTargetValueOverride = null;
+                }
                 if (ModalSelectedFormId != null && ModalSelectedFormId != Guid.Empty)
                 {
                     var pages = await FormFieldService.GetFormPagesAsync(ModalSelectedFormId.Value);
                     var fields = pages.SelectMany(p => p.Items).OfType<FieldInputDto>();
                     ModalFormFields = fields
-                        .Where(f => f.FieldType != FieldType.Text && f.FieldType != FieldType.Attachment)
+                        .Where(f => f.FieldType != FieldType.Text)
                         .ToList();
                 }
             }
@@ -104,12 +126,24 @@ namespace AlloyTicketClient.Components.Pages
 
         private void OnModalTargetFieldsChanged(ChangeEventArgs e)
         {
-            if (e.Value is string single)
-                ModalSelectedTargetFieldIds = new() { single };
-            else if (e.Value is IEnumerable<string> selectedOptions)
-                ModalSelectedTargetFieldIds = selectedOptions.ToList();
+            if (ModalSelectedAction == FilterAction.FieldsByRole)
+            {
+                // Single select
+                if (e.Value is string single && !string.IsNullOrEmpty(single))
+                    ModalSelectedTargetFieldIds = new() { single };
+                else
+                    ModalSelectedTargetFieldIds = new();
+            }
             else
-                ModalSelectedTargetFieldIds = new();
+            {
+                // Multi-select
+                if (e.Value is string single)
+                    ModalSelectedTargetFieldIds = new() { single };
+                else if (e.Value is IEnumerable<string> selectedOptions)
+                    ModalSelectedTargetFieldIds = selectedOptions.ToList();
+                else
+                    ModalSelectedTargetFieldIds = new();
+            }
         }
 
         private bool CanAddRuleFromModal =>
@@ -120,7 +154,6 @@ namespace AlloyTicketClient.Components.Pages
         private async Task SaveRuleFromModal()
         {
             if (!CanAddRuleFromModal) return;
-
 
             var triggerFieldLabel = GetModalFieldLabelById(ModalSelectedFieldId);
             var targetFieldLabels = ModalSelectedTargetFieldIds.Select(GetModalFieldLabelById).ToList();
@@ -137,10 +170,18 @@ namespace AlloyTicketClient.Components.Pages
                     };
                 })
                 .ToList();
+            RoleName? roleNameToSave = null;
+            bool isQueueToSave = false;
+            string? targetValueOverrideToSave = null;
+            if (ModalSelectedAction == FilterAction.FieldsByRole)
+            {
+                roleNameToSave = ModalSelectedRoleName;
+                isQueueToSave = ModalIsQueue;
+                targetValueOverrideToSave = string.IsNullOrWhiteSpace(ModalTargetValueOverride) ? null : ModalTargetValueOverride;
+            }
             if (IsEditMode && EditingRule != null)
             {
                 EditingRule.FormId = ModalSelectedFormId ?? Guid.Empty;
-
                 EditingRule.FormName = formName;
                 EditingRule.TriggerField = ModalSelectedFieldId;
                 EditingRule.TriggerFieldLabel = triggerFieldLabel;
@@ -148,6 +189,9 @@ namespace AlloyTicketClient.Components.Pages
                 EditingRule.Action = ModalSelectedAction;
                 EditingRule.TargetList = targetList;
                 EditingRule.TargetFieldLabels = targetFieldLabels;
+                EditingRule.RoleName = roleNameToSave;
+                EditingRule.IsQueue = isQueueToSave;
+                EditingRule.TargetValueOverride = targetValueOverrideToSave;
                 await RulesService.UpdateRuleAsync(EditingRule);
             }
             else
@@ -163,7 +207,10 @@ namespace AlloyTicketClient.Components.Pages
                     TriggerValue = string.IsNullOrWhiteSpace(ModalTriggerValue) ? null : ModalTriggerValue,
                     Action = ModalSelectedAction,
                     TargetList = targetList,
-                    TargetFieldLabels = targetFieldLabels
+                    TargetFieldLabels = targetFieldLabels,
+                    RoleName = roleNameToSave,
+                    IsQueue = isQueueToSave,
+                    TargetValueOverride = targetValueOverrideToSave
                 };
                 await RulesService.AddRuleAsync(rule);
             }

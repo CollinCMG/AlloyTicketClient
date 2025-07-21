@@ -17,7 +17,7 @@
         <div class="request-setup-buttons">
             @foreach (var btn in dynamicPage.Buttons)
             {
-                <button class="request-btn add-btn" @onclick="() => ShowDynamicButton(btn)">@btn.Name</button>
+                <button class="request-btn add-btn" @onclick="async () => await ShowDynamicButtonAsync(btn)">@btn.Name</button>
             }
         </div>
     </div>

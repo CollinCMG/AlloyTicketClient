@@ -4,6 +4,7 @@ namespace AlloyTicketClient.Enums
     {
         Hide,
         Show,
-        ModifyApps
+        ModifyApps,
+        FieldsByRole
     }
 }

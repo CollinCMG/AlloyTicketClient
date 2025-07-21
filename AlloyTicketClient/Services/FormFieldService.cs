@@ -137,7 +137,7 @@ ElementAssignments AS (
           AND e.Rank < pb2.NextPageRank
         ORDER BY pb2.PageRank DESC
     ) pb
-    WHERE e.Type IN (1, 2)
+    WHERE e.Type = 1
       AND e.Form_ID = @FormId
 )
 SELECT
@@ -376,17 +376,6 @@ ORDER BY PageRank, SortOrder, DefinitionID
             {
                 ElementDefinition = x.ElementDefinition,
                 SortOrder = x.SortOrder
-            };
-        }
-        else if (x.ElementType == 2)
-        {
-            return new AttachmentInputDto
-            {
-                DefinitionID = x.DefinitionID,
-                FieldName = x.FieldName,
-                ElementDefinition = x.ElementDefinition,
-                SortOrder = x.SortOrder,
-                Config = ParseAttachmentConfig(x.ElementDefinition)
             };
         }
         else

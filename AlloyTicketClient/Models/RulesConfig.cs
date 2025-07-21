@@ -22,6 +22,9 @@ namespace AlloyTicketClient.Models
         public FilterAction Action { get; set; } = FilterAction.Hide;
         public List<TargetFieldInfo> TargetList { get; set; } = new(); // List of target fields (name + guid)
         public List<string>? TargetFieldLabels { get; set; } // Display names for target fields
+        public RoleName? RoleName { get; set; } // Only used for FieldsByRole
+        public bool IsQueue { get; set; } // Only used for FieldsByRole
+        public string? TargetValueOverride { get; set; } // Only used for FieldsByRole, default to null/empty
     }
 
     public class RulesConfig

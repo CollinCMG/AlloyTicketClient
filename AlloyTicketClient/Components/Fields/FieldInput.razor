@@ -2,7 +2,11 @@
 @using AlloyTicketClient.Services
 @using Microsoft.AspNetCore.Components
 
-@if (Field != null)
+@if (Field == null || Field.Field_Name == "Requester_Id")
+{
+    <!-- Do not render anything for Requester_Id -->
+}
+else
 {
     <div class="field-block@(Field.FieldType == FieldType.Memo ? " full-width" : "")">
         <h4>
@@ -11,20 +15,8 @@
                 @(Field.Mandatory == true ? "*" : "\u00A0")
             </span>
         </h4>
-        @* Special-case: Due_date *@
-        @if (Field.Field_Name?.Equals("Due_date", StringComparison.OrdinalIgnoreCase) ?? false)
-        {
-            <input type="date" class="form-control" @bind="DateValue" required="@(Field.Mandatory == true)" disabled="@(Field.Read_Only == true)" />
-        }
         @* Special-case: Requester_Id *@
-        else if (Field.Field_Name?.Equals("Requester_Id", StringComparison.OrdinalIgnoreCase) ?? false)
-        {
-            <select class="form-control" @bind="CurrentValue" required="@(Field.Mandatory == true)" disabled="@(Field.Read_Only == true)">
-                <option value="">-- Select --</option>
-                <!-- TODO: Populate with actual Requester options -->
-            </select>
-        }
-        else if (Field.FieldType == FieldType.Input && !string.IsNullOrWhiteSpace(Field.LookupValues))
+        @if (Field.FieldType == FieldType.Input && !string.IsNullOrWhiteSpace(Field.LookupValues))
         {
             var (lookupType, options) = ParseLookupTypeAndValues(Field.LookupValues);
             if (lookupType == 1)
@@ -40,7 +32,7 @@
                     }
                 </div>
             }
-            else 
+            else
             {
                 <select class="form-control" @bind="CurrentValue" required="@(Field.Mandatory == true)" disabled="@(Field.Read_Only == true)">
                     <option value="">-- Select --</option>

@@ -15,7 +15,6 @@ namespace AlloyTicketClient.Enums
         Date = 12,
         Fourteen = 14,
         MultiSelect = 17,
-        Text = 101,
-        Attachment = 102
+        Text = 101
     }
 }

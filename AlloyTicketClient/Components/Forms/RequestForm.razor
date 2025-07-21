@@ -93,38 +93,15 @@
                 FormDataMapperService.SetDefaultsForHiddenRequiredFields(pages, fieldValues);
 
                 // Get all fields with types
-                var nameKeyed = FormDataMapperService.MapFieldValuesToNameKeyed(pages, fieldValues);
-
-                // Separate attachments
-                var attachments = FormDataMapperService.GetAttachmentFieldsFromNameKeyed(nameKeyed);
-                var mainPayload = nameKeyed
-                    .Where(x => x.Value.InputType != FieldType.Attachment)
-                    .ToDictionary(x => x.Key, x => x.Value.Value);
+                var namedKeys = FormDataMapperService.MapFieldValuesToNameKeyed(pages, fieldValues);
 
                 // Serialize and set main payload
-                var json = System.Text.Json.JsonSerializer.Serialize(mainPayload);
+                var json = System.Text.Json.JsonSerializer.Serialize(namedKeys);
                 JsonDocument doc = JsonDocument.Parse(json);
                 Payload.Data = doc.RootElement;
 
                 // Call main API
                 var (success, message) = await AlloyApiService.PostAsync(Payload);
-
-                // If successful and there are attachments, send them
-                if (success && attachments.Any())
-                {
-                    // Prepare attachment payload
-                    var attachmentPayload = new RequestActionPayload
-                    {
-                        FormId = Payload.FormId,
-                        ObjectId = Payload.ObjectId,
-                        CategoryId = Payload.CategoryId,
-                        Route = "/attachments",
-                        Data = JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(
-                            attachments.ToDictionary(x => x.Key, x => x.Value.Value)
-                        )).RootElement
-                    };
-                    await AlloyApiService.PostAttachmentsAsync(attachmentPayload);
-                }
 
                 await JSRuntime.InvokeVoidAsync("alert", $"API call result: {message}");
             }
@@ -147,26 +124,6 @@
             StateHasChanged();
         }
     }
-
-    protected async Task OnAttachmentChanged(InputFileChangeEventArgs e, string key)
-    {
-        var files = e.GetMultipleFiles();
-        if (files.Count > 0)
-        {
-            // Store the actual attachment data (list of objects)
-            var attachments = await AttachmentService.PrepareAttachmentsAsync(files);
-            fieldValues[key] = attachments;
-        }
-        else
-            fieldValues.Remove(key);
-
-        if (Payload != null && pages != null)
-        {
-            await RulesService.EvaluateRulesAsync(Payload.FormId, pages, fieldValues, key);
-            StateHasChanged();
-        }
-    }
-
 
     private void ClearAttachment(string key)
     {
@@ -230,7 +187,6 @@
         {
             if (
                 (item is FieldInputDto fieldInput && (fieldInput.FieldType == FieldType.Memo || (fieldInput.DefinitionID != null && modifyAppsTriggerFields.Contains(fieldInput.DefinitionID.ToString()))))
-                || item is AttachmentInputDto
                 || item is FieldTextDto
             )
             {
@@ -295,11 +251,6 @@
         }
         return (type, options.Distinct().ToList());
     }
-
-    private Dictionary<string, object>? GetAttachmentRequiredAttr(AttachmentInputDto attachment)
-    {
-        return attachment.Config?.Mandatory == true ? new Dictionary<string, object> { { "required", true } } : null;
-    }
 }
 
 @if (Show)
@@ -327,7 +278,7 @@
                             {
                                 <div class="form-page">
                                     <h3>@p.PageName</h3>
-                                    @foreach (var row in GetFieldRows(p.Items))
+                                    @foreach (var row in GetFieldRows(p.Items.Where(i => !(i is FieldInputDto fi && fi.FieldName == "Requester_Id")).ToList()))
                                     {
                                         var isFullWidthRow =
                                         (row.Count == 1 && row[0] is FieldInputDto fieldInputDto && fieldInputDto.FieldType == FieldType.Memo)
@@ -370,25 +321,6 @@
                                                             }
                                                         </h4>
                                                     </div>
-                                                }
-                                                else if (item is AttachmentInputDto attachment)
-                                                {
-                                                    var fieldKey = attachment.DefinitionID?.ToString();
-                                                    if (!string.IsNullOrEmpty(fieldKey))
-                                                    {
-                                                        <div class="form-col single-col">
-                                                            <div class="field-block">
-                                                                <h4>
-                                                                    @attachment.Config?.Caption
-                                                                    <span class="required" title="Required">
-                                                                        @(attachment.Config?.Mandatory == true ? "*" : "\u00A0")
-                                                                    </span>
-                                                                </h4>
-                                                            </div>
-                                                            <InputFile @key="attachmentInputKeys.ContainsKey(fieldKey) ? attachmentInputKeys[fieldKey] : (attachmentInputKeys[fieldKey] = Guid.NewGuid())" class="form-control" OnChange="e => OnAttachmentChanged(e, fieldKey)" @attributes="GetAttachmentRequiredAttr(attachment)" multiple />
-                                                            <button type="button" class="btn btn-secondary btn-sm" @onclick="() => ClearAttachment(fieldKey)">Clear</button>
-                                                        </div>
-                                                    }
                                                 }
                                             }
                                         </div>

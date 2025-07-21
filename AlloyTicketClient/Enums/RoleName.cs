@@ -5,6 +5,7 @@
         ADD,
         APPROVAL,
         APPROVER,
-        EDIT
+        EDIT,
+        NoteEditor
     }
 }

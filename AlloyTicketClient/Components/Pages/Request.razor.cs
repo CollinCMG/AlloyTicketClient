@@ -1,5 +1,6 @@
 using AlloyTicketClient.Models;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using System.Text.Json;
 
 namespace AlloyTicketClient.Components.Pages
@@ -11,11 +12,21 @@ namespace AlloyTicketClient.Components.Pages
 
         [Inject] private IConfiguration Configuration { get; set; } = default!;
         [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+        [Inject] private AuthenticationStateProvider AuthenticationStateProvider { get; set; } = default!;
 
         private bool showFormModal = false;
         private string? formModalTitle;
         private RequestActionPayload? formModalPayload;
         private DynamicPageConfig? dynamicPage;
+        private string? userDisplayName;
+
+        protected override async Task OnInitializedAsync()
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            userDisplayName = authState.User.Claims.FirstOrDefault(c => c.Type == "name")?.Value
+                ?? authState.User.Identity?.Name
+                ?? string.Empty;
+        }
 
         /// <summary>
         /// Loads the dynamic page configuration based on the headerText route parameter.
@@ -44,19 +55,21 @@ namespace AlloyTicketClient.Components.Pages
         /// <summary>
         /// Shows the form modal for the selected dynamic button.
         /// </summary>
-        private void ShowDynamicButton(DynamicButtonConfig btn)
+        private Task ShowDynamicButtonAsync(DynamicButtonConfig btn)
         {
-            formModalTitle = btn.Name + " Request";
+            formModalTitle = btn.Name;
             // Create an empty JSON object for Data
-            var emptyJson = JsonDocument.Parse("{}").RootElement;
+            var emptyJson = JsonDocument.Parse("{}" ).RootElement;
             formModalPayload = new RequestActionPayload
             {
+                Requester_ID = userDisplayName ?? string.Empty,
                 FormId = btn.FormId,
                 Data = emptyJson,
                 ObjectId = btn.ObjectId,
                 Route = btn.Route
             };
             showFormModal = true;
+            return Task.CompletedTask;
         }
 
         /// <summary>

@@ -1,6 +1,5 @@
 using AlloyTicketClient.Models;
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Logging;
 using System.Data;
 
 namespace AlloyTicketClient.Services

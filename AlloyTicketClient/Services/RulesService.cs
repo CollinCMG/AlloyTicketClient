@@ -67,6 +67,8 @@ namespace AlloyTicketClient.Services
                 existingRule.TargetList = rule.TargetList;
                 existingRule.TargetFieldLabels = rule.TargetFieldLabels;
                 existingRule.IsSet = rule.IsSet;
+                existingRule.IsQueue = rule.IsQueue;
+                existingRule.RoleName = rule.RoleName;
                 // Add any other properties that need to be updated
                 await _db.SaveChangesAsync();
                 InvalidateRuleCache(rule.FormId);
@@ -259,7 +261,7 @@ namespace AlloyTicketClient.Services
                         var roles = await _userRoleService.GetRolesForUserAsync(username);
                         var queues = await _userRoleService.GetUserQueuesAsync(username);
                         var apps = roles.Select(x => x.AppCode).Distinct();
-                        //var roles = roles.Select(x => x.RoleName).Distinct();
+
                         foreach (var target in rule.TargetList)
                         {
                             var targetValue = target.FieldType == Enums.FieldType.Checkbox
@@ -267,9 +269,60 @@ namespace AlloyTicketClient.Services
                                 : (apps.Contains(target.FieldName) ? "Yes" : "No");
                             modifiedApps[target.FieldId] = targetValue;
 
-                            if (target.FieldName == AppCode.CERT.ToString())
-                            {
+                            var fieldByRoleRules = rules.Where(r => r.Action == FilterAction.FieldsByRole && r.TriggerField.Equals(target.FieldId) && (string.IsNullOrWhiteSpace(r.TriggerValue) || r.TriggerValue.Equals(targetValue))).ToList();
 
+                            foreach (var roleRule in fieldByRoleRules)
+                            {
+                                var targetRoleRule = roleRule.TargetList.FirstOrDefault();
+                                if (targetRoleRule == null)
+                                    continue;
+
+                                // Parse TargetValueOverride as comma-separated values
+                                var targetValueOverrides = (roleRule.TargetValueOverride ?? string.Empty)
+                                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                    .Select(s => s.Trim())
+                                    .ToArray();
+                                var positiveValue = targetValueOverrides.Length > 0 ? targetValueOverrides[0] : string.Empty;
+                                var negativeValue = targetValueOverrides.Length > 1 ? targetValueOverrides[1] : string.Empty;
+                                string? targetRuleValue = null;
+
+                                bool isRoleMatch = false;
+                                if (roleRule.RoleName == null)
+                                {
+                                    isRoleMatch = true;
+                                }
+                                else
+                                {
+                                    var ruleRoles = roles.Where(x => x.AppCode == target.FieldName).Select(r => r.RoleName).Distinct().ToList();
+                                    isRoleMatch = ruleRoles.Count > 0 && ruleRoles.Contains(roleRule.RoleName.ToString());
+                                }
+
+                                if (isRoleMatch)
+                                {
+                                    // Positive case
+                                    if (!string.IsNullOrWhiteSpace(positiveValue))
+                                    {
+                                        targetRuleValue = positiveValue;
+                                    }
+                                    else if (roleRule.IsQueue)
+                                    {
+                                        targetRuleValue = queues.FirstOrDefault(q => q.Key.Equals(target.FieldName)).Value;
+                                    }
+                                    modifiedApps[targetRoleRule.FieldId] = targetRuleValue ?? string.Empty;
+                                }
+                                else
+                                {
+                                    // Negative case
+                                    if (!string.IsNullOrWhiteSpace(negativeValue))
+                                    {
+                                        targetRuleValue = negativeValue;
+                                    }
+                                    else
+                                    {
+                                        targetRuleValue = string.Empty;
+                                    }
+                                    modifiedApps[targetRoleRule.FieldId] = targetRuleValue;
+                                }
                             }
                         }
                     }

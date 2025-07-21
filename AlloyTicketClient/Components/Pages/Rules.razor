@@ -91,6 +91,7 @@
                                             <option value="Hide">Hide</option>
                                             <option value="Show">Show</option>
                                             <option value="ModifyApps">Modify Apps</option>
+                                            <option value="FieldsByRole">Fields By Role</option>
                                         </select>
                                     </div>
                                     <div class="col-md-6">
@@ -109,13 +110,49 @@
                                     </div>
                                     <div class="col-12">
                                         <label class="form-label">Target Fields</label>
-                                        <select class="form-select w-100" multiple size="6" style="height:auto;min-height:120px;" @onchange="OnModalTargetFieldsChanged">
-                                            @foreach (var field in ModalFormFields)
-                                            {
-                                                <option value="@field.DefinitionID" selected="@ModalSelectedTargetFieldIds.Contains(field.DefinitionID?.ToString())">@(string.IsNullOrEmpty(field.FieldLabel) ? field.FieldName : field.FieldLabel)</option>
-                                            }
-                                        </select>
+                                        @if (ModalSelectedAction == FilterAction.FieldsByRole)
+                                        {
+                                            <select class="form-select w-100" @onchange="OnModalTargetFieldsChanged">
+                                                <option value="">-- Select Target Field --</option>
+                                                @foreach (var field in ModalFormFields)
+                                                {
+                                                    <option value="@field.DefinitionID" selected="@ModalSelectedTargetFieldIds.Contains(field.DefinitionID?.ToString())">@(string.IsNullOrEmpty(field.FieldLabel) ? field.FieldName : field.FieldLabel)</option>
+                                                }
+                                            </select>
+                                        }
+                                        else
+                                        {
+                                            <select class="form-select w-100" multiple size="6" style="height:auto;min-height:120px;" @onchange="OnModalTargetFieldsChanged">
+                                                @foreach (var field in ModalFormFields)
+                                                {
+                                                    <option value="@field.DefinitionID" selected="@ModalSelectedTargetFieldIds.Contains(field.DefinitionID?.ToString())">@(string.IsNullOrEmpty(field.FieldLabel) ? field.FieldName : field.FieldLabel)</option>
+                                                }
+                                            </select>
+                                        }
                                     </div>
+                                    @if (ModalSelectedAction == FilterAction.FieldsByRole)
+                                    {
+                                        <div class="col-md-6">
+                                            <label class="form-label">Role</label>
+                                            <select class="form-select" @bind="ModalSelectedRoleName">
+                                                <option value="">Any</option>
+                                                @foreach (var role in AllRoles)
+                                                {
+                                                    <option value="@role">@role</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 d-flex align-items-end">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="isQueueCheck" @bind="ModalIsQueue" />
+                                                <label class="form-check-label" for="isQueueCheck">Is Queue</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Target Value Override <span class="text-muted" style="font-size:smaller">(optional)</span></label>
+                                            <input class="form-control" @bind="ModalTargetValueOverride" placeholder="Override value for target field (optional)" />
+                                        </div>
+                                    }
                                 </div>
                             </div>
                         </div>
