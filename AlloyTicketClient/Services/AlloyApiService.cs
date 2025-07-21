@@ -53,6 +53,33 @@
             }
         }
 
+
+        public async Task<(bool Success, string Message)> PostAttachmentsAsync(RequestActionPayload payload)
+        {
+            try
+            {
+                SetAuthHeader("test", null);
+                var apiUrl = $"{GetBaseUrl()}/request/attachments";
+                // Serialize and send the RequestActionPayload object directly (no wrapper)
+                var serializedPayload = JsonSerializer.Serialize(payload);
+                _logger.LogInformation("Sending POST to {ApiUrl} with payload: {Payload}", apiUrl, serializedPayload);
+                var content = new StringContent(serializedPayload, Encoding.UTF8, "application/json");
+                using var response = await _client.PostAsync(apiUrl, content);
+                var apiResponse = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation("Received response: {StatusCode} - {Response}", response.StatusCode, apiResponse);
+
+                if (response.IsSuccessStatusCode)
+                    return (true, "Success");
+
+                return (false, $"API Error: {response.StatusCode} - {apiResponse}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception occurred in PostAsync");
+                return (false, $"Exception occurred in PostAsync: {ex.Message}");
+            }
+        }
+
         private void SetAuthHeader(string requester, string email = null)
         {
             if (string.IsNullOrWhiteSpace(requester))

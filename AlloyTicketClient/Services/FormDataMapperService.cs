@@ -9,8 +9,9 @@ namespace AlloyTicketClient.Services
     {
         /// <summary>
         /// Maps fieldValues (by GUID) to a dictionary keyed by field name, including all required fields (even if hidden), with dropdown handling.
+        /// Returns a dictionary where each value is a tuple of (Value, InputType).
         /// </summary>
-        public static Dictionary<string, object?> MapFieldValuesToNameKeyed(
+        public static Dictionary<string, (object? Value, FieldType? InputType)> MapFieldValuesToNameKeyed(
             List<PageDto>? pages,
             Dictionary<string, object?> fieldValues)
         {
@@ -42,7 +43,7 @@ namespace AlloyTicketClient.Services
                     }
                 }
             }
-            var nameKeyed = new Dictionary<string, object?>();
+            var nameKeyed = new Dictionary<string, (object? Value, FieldType? InputType)>();
             // Always include visible fields and required fields (even if hidden)
             var allRelevantGuids = visibleFieldGuids.Union(requiredFieldGuids);
             foreach (var guid in allRelevantGuids)
@@ -55,7 +56,6 @@ namespace AlloyTicketClient.Services
                     fieldType = t;
                 object? value = fieldValues.TryGetValue(guid, out var v) ? v : null;
 
-
                 if (fieldType == FieldType.Dropdown && value is DropdownOptionDto dto)
                 {
                     if (dto.Properties.TryGetValue("Full_Name", out var fullNameVal) && fullNameVal != null)
@@ -64,9 +64,20 @@ namespace AlloyTicketClient.Services
                         value = dto.Properties.Values.FirstOrDefault();
                 }
 
-                nameKeyed[fieldName ?? guid] = value;
+                nameKeyed[fieldName ?? guid] = (value, fieldType);
             }
             return nameKeyed;
+        }
+
+        /// <summary>
+        /// Returns only the attachment fields from a name-keyed dictionary.
+        /// </summary>
+        public static Dictionary<string, (object? Value, FieldType? InputType)> GetAttachmentFieldsFromNameKeyed(
+            Dictionary<string, (object? Value, FieldType? InputType)> nameKeyed)
+        {
+            return nameKeyed
+                .Where(kvp => kvp.Value.InputType == FieldType.Attachment)
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         }
 
         /// <summary>

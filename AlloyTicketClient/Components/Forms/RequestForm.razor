@@ -91,14 +91,41 @@
             if (Payload != null)
             {
                 FormDataMapperService.SetDefaultsForHiddenRequiredFields(pages, fieldValues);
+
+                // Get all fields with types
                 var nameKeyed = FormDataMapperService.MapFieldValuesToNameKeyed(pages, fieldValues);
 
-                var json = System.Text.Json.JsonSerializer.Serialize(nameKeyed);
-                JsonDocument doc = JsonDocument.Parse(json);
-                var element = doc.RootElement;
+                // Separate attachments
+                var attachments = FormDataMapperService.GetAttachmentFieldsFromNameKeyed(nameKeyed);
+                var mainPayload = nameKeyed
+                    .Where(x => x.Value.InputType != FieldType.Attachment)
+                    .ToDictionary(x => x.Key, x => x.Value.Value);
 
-                Payload.Data = element;
+                // Serialize and set main payload
+                var json = System.Text.Json.JsonSerializer.Serialize(mainPayload);
+                JsonDocument doc = JsonDocument.Parse(json);
+                Payload.Data = doc.RootElement;
+
+                // Call main API
                 var (success, message) = await AlloyApiService.PostAsync(Payload);
+
+                // If successful and there are attachments, send them
+                if (success && attachments.Any())
+                {
+                    // Prepare attachment payload
+                    var attachmentPayload = new RequestActionPayload
+                    {
+                        FormId = Payload.FormId,
+                        ObjectId = Payload.ObjectId,
+                        CategoryId = Payload.CategoryId,
+                        Route = "/attachments",
+                        Data = JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(
+                            attachments.ToDictionary(x => x.Key, x => x.Value.Value)
+                        )).RootElement
+                    };
+                    await AlloyApiService.PostAttachmentsAsync(attachmentPayload);
+                }
+
                 await JSRuntime.InvokeVoidAsync("alert", $"API call result: {message}");
             }
         }
@@ -126,9 +153,9 @@
         var files = e.GetMultipleFiles();
         if (files.Count > 0)
         {
-            var fileString = await AttachmentService.CreateAttachmentStringContentAsync(files);
-
-            fieldValues[key] = fileString;
+            // Store the actual attachment data (list of objects)
+            var attachments = await AttachmentService.PrepareAttachmentsAsync(files);
+            fieldValues[key] = attachments;
         }
         else
             fieldValues.Remove(key);
