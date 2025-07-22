@@ -1,15 +1,14 @@
 ﻿namespace AlloyTicketClient.Services
 {
     using AlloyTicketClient.Models;
-    using Azure.Core;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Logging;
     using System;
     using System.Net.Http;
     using System.Net.Http.Headers;
     using System.Text;
-    using System.Threading.Tasks;
     using System.Text.Json;
+    using System.Threading.Tasks;
 
     public class AlloyApiService
     {
@@ -25,7 +24,6 @@
             _jwtTokenService = jwtTokenService ?? throw new ArgumentNullException(nameof(jwtTokenService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
-
 
         public async Task<(bool Success, string Message)> PostAsync(RequestActionPayload payload)
         {

@@ -1,19 +1,21 @@
+using System.Text.Json;
 using AlloyTicketClient.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
-using System.Text.Json;
 
 namespace AlloyTicketClient.Components.Pages
 {
     public partial class Request : ComponentBase
     {
-        [Parameter]
-        public string? headerText { get; set; }
+        // --- Parameters ---
+        [Parameter] public string? headerText { get; set; }
 
-        [Inject] private IConfiguration Configuration { get; set; } = default!;
-        [Inject] private NavigationManager NavigationManager { get; set; } = default!;
-        [Inject] private AuthenticationStateProvider AuthenticationStateProvider { get; set; } = default!;
+        // --- Injected Services ---
+        [Inject] private IConfiguration Configuration { get; set; }
+        [Inject] private NavigationManager NavigationManager { get; set; }
+        [Inject] private AuthenticationStateProvider AuthenticationStateProvider { get; set; }
 
+        // --- Private Fields ---
         private bool showFormModal = false;
         private string? formModalTitle;
         private RequestActionPayload? formModalPayload;
@@ -37,14 +39,7 @@ namespace AlloyTicketClient.Components.Pages
             if (!string.IsNullOrEmpty(headerText))
             {
                 var match = dynamicPages.FirstOrDefault(p => string.Equals(p.HeaderText, Uri.UnescapeDataString(headerText), StringComparison.OrdinalIgnoreCase));
-                if (match != null)
-                {
-                    dynamicPage = match;
-                }
-                else
-                {
-                    dynamicPage = null;
-                }
+                dynamicPage = match;
             }
             else
             {
@@ -58,7 +53,6 @@ namespace AlloyTicketClient.Components.Pages
         private Task ShowDynamicButtonAsync(DynamicButtonConfig btn)
         {
             formModalTitle = btn.Name;
-            // Create an empty JSON object for Data
             var emptyJson = JsonDocument.Parse("{}" ).RootElement;
             formModalPayload = new RequestActionPayload
             {

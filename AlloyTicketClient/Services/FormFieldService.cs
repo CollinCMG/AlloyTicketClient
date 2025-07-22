@@ -1,5 +1,6 @@
 using AlloyTicketClient.Enums;
 using AlloyTicketClient.Models;
+using AlloyTicketClient.Models.DTOs;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;

@@ -2,12 +2,11 @@ using AlloyTicketClient.Enums;
 
 namespace AlloyTicketClient.Models
 {
-    public class TargetFieldInfo
+    public class RulesConfig
     {
-        public string FieldId { get; set; } = string.Empty; // GUID as string
-        public string FieldName { get; set; } = string.Empty;
-        public string FieldValue { get; set; } = string.Empty;
-        public FieldType FieldType { get; set; } = FieldType.Null; // Use enum
+        private static RulesConfig? _instance;
+        public static RulesConfig Instance => _instance ??= new RulesConfig();
+        public List<RuleConfig> Rules { get; set; } = new();
     }
 
     public class RuleConfig
@@ -26,12 +25,5 @@ namespace AlloyTicketClient.Models
         public RoleName? RoleName { get; set; } // Only used for FieldsByRole
         public bool IsQueue { get; set; } // Only used for FieldsByRole
         public string? TargetValueOverride { get; set; } // Only used for FieldsByRole, default to null/empty
-    }
-
-    public class RulesConfig
-    {
-        private static RulesConfig? _instance;
-        public static RulesConfig Instance => _instance ??= new RulesConfig();
-        public List<RuleConfig> Rules { get; set; } = new();
     }
 }

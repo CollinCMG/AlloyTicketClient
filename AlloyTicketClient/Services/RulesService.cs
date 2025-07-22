@@ -1,6 +1,7 @@
 using AlloyTicketClient.Contexts;
 using AlloyTicketClient.Enums;
 using AlloyTicketClient.Models;
+using AlloyTicketClient.Models.DTOs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 

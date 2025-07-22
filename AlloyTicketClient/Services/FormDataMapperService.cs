@@ -1,5 +1,5 @@
 using AlloyTicketClient.Enums;
-using AlloyTicketClient.Models;
+using AlloyTicketClient.Models.DTOs;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
