@@ -255,12 +255,12 @@ namespace AlloyTicketClient.Services
                     {
                         isActive = !string.IsNullOrWhiteSpace(valueStr);
                     }
-                    bool triggerMatch = string.IsNullOrWhiteSpace(rule.TriggerValue) || string.Equals(valueStr, rule.TriggerValue, StringComparison.OrdinalIgnoreCase);
-                    if (isActive && triggerMatch)
+                    if (isActive)
                     {
                         var roles = await _userRoleService.GetRolesForUserAsync(username);
                         var queues = await _userRoleService.GetUserQueuesAsync(username);
                         var apps = roles.Select(x => x.AppCode).Distinct();
+                        //bool triggerMatch = string.IsNullOrWhiteSpace(rule.TriggerValue) || string.Equals(valueStr, rule.TriggerValue, StringComparison.OrdinalIgnoreCase);
 
                         foreach (var target in rule.TargetList)
                         {
@@ -278,56 +278,35 @@ namespace AlloyTicketClient.Services
 
                             foreach (var roleRule in fieldByRoleRules)
                             {
-                                var targetRoleRule = roleRule.TargetList.FirstOrDefault();
-                                if (targetRoleRule == null)
-                                    continue;
+                                var appRoles = roles.Where(r => r.AppCode == target.FieldName).Select(x => x.RoleName).Distinct().ToList();
 
-                                // Parse TargetValueOverride as comma-separated values
-                                var targetValueOverrides = (roleRule.TargetValueOverride ?? string.Empty)
-                                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                                    .Select(s => s.Trim())
-                                    .ToArray();
-                                var positiveValue = targetValueOverrides.Length > 0 ? targetValueOverrides[0] : string.Empty;
-                                var negativeValue = targetValueOverrides.Length > 1 ? targetValueOverrides[1] : string.Empty;
+                                if (roleRule.TargetList.Count == 0)
+                                {
+                                    continue;
+                                }
+
+                                var targetRoleRuleField = roleRule.TargetList.First();
+
+                                if (roleRule.RoleName != null && !appRoles.Contains(roleRule.RoleName.ToString()))
+                                {
+                                    modifiedApps[targetRoleRuleField.FieldId] = targetRoleRuleField.FieldValue ?? string.Empty;
+                                    continue;
+                                }
+
+                                var roleRuleOverrideValue = roleRule.TargetValueOverride ?? string.Empty;
+
                                 string? targetRuleValue = null;
 
-                                bool isRoleMatch = false;
-                                if (roleRule.RoleName == null)
+                                if (!string.IsNullOrWhiteSpace(roleRuleOverrideValue))
                                 {
-                                    isRoleMatch = true;
+                                    targetRuleValue = roleRuleOverrideValue;
                                 }
-                                else
+                                else if (roleRule.IsQueue)
                                 {
-                                    var ruleRoles = roles.Where(x => x.AppCode == target.FieldName).Select(r => r.RoleName).Distinct().ToList();
-                                    isRoleMatch = ruleRoles.Count > 0 && ruleRoles.Contains(roleRule.RoleName.ToString());
+                                    targetRuleValue = queues.FirstOrDefault(q => q.Key.Equals(target.FieldName)).Value;
                                 }
+                                modifiedApps[targetRoleRuleField.FieldId] = targetRuleValue ?? string.Empty;
 
-                                if (isRoleMatch)
-                                {
-                                    // Positive case
-                                    if (!string.IsNullOrWhiteSpace(positiveValue))
-                                    {
-                                        targetRuleValue = positiveValue;
-                                    }
-                                    else if (roleRule.IsQueue)
-                                    {
-                                        targetRuleValue = queues.FirstOrDefault(q => q.Key.Equals(target.FieldName)).Value;
-                                    }
-                                    modifiedApps[targetRoleRule.FieldId] = targetRuleValue ?? string.Empty;
-                                }
-                                else
-                                {
-                                    // Negative case
-                                    if (!string.IsNullOrWhiteSpace(negativeValue))
-                                    {
-                                        targetRuleValue = negativeValue;
-                                    }
-                                    else
-                                    {
-                                        targetRuleValue = string.Empty;
-                                    }
-                                    modifiedApps[targetRoleRule.FieldId] = targetRuleValue;
-                                }
                             }
                         }
                     }
