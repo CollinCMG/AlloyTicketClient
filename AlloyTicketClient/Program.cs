@@ -1,10 +1,9 @@
 using AlloyTicketClient.Components;
+using AlloyTicketClient.Contexts;
 using AlloyTicketClient.Services;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
-using AlloyTicketClient.Contexts;
-using Microsoft.Extensions.Caching.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,7 +23,6 @@ builder.Services.AddScoped<FormFieldService>();
 builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddScoped<AlloyApiService>();
 builder.Services.AddScoped<UserRoleService>();
-builder.Services.AddScoped<AttachmentService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<RulesService>();
 
