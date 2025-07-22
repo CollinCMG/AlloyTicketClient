@@ -1,9 +1,11 @@
 @page "/rules"
+@attribute [Authorize(Roles = "Admin")]
 @rendermode InteractiveServer
 
 @using AlloyTicketClient.Models
 @using AlloyTicketClient.Services
 @using AlloyTicketClient.Enums
+@using Microsoft.AspNetCore.Authorization
 
 <PageTitle>Rules</PageTitle>
 

@@ -1,4 +1,5 @@
 ﻿@inject IConfiguration Configuration
+@using Microsoft.AspNetCore.Components.Authorization
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
@@ -10,8 +11,7 @@
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column">
-        
-        @if (dynamicPages != null)
+          @if (dynamicPages != null)
         {
             foreach (var dp in dynamicPages)
             {
@@ -23,11 +23,13 @@
             }
         }
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/rules">
-                Rules 
-            </NavLink>
-        </div>
+        <AuthorizeView Roles="Admin">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/rules">
+                    Rules 
+                </NavLink>
+            </div>
+        </AuthorizeView>
     </nav>
 </div>
 
