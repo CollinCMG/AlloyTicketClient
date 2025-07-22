@@ -4,7 +4,7 @@
 
 @if (Field == null || Field.Field_Name == "Requester_ID")
 {
-    <!-- Do not render anything for Requester_ID -->
+    // Do not render anything for Requester_ID
 }
 else
 {
@@ -15,6 +15,7 @@ else
                 @(Field.Mandatory == true ? "*" : "\u00A0")
             </span>
         </h4>
+        @* Input with LookupValues: radio or select *@
         @if (Field.FieldType == FieldType.Input && !string.IsNullOrWhiteSpace(Field.LookupValues))
         {
             var (lookupType, options) = ParseLookupTypeAndValues(Field.LookupValues);
@@ -42,18 +43,22 @@ else
                 </select>
             }
         }
+        @* Plain text input *@
         else if (Field.FieldType == FieldType.Input)
         {
             <input type="text" class="form-control" @bind="CurrentValue" @bind:event="oninput" required="@(Field.Mandatory == true)" disabled="@(Field.Read_Only == true)" />
         }
+        @* Checkbox *@
         else if (Field.FieldType == FieldType.Checkbox)
         {
             <input type="checkbox" class="form-check-input" @bind="IsChecked" disabled="@(Field.Read_Only == true)" />
         }
+        @* Memo (textarea) *@
         else if (Field.FieldType == FieldType.Memo)
         {
             <textarea class="form-control full-row" @bind="CurrentValue" required="@(Field.Mandatory == true)" disabled="@(Field.Read_Only == true)"></textarea>
         }
+        @* MultiSelect *@
         else if (Field.FieldType == FieldType.MultiSelect && !string.IsNullOrWhiteSpace(Field.LookupValues))
         {
             var multiOptions = FormDataMapperService.ParseLookupValues(Field.LookupValues).Distinct();
@@ -64,6 +69,7 @@ else
                 }
             </select>
         }
+        @* Dropdown with async options *@
         else if (Field.FieldType == FieldType.Dropdown && !string.IsNullOrWhiteSpace(Field.TableName) && !string.IsNullOrWhiteSpace(Field.DisplayFields))
         {
             if (Options == null)
@@ -76,29 +82,29 @@ else
                     <option value="">-- Select --</option>
                     @foreach (var option in Options)
                     {
-                        var value = option.Properties.ContainsKey("Id") ? option.Properties["Id"]?.ToString() : option.Properties.Values.FirstOrDefault()?.ToString();
-                        var display = option.Properties.ContainsKey("Display_Name") ? option.Properties["Display_Name"]?.ToString() : option.Properties.Values.FirstOrDefault()?.ToString();
+                        var (value, display) = GetDropdownValueAndDisplay(option);
                         <option value="@value">@display</option>
                     }
                 </select>
             }
         }
+        @* Dropdown with static options *@
         else if (Field.FieldType == FieldType.Dropdown && Options != null)
         {
             <select class="form-control" @onchange="OnDropdownChanged" required="@(Field.Mandatory == true)" disabled="@(Field.Read_Only == true)">
-                @* <option value="">-- Select --</option> *@
                 @foreach (var option in Options)
                 {
-                    var value = option.Properties.ContainsKey("Id") ? option.Properties["Id"]?.ToString() : option.Properties.Values.FirstOrDefault()?.ToString();
-                    var display = option.Properties.ContainsKey("Display_Name") ? option.Properties["Display_Name"]?.ToString() : option.Properties.Values.FirstOrDefault()?.ToString();
+                    var (value, display) = GetDropdownValueAndDisplay(option);
                     <option value="@value">@display</option>
                 }
             </select>
         }
+        @* Date input *@
         else if (Field.FieldType == FieldType.Date)
         {
             <input type="date" class="form-control" @bind="DateValue" required="@(Field.Mandatory == true)" disabled="@(Field.Read_Only == true)" />
         }
+        @* Fallback: text input *@
         else
         {
             <input type="text" class="form-control" @bind="CurrentValue" @bind:event="oninput" required="@(Field.Mandatory == true)" disabled="@(Field.Read_Only == true)" />
@@ -107,208 +113,5 @@ else
 }
 
 @code {
-    [Parameter] public FormFieldDto? Field { get; set; }
-    [Parameter] public object? Value { get; set; }
-    [Parameter] public EventCallback<object?> OnValueChanged { get; set; }
-
-    [Inject] private FormFieldService FormFieldService { get; set; } = default!;
-
-    private List<DropdownOptionDto>? Options;
-
-    private List<string> SelectedMultiValues
-    {
-        get
-        {
-            if (Value is List<string> list)
-                return list;
-            if (Value is string s && !string.IsNullOrWhiteSpace(s))
-                return s.Split(';').Select(x => x.Trim()).Where(x => !string.IsNullOrEmpty(x)).ToList();
-            return new List<string>();
-        }
-        set
-        {
-            if (!Equals(Value, value))
-            {
-                Value = value;
-                OnValueChanged.InvokeAsync(value);
-            }
-        }
-    }
-
-    private void OnMultiSelectChanged(ChangeEventArgs e)
-    {
-        if (e.Value is not null)
-        {
-            var selected = new List<string>();
-            if (e.Value is string single)
-            {
-                selected.Add(single);
-            }
-            else if (e.Value is IEnumerable<string> many)
-            {
-                selected.AddRange(many);
-            }
-            else if (e.Value is string[] arr)
-            {
-                selected.AddRange(arr);
-            }
-            else if (e.Value is IEnumerable<object> objArr)
-            {
-                selected.AddRange(objArr.Select(x => x?.ToString() ?? ""));
-            }
-            SelectedMultiValues = selected;
-        }
-        else
-        {
-            SelectedMultiValues = new List<string>();
-        }
-    }
-
-    private string? CurrentValue
-    {
-        get
-        {
-            // Prefer Value, but if null/empty, use Field.FieldValue
-            var val = Value is DropdownOptionDto dto
-                ? dto.Properties.ContainsKey("Id") ? dto.Properties["Id"]?.ToString() : dto.Properties.Values.FirstOrDefault()?.ToString()
-                : Value?.ToString();
-            if (string.IsNullOrEmpty(val) && Field != null && !string.IsNullOrEmpty(Field.Field_Value))
-            {
-                return Field.Field_Value;
-            }
-            return val;
-        }
-        set
-        {
-            if (Field?.FieldType == FieldType.Dropdown && Options != null)
-            {
-                var selected = Options.FirstOrDefault(o => (o.Properties.ContainsKey("Id") ? o.Properties["Id"]?.ToString() : o.Properties.Values.FirstOrDefault()?.ToString()) == value);
-                if (selected != null && !Equals(Value, selected))
-                {
-                    Value = selected;
-                    OnValueChanged.InvokeAsync(selected);
-                }
-                else if (string.IsNullOrEmpty(value))
-                {
-                    Value = null;
-                    OnValueChanged.InvokeAsync(null);
-                }
-            }
-            else
-            {
-                if (!Equals(Value, value))
-                {
-                    Value = value;
-                    OnValueChanged.InvokeAsync(value);
-                }
-            }
-        }
-    }
-
-    private void OnRadioChanged(string option)
-    {
-        if (!Equals(Value, option))
-        {
-            Value = option;
-            OnValueChanged.InvokeAsync(option);
-        }
-    }
-
-    private void OnDropdownChanged(ChangeEventArgs e)
-    {
-        var selectedValue = e.Value?.ToString();
-        if (Options != null)
-        {
-            var selected = Options.FirstOrDefault(o => (o.Properties.ContainsKey("Id") ? o.Properties["Id"]?.ToString() : o.Properties.Values.FirstOrDefault()?.ToString()) == selectedValue);
-            Value = selected;
-            OnValueChanged.InvokeAsync(selected);
-        }
-    }
-
-    private bool IsChecked
-    {
-        get => Value?.ToString() == "true" || Value?.ToString() == "True";
-        set
-        {
-            var strValue = value ? "true" : "false";
-            if (!Equals(Value, strValue))
-            {
-                Value = strValue;
-                OnValueChanged.InvokeAsync(strValue);
-            }
-        }
-    }
-
-    private DateTime? DateValue
-    {
-        get
-        {
-            if (DateTime.TryParse(Value?.ToString(), out var dt))
-                return dt;
-            return null;
-        }
-        set
-        {
-            var strValue = value.HasValue ? value.Value.ToString("yyyy-MM-dd") : null;
-            if (!Equals(Value, strValue))
-            {
-                Value = strValue;
-                OnValueChanged.InvokeAsync(strValue);
-            }
-        }
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadDropdownOptions();
-    }
-
-    private async Task LoadDropdownOptions()
-    {
-        if (Field?.FieldType == FieldType.Dropdown && !string.IsNullOrWhiteSpace(Field.TableName) && !string.IsNullOrWhiteSpace(Field.DisplayFields))
-        {
-            Options = await FormFieldService.GetDropdownOptionsAsync(Field);
-            StateHasChanged();
-        }
-        else
-        {
-            Options = null;
-        }
-    }
-
-    private string GetDisplayName(FormFieldDto field)
-        => string.IsNullOrWhiteSpace(field.Field_Label) ? field.Field_Name ?? string.Empty : field.Field_Label;
-
-    private (int lookupType, List<string> options) ParseLookupTypeAndValues(string lookupValues)
-    {
-        // Example: 1,"No,Yes","No,Yes" or 2,"A,B,C"
-        var parts = lookupValues.Split(',', 2);
-        if (parts.Length < 2 || !int.TryParse(parts[0], out var type))
-        {
-            // fallback: treat as type 2 (dropdown) and parse as before
-            return (2, FormDataMapperService.ParseLookupValues(lookupValues).ToList());
-        }
-        var rest = parts[1];
-        var options = new List<string>();
-        // Try to extract quoted string(s)
-        var quoteStart = rest.IndexOf('"');
-        var quoteEnd = rest.LastIndexOf('"');
-        if (quoteStart >= 0 && quoteEnd > quoteStart)
-        {
-            var quoted = rest.Substring(quoteStart + 1, quoteEnd - quoteStart - 1);
-            options = quoted.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries)
-                .Select(x => x.Replace("\"", string.Empty)).ToList();
-        }
-        else
-        {
-            options = rest.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries)
-                .Select(x => x.Replace("\"", string.Empty)).ToList();
-        }
-        return (type, options.Distinct().ToList());
-    }
-
-    private Dictionary<string, object> GetRequiredAttribute()
-    {
-        return Field?.Mandatory == true ? new Dictionary<string, object> { { "required", true } } : new Dictionary<string, object>();
-    }
+    // All logic moved to FieldInput.razor.cs partial class
 }
