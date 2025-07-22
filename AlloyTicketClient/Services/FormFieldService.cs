@@ -25,19 +25,22 @@ public class FormFieldService
             return Guid.Empty;
 
         var sql = @"SELECT e.Form_ID FROM cfgLCEvents e INNER JOIN cfgLCActionList al ON e.EventID = al.EventID INNER JOIN Service_Request_Fulfillment_List fl ON fl.Request_Create_Action_ID = al.id INNER JOIN Service_Catalog_Item_List cil ON fl.ID = cil.Request_Fulfillment_ID WHERE OID = @ObjId";
-        using (var command = _db.Database.GetDbConnection().CreateCommand())
+        var connString = _db.Database.GetConnectionString();
+        using (var connection = new SqlConnection(connString))
         {
-            command.CommandText = sql;
-            var param = new SqlParameter("@ObjId", objectId);
-            command.Parameters.Add(param);
-            EnsureConnectionOpen(command);
-            using (var reader = await command.ExecuteReaderAsync())
+            await connection.OpenAsync();
+            using (var command = connection.CreateCommand())
             {
-                if (await reader.ReadAsync())
+                command.CommandText = sql;
+                command.Parameters.Add(new SqlParameter("@ObjId", objectId));
+                using (var reader = await command.ExecuteReaderAsync())
                 {
-                    var formIdObj = reader["Form_ID"];
-                    if (formIdObj != DBNull.Value && Guid.TryParse(formIdObj.ToString(), out var formId))
-                        return formId;
+                    if (await reader.ReadAsync())
+                    {
+                        var formIdObj = reader["Form_ID"];
+                        if (formIdObj != DBNull.Value && Guid.TryParse(formIdObj.ToString(), out var formId))
+                            return formId;
+                    }
                 }
             }
         }

@@ -1,0 +1,56 @@
+@* Toast.razor: A reusable toast notification component *@
+@code {
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public string Type { get; set; } = "success"; // "success" or "error"
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public EventCallback OnHide { get; set; }
+
+    private string ToastClass => $"toast-message center {(Show ? "show" : "")}" + (Type == "error" ? " error" : " success");
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Show)
+        {
+            await Task.Delay(3000);
+            await OnHide.InvokeAsync();
+        }
+    }
+}
+
+@if (Show && !string.IsNullOrWhiteSpace(Message))
+{
+    <div class="@ToastClass">
+        @Message
+    </div>
+}
+
+<style>
+.toast-message.center {
+    position: fixed;
+    top: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 220px;
+    max-width: 90vw;
+    background: #28a745;
+    color: #fff;
+    padding: 1rem 2rem;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 2147483647;
+    opacity: 0;
+    transition: opacity 0.5s;
+    pointer-events: none;
+    text-align: center;
+}
+.toast-message.center.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+.toast-message.center.error {
+    background: #dc3545;
+}
+.toast-message.center.success {
+    background: #28a745;
+}
+</style>

@@ -85,6 +85,12 @@ namespace AlloyTicketClient.Services
                         var guid = fieldInput.DefinitionID.ToString()!;
                         if (!fieldValues.TryGetValue(guid, out var value) || value == null || string.IsNullOrWhiteSpace(value.ToString()))
                         {
+                            // Use FieldValue if present and not empty
+                            if (!string.IsNullOrWhiteSpace(fieldInput.FieldValue))
+                            {
+                                fieldValues[guid] = fieldInput.FieldValue;
+                                continue;
+                            }
                             switch (fieldInput.FieldType)
                             {
                                 case FieldType.Checkbox:

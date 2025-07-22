@@ -32,6 +32,10 @@ namespace AlloyTicketClient.Components.Forms
         private bool closeSidebarOnConfirm = false;
         private RuleEvaluationResult? ruleResult;
         private List<string> modifyAppsTriggerFields = new();
+        private string? successMessage = null;
+        private string toastMessage = string.Empty;
+        private string toastType = "success";
+        private bool showToast = false;
 
         // --- Lifecycle ---
         protected override async Task OnParametersSetAsync()
@@ -86,6 +90,24 @@ namespace AlloyTicketClient.Components.Forms
         }
 
         // --- Event Handlers ---
+        private async Task ShowToastAsync(string message, string type = "success", int durationMs = 3000)
+        {
+            toastMessage = message;
+            toastType = type;
+            showToast = true;
+            StateHasChanged();
+            await Task.Delay(durationMs);
+            showToast = false;
+            StateHasChanged();
+        }
+
+        private Task HideToast()
+        {
+            showToast = false;
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+
         private async Task SubmitFormAsync()
         {
             isSubmitting = true;
@@ -100,7 +122,15 @@ namespace AlloyTicketClient.Components.Forms
                     JsonDocument doc = JsonDocument.Parse(json);
                     Payload.Data = doc.RootElement;
                     var (success, message) = await AlloyApiService.PostAsync(Payload);
-                    await JSRuntime.InvokeVoidAsync("alert", $"API call result: {message}");
+
+                    if (success)
+                    {
+                        Show = false;
+                        await ShowToastAsync("Form submitted successfully!", "success");
+                        return;
+                    }
+
+                    await ShowToastAsync($"API call result: {message}", "error");
                 }
             }
             finally

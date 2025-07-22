@@ -3,6 +3,9 @@
 @using AlloyTicketClient.Models
 @using AlloyTicketClient.Models.DTOs
 @using AlloyTicketClient.Services
+@using AlloyTicketClient.Components.Forms
+
+<Toast Message="@toastMessage" Type="@toastType" Show="@showToast" OnHide="HideToast" />
 
 @if (Show)
 {
