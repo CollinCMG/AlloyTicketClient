@@ -1,4 +1,5 @@
-﻿.modal-overlay {
+﻿/* Modal Overlay and Dialog */
+.modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -33,13 +34,13 @@
         transform: translateY(2.5rem) scale(0.98);
         opacity: 0;
     }
-
     to {
         transform: translateY(0) scale(1);
         opacity: 1;
     }
 }
 
+/* Modal Header */
 .modal-header {
     padding: 1.5rem 2rem 1rem 2rem;
     border-bottom: 0.0625rem solid #e5e7eb;
@@ -81,24 +82,12 @@
     align-items: center;
     justify-content: center;
 }
-
-    .modal-close:hover {
-        color: #2563eb;
-        background: #e0e7ef;
-    }
-
-.field-content {
-    overflow-y: hidden;
-    height: 90%;
+.modal-close:hover {
+    color: #2563eb;
+    background: #e0e7ef;
 }
 
-.field-content-scroll {
-    flex: 1 1 auto;
-    overflow-y: auto;
-    min-height: 0;
-    padding: 2rem;
-}
-
+/* Modal Content */
 .modal-content {
     flex: 1;
     padding: 2rem;
@@ -118,6 +107,19 @@
     pointer-events: auto;
 }
 
+.field-content {
+    overflow-y: hidden;
+    height: 90%;
+}
+
+.field-content-scroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    min-height: 0;
+    padding: 2rem;
+}
+
+/* Form Page */
 .form-page {
     margin: 0 auto 2.5rem auto;
     padding: 0 1.5rem 1.5rem 1.5rem;
@@ -127,31 +129,28 @@
     box-shadow: 0 0.125rem 0.5rem rgba(30,41,59,0.04);
     transition: box-shadow 0.18s;
 }
+.form-page:last-child {
+    margin-bottom: 0;
+}
+.form-page h3 {
+    background: #f3f6fa;
+    border-radius: 1rem 1rem 0 0;
+    padding: 1.25rem 1rem 0.75rem 1rem;
+    margin: 0 -1.5rem 1.25rem -1.5rem;
+    border-bottom: 0.09375rem solid #e0e7ef;
+    font-weight: 700;
+    color: #2563eb;
+    letter-spacing: 0.01em;
+    text-shadow: 0 0.125rem 0.5rem rgba(30,41,59,0.06);
+}
+.form-page > * {
+    margin-bottom: 1.25rem;
+}
+.form-page > *:last-child {
+    margin-bottom: 0;
+}
 
-    .form-page:last-child {
-        margin-bottom: 0;
-    }
-
-    .form-page h3 {
-        background: #f3f6fa;
-        border-radius: 1rem 1rem 0 0;
-        padding: 1.25rem 1rem 0.75rem 1rem;
-        margin: 0 -1.5rem 1.25rem -1.5rem;
-        border-bottom: 0.09375rem solid #e0e7ef;
-        font-weight: 700;
-        color: #2563eb;
-        letter-spacing: 0.01em;
-        text-shadow: 0 0.125rem 0.5rem rgba(30,41,59,0.06);
-    }
-
-    .form-page > * {
-        margin-bottom: 1.25rem;
-    }
-
-        .form-page > *:last-child {
-            margin-bottom: 0;
-        }
-
+/* Modal Footer */
 .modal-footer, .modal-footer-fixed {
     height: 4.5rem;
     min-height: 4.5rem;
@@ -166,119 +165,34 @@
     background: #f8fafc;
     border-radius: 0 0 1rem 1rem;
 }
-
-    .modal-footer .btn, .modal-footer-fixed .btn {
-        margin-top: 0;
-        margin-bottom: 0;
-        align-self: center;
-        padding-top: 0.75rem;
-        padding-bottom: 0.75rem;
-    }
-
-    .modal-footer .btn-primary {
-        background-color: #2563eb;
-        color: #fff;
-        border: none;
-    }
-
-        .modal-footer .btn-primary:hover, .modal-footer .btn-primary:focus {
-            background-color: #1d4ed8;
-            color: #fff;
-            box-shadow: 0 0.25rem 1rem rgba(30,41,59,0.12);
-        }
-
-    .modal-footer .btn-secondary {
-        background-color: #f3f6fa;
-        color: #64748b;
-        border: none;
-    }
-
-        .modal-footer .btn-secondary:hover, .modal-footer .btn-secondary:focus {
-            background-color: #e0e7ef;
-            color: #334155;
-        }
-
-.form-page {
-    margin: 0 auto 2.5rem auto;
-    padding: 0 1.5rem 1.5rem 1.5rem;
-    background: #fff;
-    border: 0.09375rem solid #e5e7eb;
-    border-radius: 1rem;
-    box-shadow: 0 0.125rem 0.5rem rgba(30,41,59,0.04);
-    transition: box-shadow 0.18s;
+.modal-footer .btn, .modal-footer-fixed .btn {
+    margin-top: 0;
+    margin-bottom: 0;
+    align-self: center;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+}
+.modal-footer .btn-primary {
+    background-color: #2563eb;
+    color: #fff;
+    border: none;
+}
+.modal-footer .btn-primary:hover, .modal-footer .btn-primary:focus {
+    background-color: #1d4ed8;
+    color: #fff;
+    box-shadow: 0 0.25rem 1rem rgba(30,41,59,0.12);
+}
+.modal-footer .btn-secondary {
+    background-color: #f3f6fa;
+    color: #64748b;
+    border: none;
+}
+.modal-footer .btn-secondary:hover, .modal-footer .btn-secondary:focus {
+    background-color: #e0e7ef;
+    color: #334155;
 }
 
-    .form-page:last-child {
-        margin-bottom: 0;
-    }
-
-    .form-page h3 {
-        background: #f3f6fa;
-        border-radius: 1rem 1rem 0 0;
-        padding: 1.25rem 1rem 0.75rem 1rem;
-        margin: 0 -1.5rem 1.25rem -1.5rem;
-        border-bottom: 0.09375rem solid #e0e7ef;
-        font-weight: 700;
-        color: #2563eb;
-        letter-spacing: 0.01em;
-        text-shadow: 0 0.125rem 0.5rem rgba(30,41,59,0.06);
-    }
-
-    .form-page > * {
-        margin-bottom: 1.25rem;
-    }
-
-        .form-page > *:last-child {
-            margin-bottom: 0;
-        }
-
-.modal-footer, .modal-footer-fixed {
-    height: 4.5rem;
-    min-height: 4.5rem;
-    max-height: 4.5rem;
-    padding-top: 0;
-    padding-bottom: 0;
-    display: flex;
-    align-items: center;
-    gap: 1.25rem;
-    pointer-events: auto;
-    border-top: 0.0625rem solid #e5e7eb;
-    background: #f8fafc;
-    border-radius: 0 0 1rem 1rem;
-}
-
-    .modal-footer .btn, .modal-footer-fixed .btn {
-        margin-top: 0;
-        margin-bottom: 0;
-        align-self: center;
-        padding-top: 0.75rem;
-        padding-bottom: 0.75rem;
-    }
-
-    .modal-footer .btn-primary {
-        background-color: #2563eb;
-        color: #fff;
-        border: none;
-    }
-
-        .modal-footer .btn-primary:hover, .modal-footer .btn-primary:focus {
-            background-color: #1d4ed8;
-            color: #fff;
-            box-shadow: 0 0.25rem 1rem rgba(30,41,59,0.12);
-        }
-
-    .modal-footer .btn-secondary {
-        background-color: #f3f6fa;
-        color: #64748b;
-        border: none;
-    }
-
-        .modal-footer .btn-secondary:hover, .modal-footer .btn-secondary:focus {
-            background-color: #e0e7ef;
-            color: #334155;
-        }
-
-/* --- Responsive 2-column form layout --- */
+/* Form Layout */
 .form-row {
     display: flex;
     flex-direction: row;
@@ -287,7 +201,23 @@
     align-items: flex-start;
     flex-wrap: wrap;
 }
-
+.form-row.full-width-row {
+    width: 100% !important;
+    max-width: 100%;
+    display: block;
+    flex: 0 0 100%;
+    margin-bottom: 1.25rem;
+}
+.form-row.full-width-row > .form-col,
+.form-row.full-width-row > .textarea-col,
+.textarea-col {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
 .form-col {
     flex: 1 1 0;
     min-width: 0;
@@ -299,32 +229,10 @@
     align-items: stretch;
     box-sizing: border-box;
 }
-
 .form-col.single-col {
-    /* Match the width of a two-column field including the gap */
-    width: calc(50% - 0.625rem); /* 0.625rem is half of the 1.25rem gap */
+    width: calc(50% - 0.625rem);
     max-width: calc(50% - 0.625rem);
     flex: 1 1 0;
-}
-
-/* Undo .attachment-col changes */
-.form-row.full-width-row {
-    width: 100% !important;
-    max-width: 100%;
-    display: block;
-    flex: 0 0 100%;
-    margin-bottom: 1.25rem;
-}
-
-.form-row.full-width-row > .form-col,
-.form-row.full-width-row > .textarea-col,
-.textarea-col {
-    width: 100% !important;
-    max-width: 100% !important;
-    flex: 0 0 100% !important;
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
 }
 
 @media (max-width: 900px) {
@@ -333,91 +241,6 @@
         width: 100%;
     }
 }
-
-.modal-footer, .modal-footer-fixed {
-    height: 4.5rem;
-    min-height: 4.5rem;
-    max-height: 4.5rem;
-    padding-top: 0;
-    padding-bottom: 0;
-    display: flex;
-    align-items: center;
-    gap: 1.25rem;
-    pointer-events: auto;
-    border-top: 0.0625rem solid #e5e7eb;
-    background: #f8fafc;
-    border-radius: 0 0 1rem 1rem;
-}
-
-    .modal-footer .btn, .modal-footer-fixed .btn {
-        margin-top: 0;
-        margin-bottom: 0;
-        align-self: center;
-        padding-top: 0.75rem;
-        padding-bottom: 0.75rem;
-    }
-
-    .modal-footer .btn-primary {
-        background-color: #2563eb;
-        color: #fff;
-        border: none;
-    }
-
-        .modal-footer .btn-primary:hover, .modal-footer .btn-primary:focus {
-            background-color: #1d4ed8;
-            color: #fff;
-            box-shadow: 0 0.25rem 1rem rgba(30,41,59,0.12);
-        }
-
-    .modal-footer .btn-secondary {
-        background-color: #f3f6fa;
-        color: #64748b;
-        border: none;
-    }
-
-        .modal-footer .btn-secondary:hover, .modal-footer .btn-secondary:focus {
-            background-color: #e0e7ef;
-            color: #334155;
-        }
-
-.form-row {
-    display: flex;
-    flex-direction: row;
-    gap: 1.25rem;
-    margin-bottom: 1.25rem;
-    align-items: flex-start;
-    flex-wrap: wrap;
-}
-
-.form-row.full-width-row {
-    width: 100% !important;
-    max-width: 100%;
-    display: block;
-    flex: 0 0 100%;
-    margin-bottom: 1.25rem;
-}
-
-.form-row.full-width-row > .form-col,
-.form-row.full-width-row > .textarea-col,
-.textarea-col {
-    width: 100% !important;
-    max-width: 100% !important;
-    flex: 0 0 100% !important;
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-}
-
-.form-col {
-    flex: 1 1 0;
-    min-width: 0;
- 
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: stretch;
-}
-
 @media (max-width: 600px) {
     .modal-dialog {
         width: 100vw;
@@ -425,15 +248,12 @@
         max-height: 100vh;
         border-radius: 0;
     }
-
     .modal-header, .modal-content, .modal-footer {
         padding: 1rem;
     }
-
     .field-content-scroll {
         padding: 1rem;
     }
-
     .modal-footer, .modal-footer-fixed {
         height: 3.5rem;
         min-height: 3.5rem;
@@ -442,6 +262,7 @@
     }
 }
 
+/* Loading, No Fields, Misc */
 .modern-loading {
     display: flex;
     flex-direction: column;
@@ -453,27 +274,19 @@
     font-weight: 500;
     min-height: 8rem;
 }
-
-    .modern-loading .modern-spinner {
-        margin-bottom: 1rem;
-        border: 0.25rem solid #e0e7ef;
-        border-top: 0.25rem solid #2563eb;
-        border-radius: 50%;
-        width: 2.5rem;
-        height: 2.5rem;
-        animation: spin 1s linear infinite;
-    }
-
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
+.modern-loading .modern-spinner {
+    margin-bottom: 1rem;
+    border: 0.25rem solid #e0e7ef;
+    border-top: 0.25rem solid #2563eb;
+    border-radius: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    animation: spin 1s linear infinite;
 }
-
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
 .no-fields-message {
     display: flex;
     flex-direction: column;
