@@ -16,10 +16,13 @@ public class FormFieldService
         _db = db ?? throw new ArgumentNullException(nameof(db));
     }
 
+    /// <summary>
+    /// Gets the FormId for a given objectId.
+    /// </summary>
     public async Task<Guid> GetFormId(string objectId)
     {
         if (string.IsNullOrWhiteSpace(objectId))
-            return Guid.Empty;  
+            return Guid.Empty;
 
         var sql = @"SELECT e.Form_ID FROM cfgLCEvents e INNER JOIN cfgLCActionList al ON e.EventID = al.EventID INNER JOIN Service_Request_Fulfillment_List fl ON fl.Request_Create_Action_ID = al.id INNER JOIN Service_Catalog_Item_List cil ON fl.ID = cil.Request_Fulfillment_ID WHERE OID = @ObjId";
         using (var command = _db.Database.GetDbConnection().CreateCommand())
@@ -41,16 +44,19 @@ public class FormFieldService
         return Guid.Empty;
     }
 
+    /// <summary>
+    /// Gets all form pages and their items for a given formId.
+    /// </summary>
     public async Task<List<PageDto>> GetFormPagesAsync(Guid formId)
     {
         var sql = @"
 WITH PageBreaks AS (
     SELECT
-        e.Field_ID AS PageFieldID,
-        e.Name AS PageName,
-        e.Form_ID,
-        e.Rank AS PageRank,
-        fd.Field_Num AS StartFieldNum,
+        e.Field_ID      AS PageFieldID,
+        e.Name          AS PageName,
+        e.Form_ID       AS Form_ID,
+        e.Rank          AS PageRank,
+        fd.Field_Num    AS StartFieldNum,
         LEAD(e.Rank, 1, 999999) OVER (ORDER BY e.Rank) AS NextPageRank
     FROM cfgLCFormElements e
     LEFT JOIN cfgLCFormDefinition fd
@@ -60,33 +66,33 @@ WITH PageBreaks AS (
 ),
 FieldAssignments AS (
     SELECT
-        d.ID AS DefinitionID,
-        d.Field_Num,
+        d.ID            AS DefinitionID,
+        d.Field_Num     AS Field_Num,
         CASE
             WHEN d.Virtual = 0 THEN d.Field_Name
             ELSE f.Field_Caption
-        END AS Field_Name,
-        d.Field_Label,
-        d.Field_Value,
-        d.Form_ID,
-        f.Field_Caption,
-        pb.PageName,
-        pb.PageRank,
-        NULL AS ElementType,
-        d.Field_Num AS SortOrder,
-        NULL AS ElementDefinition,
-        f.Field_Type AS FieldType,
-        d.Mandatory,
-        d.Read_Only as ReadOnly,
-        Lookup_Values,
+        END             AS Field_Name,
+        d.Field_Label   AS Field_Label,
+        d.Field_Value   AS Field_Value,
+        d.Form_ID       AS Form_ID,
+        f.Field_Caption AS Field_Caption,
+        pb.PageName     AS PageName,
+        pb.PageRank     AS PageRank,
+        NULL            AS ElementType,
+        d.Field_Num     AS SortOrder,
+        NULL            AS ElementDefinition,
+        f.Field_Type    AS FieldType,
+        d.Mandatory     AS Mandatory,
+        d.Read_Only     AS ReadOnly,
+        Lookup_Values   AS Lookup_Values,
         CASE 
             WHEN f.Table_Name = 'Persons' THEN 'Person_List'
             WHEN f.Table_Name = 'Organizational_Units' THEN 'Organizational_Unit_List'
             ELSE f.Table_Name
-        END AS Table_Name,
-        Virtual,
-        ct.Display_Fields as Display_Fields,
-        Filter
+        END             AS Table_Name,
+        Virtual         AS Virtual,
+        ct.Display_Fields AS Display_Fields,
+        Filter          AS Filter
     FROM cfgLCFormDefinition d
     LEFT JOIN cfgLCFormFields f
         ON REPLACE(REPLACE(d.Field_Name, '{', ''), '}', '') = REPLACE(REPLACE(f.ID, '{', ''), '}', '')
@@ -103,26 +109,26 @@ FieldAssignments AS (
 ),
 ElementAssignments AS (
     SELECT
-        e.ID AS DefinitionID,
-        fd.Field_Num AS Field_Num,
-        e.Name AS Field_Name,
-        NULL AS Field_Label,
-        NULL AS Field_Value,
-        e.Form_ID,
-        NULL AS Field_Caption,
-        pb.PageName,
-        pb.PageRank,
-        e.Type AS ElementType,
-        fd.Field_Num AS SortOrder,
-        e.Definition AS ElementDefinition,
-        NULL AS FieldType,
-        NULL AS Mandatory,
-        NULL as ReadOnly,
-        NULL AS Lookup_Values,
-        NULL AS Table_Name,
-        NULL AS Virtual,
-        NULL AS Display_Fields,
-        NULL AS Filter
+        e.ID            AS DefinitionID,
+        fd.Field_Num    AS Field_Num,
+        e.Name          AS Field_Name,
+        NULL            AS Field_Label,
+        NULL            AS Field_Value,
+        e.Form_ID       AS Form_ID,
+        NULL            AS Field_Caption,
+        pb.PageName     AS PageName,
+        pb.PageRank     AS PageRank,
+        e.Type          AS ElementType,
+        fd.Field_Num    AS SortOrder,
+        e.Definition    AS ElementDefinition,
+        NULL            AS FieldType,
+        NULL            AS Mandatory,
+        NULL            AS ReadOnly,
+        NULL            AS Lookup_Values,
+        NULL            AS Table_Name,
+        NULL            AS Virtual,
+        NULL            AS Display_Fields,
+        NULL            AS Filter
     FROM cfgLCFormElements e
     LEFT JOIN cfgLCFormDefinition fd
         ON REPLACE(REPLACE(e.Field_ID, '{', ''), '}', '') = REPLACE(REPLACE(fd.ID, '{', ''), '}', '')
@@ -151,10 +157,10 @@ SELECT
     FieldType,
     Mandatory,
     ReadOnly,
-    Lookup_Values as LookupValues,
-    Table_Name as TableName,
+    Lookup_Values      AS LookupValues,
+    Table_Name         AS TableName,
     Virtual,
-    Display_Fields as DisplayFields,
+    Display_Fields     AS DisplayFields,
     Filter
 FROM FieldAssignments
 
@@ -174,15 +180,15 @@ SELECT
     FieldType,
     Mandatory,
     ReadOnly,
-    Lookup_Values as LookupValues,
-    Table_Name as TableName,
+    Lookup_Values      AS LookupValues,
+    Table_Name         AS TableName,
     Virtual,
-    Display_Fields as DisplayFields,
+    Display_Fields     AS DisplayFields,
     Filter
 FROM ElementAssignments
 
 ORDER BY PageRank, SortOrder, DefinitionID
-    ";
+";
         var param = new SqlParameter("@FormId", formId);
         var results = new List<dynamic>();
         // Read all data into memory before further processing (no MARS required)
@@ -217,6 +223,9 @@ ORDER BY PageRank, SortOrder, DefinitionID
         return pages;
     }
 
+    /// <summary>
+    /// Gets dropdown options for a given form field, using cache if available.
+    /// </summary>
     public async Task<List<DropdownOptionDto>> GetDropdownOptionsAsync(FormFieldDto field)
     {
         if (string.IsNullOrWhiteSpace(field.TableName) || string.IsNullOrWhiteSpace(field.DisplayFields))
@@ -269,6 +278,9 @@ ORDER BY PageRank, SortOrder, DefinitionID
         return options;
     }
 
+    /// <summary>
+    /// Ensures the database connection is open for a given command.
+    /// </summary>
     private void EnsureConnectionOpen(DbCommand command)
     {
         if (command.Connection != null && command.Connection.State != System.Data.ConnectionState.Open)
@@ -277,12 +289,9 @@ ORDER BY PageRank, SortOrder, DefinitionID
             throw new InvalidOperationException("Database command connection is null.");
     }
 
-    private void EnsureConnectionClosed(DbCommand command)
-    {
-        if (command.Connection != null && command.Connection.State == System.Data.ConnectionState.Open)
-            command.Connection.Close();
-    }
-
+    /// <summary>
+    /// Reads a row from the form page query and returns a dynamic object.
+    /// </summary>
     private dynamic ReadFormPageRow(DbDataReader reader)
     {
         return new
@@ -308,6 +317,9 @@ ORDER BY PageRank, SortOrder, DefinitionID
         };
     }
 
+    /// <summary>
+    /// Maps a dynamic row to an IPageItem (FieldInputDto or FieldTextDto).
+    /// </summary>
     private IPageItem? MapToPageItem(dynamic x)
     {
         if (x.ElementType == null)
