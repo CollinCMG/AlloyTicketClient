@@ -2,6 +2,7 @@
     position: relative;
     display: flex;
     flex-direction: column;
+    height: 100vh
 }
 
 main {
@@ -9,7 +10,7 @@ main {
 }
 
 .sidebar {
-    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+    background: #fff;
 }
 
 .top-row {
@@ -54,8 +55,10 @@ main {
     .sidebar {
         width: 250px;
         height: 100vh;
-        position: sticky;
         top: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
     }
 
     .top-row {
@@ -89,3 +92,22 @@ main {
         right: 0.75rem;
         top: 0.5rem;
     }
+
+.sidebar.nav-sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    min-height: 0;
+}
+
+.nav-scrollable {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    min-height: 0;
+    height: 100%;
+}
+
+.nav-logout {
+    flex-shrink: 0;
+    margin-bottom: 1rem;
+}

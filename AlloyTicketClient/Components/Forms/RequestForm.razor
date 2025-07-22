@@ -25,7 +25,7 @@
                 }
                 else if (pages != null && pages.Count > 0)
                 {
-                    <EditForm Model="fieldValues" OnValidSubmit="SubmitFormAsync" class="edit-form-flex" style="height: 100%">
+                    <EditForm Model="fieldValues" OnValidSubmit="SubmitFormAsync" class="edit-form-flex h-100">
                         <DataAnnotationsValidator />
                         <div class="field-content field-content-scroll">
                             @foreach (var p in pages.Where(pg => !pg.IsHidden))
@@ -83,11 +83,11 @@
                             }
                         </div>
                         <div class="modal-footer modal-footer-fixed">
-                            <button class="btn btn-primary" type="submit" style="min-width: 100px; display: flex; align-items: center; justify-content: center; gap: 0.5rem;" disabled="@(isSubmitting)">
+                            <button class="btn btn-primary btn-submit" type="submit" disabled="@(isSubmitting)">
                                 @if (isSubmitting)
                                 {
                                     <span>Submitting</span>
-                                    <span class="modern-spinner" style="width: 1.25rem; height: 1.25rem; border-width: 2.5px;"></span>
+                                    <span class="modern-spinner btn-spinner"></span>
                                 }
                                 else
                                 {

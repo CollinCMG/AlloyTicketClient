@@ -133,6 +133,20 @@ body, html {
 .justify-content-center { justify-content: center; }
 .align-items-center { align-items: center; }
 .gap-1 { gap: 0.25rem; }
+.rules-formid-note {
+    font-size: small;
+    color: gray;
+}
+.rules-target-multiselect {
+    height: auto;
+    min-height: 120px;
+}
+.rules-trigger-note {
+    font-size: smaller;
+}
+.rules-override-note {
+    font-size: smaller;
+}
 
 @media (max-width: 900px) {
     .request-setup-container {

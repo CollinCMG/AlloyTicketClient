@@ -15,6 +15,12 @@
     letter-spacing: 0.02em;
 }
 
+.nav-sidebar {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
 .nav-scrollable {
     background: #2563eb;
     color: #fff;
@@ -24,6 +30,9 @@
     border-right: 1px solid #1e40af;
     display: block;
     padding-top: 1.5rem;
+    height: 100%;
+    flex: 1 1 auto;
+    overflow-y: auto;
 }
 
 .nav-item {
@@ -33,40 +42,35 @@
     padding-right: 1.25rem;
 }
 
-.nav-item:first-of-type {
-    padding-top: 1rem;
-}
+    .nav-item:first-of-type {
+        padding-top: 1rem;
+    }
+    .nav-item ::deep .nav-link {
+        color: #e0e7ef;
+        background: none;
+        border: none;
+        border-radius: 0.75rem;
+        height: 2.75rem;
+        display: flex;
+        align-items: center;
+        line-height: 2.75rem;
+        width: 100%;
+        font-weight: 500;
+        font-size: 1rem;
+        transition: background 0.18s, color 0.18s;
+        padding-left: 0.5rem;
+    }
 
-.nav-item:last-of-type {
-    padding-bottom: 1.5rem;
-}
+    .nav-item ::deep a.active {
+        background-color: #1d4ed8;
+        color: #fff;
+        font-weight: 600;
+    }
 
-.nav-item ::deep .nav-link {
-    color: #e0e7ef;
-    background: none;
-    border: none;
-    border-radius: 0.75rem;
-    height: 2.75rem;
-    display: flex;
-    align-items: center;
-    line-height: 2.75rem;
-    width: 100%;
-    font-weight: 500;
-    font-size: 1rem;
-    transition: background 0.18s, color 0.18s;
-    padding-left: 0.5rem;
-}
-
-.nav-item ::deep a.active {
-    background-color: #1d4ed8;
-    color: #fff;
-    font-weight: 600;
-}
-
-.nav-item ::deep .nav-link:hover {
-    background-color: #1e40af;
-    color: #fff;
-}
+    .nav-item ::deep .nav-link:hover {
+        background-color: #1e40af;
+        color: #fff;
+    }
 
 .bi {
     display: inline-block;
@@ -84,6 +88,24 @@
     display: none !important;
 }
 
+.nav-logout-section {
+    background: #2563eb;
+    color: #fff;
+    width: 100%;
+}
+
+.nav-logout-section .nav-link {
+    color: #e0e7ef;
+    font-weight: 500;
+    text-align: left;
+    width: 100%;
+}
+
+.nav-logout-section .nav-link:hover {
+    background-color: #1e40af;
+    color: #fff;
+}
+
 @media (max-width: 640px) {
     .nav-scrollable {
         width: 100vw;
@@ -92,6 +114,7 @@
         box-shadow: 0 4px 16px rgba(30,41,59,0.10);
         padding-top: 1rem;
     }
+
     .top-row {
         border-radius: 0;
     }

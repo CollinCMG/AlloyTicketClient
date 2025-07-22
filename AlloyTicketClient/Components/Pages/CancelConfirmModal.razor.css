@@ -92,3 +92,7 @@
     background: #e0e7ef;
     color: #334155;
 }
+
+.z-9999 {
+    z-index: 9999;
+}

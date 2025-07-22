@@ -25,7 +25,7 @@
                 {
                     var formName = Forms.FirstOrDefault(f => f.FormId == group.Key)?.Name ?? group.First().FormName ?? group.Key.ToString();
                     <div class="rules-group mb-4 p-3 border rounded bg-light">
-                        <h5 class="mb-3">@formName <span style="font-size:small;color:gray">(FormId: @group.Key)</span></h5>
+                        <h5 class="mb-3">@formName <span class="rules-formid-note">(FormId: @group.Key)</span></h5>
                         <table class="table table-sm table-bordered mb-0">
                             <thead>
                                 <tr>
@@ -106,7 +106,7 @@
                                         </select>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label">Trigger Value <span class="text-muted" style="font-size:smaller">(leave blank for any value)</span></label>
+                                        <label class="form-label">Trigger Value <span class="text-muted rules-trigger-note">(leave blank for any value)</span></label>
                                         <input class="form-control" @bind="ModalTriggerValue" placeholder="Any value" />
                                     </div>
                                     <div class="col-12">
@@ -123,7 +123,7 @@
                                         }
                                         else
                                         {
-                                            <select class="form-select w-100" multiple size="6" style="height:auto;min-height:120px;" @onchange="OnModalTargetFieldsChanged">
+                                            <select class="form-select w-100 rules-target-multiselect" multiple size="6" @onchange="OnModalTargetFieldsChanged">
                                                 @foreach (var field in ModalFormFields)
                                                 {
                                                     <option value="@field.DefinitionID" selected="@ModalSelectedTargetFieldIds.Contains(field.DefinitionID?.ToString())">@(string.IsNullOrEmpty(field.FieldLabel) ? field.FieldName : field.FieldLabel)</option>
@@ -153,7 +153,7 @@
                                     @if (ModalSelectedAction == FilterAction.FieldsByRole || ModalSelectedAction == FilterAction.ModifyApps)
                                     {
                                         <div class="col-md-6">
-                                            <label class="form-label">Target Value Override <span class="text-muted" style="font-size:smaller">(optional)</span></label>
+                                            <label class="form-label">Target Value Override <span class="text-muted rules-override-note">(optional)</span></label>
                                             <input class="form-control" @bind="ModalTargetValueOverride" placeholder="Override value for target field (optional)" />
                                         </div>
                                     }
