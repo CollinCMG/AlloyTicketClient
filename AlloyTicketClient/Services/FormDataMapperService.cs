@@ -70,8 +70,7 @@ namespace AlloyTicketClient.Services
         }
 
         /// <summary>
-        /// Sets default values for any hidden required fields that are missing or empty in fieldValues.
-        /// For Checkbox, sets to false. For Dropdown, sets to first available option if possible.
+        /// Sets default values for any required fields that are missing or empty in fieldValues.
         /// </summary>
         public static void SetDefaultsForRequiredFields(List<PageDto>? pages, Dictionary<string, object?> fieldValues)
         {
@@ -126,43 +125,6 @@ namespace AlloyTicketClient.Services
                             }
                         }
                     }
-
-                    //if (!fieldValues.TryGetValue(guid, out var value) || value == null || string.IsNullOrWhiteSpace(value.ToString()))
-                    //{
-                    //    // Use FieldValue if present and not empty
-
-                    //    switch (fieldInput.FieldType)
-                    //    {
-                    //        case FieldType.Checkbox:
-                    //            fieldValues[guid] = false;
-                    //            break;
-                    //        case FieldType.Dropdown:
-                    //            // Use Lookup_Values if available
-                    //            object? dropdownDefault = null;
-                    //            if (!string.IsNullOrWhiteSpace(fieldInput.Lookup_Values))
-                    //            {
-                    //                var options = ParseLookupValues(fieldInput.Lookup_Values).Distinct().ToList();
-                    //                if (options.Count > 0)
-                    //                    dropdownDefault = options[0];
-                    //            }
-                    //            fieldValues[guid] = dropdownDefault;
-                    //            break;
-                    //        case FieldType.Input:
-                    //            var result = "NA";
-                    //            if (!string.IsNullOrWhiteSpace(fieldInput.Lookup_Values))
-                    //            {
-                    //                var options = ParseLookupValues(fieldInput.Lookup_Values).Distinct().ToList();
-                    //                if (options.Count > 0)
-                    //                    result = options[0];
-                    //            }
-                    //            fieldValues[guid] = result;
-                    //            break;
-                    //        default:
-                    //            fieldValues[guid] = "NA";
-                    //            break;
-                    //    }
-                    //}
-                    //}
                 }
             }
         }
