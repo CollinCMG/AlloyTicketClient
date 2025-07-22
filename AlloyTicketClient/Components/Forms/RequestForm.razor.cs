@@ -116,7 +116,7 @@ namespace AlloyTicketClient.Components.Forms
             {
                 if (Payload != null)
                 {
-                    FormDataMapperService.SetDefaultsForHiddenRequiredFields(pages, fieldValues);
+                    FormDataMapperService.SetDefaultsForRequiredFields(pages, fieldValues);
                     var namedKeys = FormDataMapperService.MapFieldValuesToNameKeyed(pages, fieldValues);
                     var json = JsonSerializer.Serialize(namedKeys);
                     JsonDocument doc = JsonDocument.Parse(json);

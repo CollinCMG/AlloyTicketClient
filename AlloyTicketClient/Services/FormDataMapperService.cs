@@ -73,7 +73,7 @@ namespace AlloyTicketClient.Services
         /// Sets default values for any hidden required fields that are missing or empty in fieldValues.
         /// For Checkbox, sets to false. For Dropdown, sets to first available option if possible.
         /// </summary>
-        public static void SetDefaultsForHiddenRequiredFields(List<PageDto>? pages, Dictionary<string, object?> fieldValues)
+        public static void SetDefaultsForRequiredFields(List<PageDto>? pages, Dictionary<string, object?> fieldValues)
         {
             if (pages == null) return;
             foreach (var page in pages)
