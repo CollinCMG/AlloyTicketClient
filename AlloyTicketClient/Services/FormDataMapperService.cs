@@ -11,7 +11,7 @@ namespace AlloyTicketClient.Services
         /// Maps fieldValues (by GUID) to a dictionary keyed by field name, including all required fields (even if hidden), with dropdown handling.
         /// Returns a dictionary where each value is a tuple of (Value, InputType).
         /// </summary>
-        public static Dictionary<string,  object?> MapFieldValuesToNameKeyed(
+        public static Dictionary<string, object?> MapFieldValuesToNameKeyed(
             List<PageDto>? pages,
             Dictionary<string, object?> fieldValues)
         {
@@ -80,49 +80,89 @@ namespace AlloyTicketClient.Services
             {
                 foreach (var item in page.Items)
                 {
-                    if (item is FieldInputDto fieldInput && fieldInput.DefinitionID != null && fieldInput.Mandatory == true && fieldInput.IsHidden)
+                    if (item is FieldInputDto fieldInput && fieldInput.DefinitionID != null && fieldInput.Mandatory == true)
                     {
                         var guid = fieldInput.DefinitionID.ToString()!;
+
                         if (!fieldValues.TryGetValue(guid, out var value) || value == null || string.IsNullOrWhiteSpace(value.ToString()))
                         {
-                            // Use FieldValue if present and not empty
                             if (!string.IsNullOrWhiteSpace(fieldInput.FieldValue))
                             {
-                                fieldValues[guid] = fieldInput.FieldValue;
+                                fieldValues[guid] = fieldInput.FieldValue ?? string.Empty;
                                 continue;
                             }
-                            switch (fieldInput.FieldType)
+                            else
                             {
-                                case FieldType.Checkbox:
-                                    fieldValues[guid] = false;
-                                    break;
-                                case FieldType.Dropdown:
-                                    // Use Lookup_Values if available
-                                    object? dropdownDefault = null;
-                                    if (!string.IsNullOrWhiteSpace(fieldInput.Lookup_Values))
-                                    {
-                                        var options = ParseLookupValues(fieldInput.Lookup_Values).Distinct().ToList();
-                                        if (options.Count > 0)
-                                            dropdownDefault = options[0];
-                                    }
-                                    fieldValues[guid] = dropdownDefault;
-                                    break;
-                                case FieldType.Input:
-                                    var result = "NA";
-                                    if (!string.IsNullOrWhiteSpace(fieldInput.Lookup_Values))
-                                    {
-                                        var options = ParseLookupValues(fieldInput.Lookup_Values).Distinct().ToList();
-                                        if (options.Count > 0)
-                                            result = options[0];
-                                    }
-                                    fieldValues[guid] = result;
-                                    break;
-                                default:
-                                    fieldValues[guid] = "NA";
-                                    break;
+                                switch (fieldInput.FieldType)
+                                {
+                                    case FieldType.Checkbox:
+                                        fieldValues[guid] = false;
+                                        break;
+                                    case FieldType.Dropdown:
+                                        // Use Lookup_Values if available
+                                        object? dropdownDefault = null;
+                                        if (!string.IsNullOrWhiteSpace(fieldInput.Lookup_Values))
+                                        {
+                                            var options = ParseLookupValues(fieldInput.Lookup_Values).Distinct().ToList();
+                                            if (options.Count > 0)
+                                                dropdownDefault = options[0];
+                                        }
+                                        fieldValues[guid] = dropdownDefault;
+                                        break;
+                                    case FieldType.Input:
+                                        var result = "NA";
+                                        if (!string.IsNullOrWhiteSpace(fieldInput.Lookup_Values))
+                                        {
+                                            var options = ParseLookupValues(fieldInput.Lookup_Values).Distinct().ToList();
+                                            if (options.Count > 0)
+                                                result = options[0];
+                                        }
+                                        fieldValues[guid] = result;
+                                        break;
+                                    default:
+                                        fieldValues[guid] = "NA";
+                                        break;
+                                }
                             }
                         }
                     }
+
+                    //if (!fieldValues.TryGetValue(guid, out var value) || value == null || string.IsNullOrWhiteSpace(value.ToString()))
+                    //{
+                    //    // Use FieldValue if present and not empty
+
+                    //    switch (fieldInput.FieldType)
+                    //    {
+                    //        case FieldType.Checkbox:
+                    //            fieldValues[guid] = false;
+                    //            break;
+                    //        case FieldType.Dropdown:
+                    //            // Use Lookup_Values if available
+                    //            object? dropdownDefault = null;
+                    //            if (!string.IsNullOrWhiteSpace(fieldInput.Lookup_Values))
+                    //            {
+                    //                var options = ParseLookupValues(fieldInput.Lookup_Values).Distinct().ToList();
+                    //                if (options.Count > 0)
+                    //                    dropdownDefault = options[0];
+                    //            }
+                    //            fieldValues[guid] = dropdownDefault;
+                    //            break;
+                    //        case FieldType.Input:
+                    //            var result = "NA";
+                    //            if (!string.IsNullOrWhiteSpace(fieldInput.Lookup_Values))
+                    //            {
+                    //                var options = ParseLookupValues(fieldInput.Lookup_Values).Distinct().ToList();
+                    //                if (options.Count > 0)
+                    //                    result = options[0];
+                    //            }
+                    //            fieldValues[guid] = result;
+                    //            break;
+                    //        default:
+                    //            fieldValues[guid] = "NA";
+                    //            break;
+                    //    }
+                    //}
+                    //}
                 }
             }
         }
