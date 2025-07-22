@@ -5,7 +5,7 @@
 @using AlloyTicketClient.Services
 @using AlloyTicketClient.Components.Forms
 
-<Toast Message="@toastMessage" Type="@toastType" Show="@showToast" OnHide="HideToast" />
+<Toast Message="@toastMessage" Type="@toastType" Show="@showToast" OnHide="HideToastAsync" />
 
 @if (Show)
 {

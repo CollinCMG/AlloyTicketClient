@@ -3,7 +3,6 @@ using AlloyTicketClient.Models;
 using AlloyTicketClient.Models.DTOs;
 using AlloyTicketClient.Services;
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 using System.Text.Json;
 
 namespace AlloyTicketClient.Components.Forms
@@ -20,7 +19,6 @@ namespace AlloyTicketClient.Components.Forms
         [Inject] private FormFieldService formFieldService { get; set; }
         [Inject] private AlloyApiService AlloyApiService { get; set; }
         [Inject] private RulesService RulesService { get; set; }
-        [Inject] private IJSRuntime JSRuntime { get; set; }
 
         // --- Private Fields ---
         private bool isLoading = false;
@@ -96,16 +94,13 @@ namespace AlloyTicketClient.Components.Forms
             toastType = type;
             showToast = true;
             StateHasChanged();
-            await Task.Delay(durationMs);
-            showToast = false;
-            StateHasChanged();
         }
 
-        private Task HideToast()
+        private  async Task HideToastAsync()
         {
             showToast = false;
+            toastMessage = "";
             StateHasChanged();
-            return Task.CompletedTask;
         }
 
         private async Task SubmitFormAsync()
@@ -130,7 +125,7 @@ namespace AlloyTicketClient.Components.Forms
                         return;
                     }
 
-                    await ShowToastAsync($"API call result: {message}", "error");
+                    await ShowToastAsync("There was a problem submitting your request.<br />Please reach out to the help desk directly for assistance.", "error");
                 }
             }
             finally
