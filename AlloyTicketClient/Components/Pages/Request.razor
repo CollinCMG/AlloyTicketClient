@@ -1,6 +1,10 @@
 ﻿@using Microsoft.AspNetCore.Authorization
 @using AlloyTicketClient.Models
 @using Microsoft.AspNetCore.Components
+@using AlloyTicketClient.Components.Fields
+@using AlloyTicketClient.Enums
+@using AlloyTicketClient.Services
+@using AlloyTicketClient.Components.Forms
 
 @page "/request/{headerText}"
 @attribute [Authorize]
@@ -25,10 +29,5 @@
 
 @if (dynamicPage != null)
 {
-    <FormModal Show="showFormModal"
-              Title="@formModalTitle"
-              Payload="@formModalPayload"
-              OnClose="CloseFormModal" />
+    <RequestForm Show="showFormModal" Title="@formModalTitle" Payload="@formModalPayload" OnClose="CloseFormModal" />
 }
-
-

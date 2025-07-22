@@ -1,3 +1,4 @@
+/* Overlay and Centering */
 .cancel-modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -11,6 +12,8 @@
     align-items: center;
     justify-content: center;
 }
+
+/* Dialog and Content */
 .cancel-modal-dialog {
     max-width: 320px;
     min-width: 260px;
@@ -23,6 +26,8 @@
     padding: 1rem 1.25rem;
     border-radius: 8px;
 }
+
+/* Header */
 .cancel-modal-header {
     border-bottom: 1px solid #eee;
     padding-bottom: 0.25rem;
@@ -34,6 +39,8 @@
     margin: 0;
     color: #334155;
 }
+
+/* Body and Message */
 .cancel-modal-body {
     padding: 0;
     margin-bottom: 1rem;
@@ -46,10 +53,14 @@
     color: #475569;
     text-align: center;
 }
+
+/* Divider */
 .cancel-modal-divider {
     border-top: 1px solid #eee;
     margin-bottom: 0.5rem;
 }
+
+/* Footer and Buttons */
 .cancel-modal-footer {
     display: flex;
     justify-content: center;
