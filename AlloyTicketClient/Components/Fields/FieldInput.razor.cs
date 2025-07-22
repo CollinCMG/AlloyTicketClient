@@ -1,4 +1,5 @@
 using AlloyTicketClient.Enums;
+using AlloyTicketClient.Models.DTOs;
 using AlloyTicketClient.Services;
 using Microsoft.AspNetCore.Components;
 

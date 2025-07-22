@@ -13,7 +13,7 @@ namespace AlloyTicketClient.Services
         {
             // Use the same connection string as the legacy code, fallback to "default" if not found
             _connectionString = configuration.GetConnectionString("default") ?? string.Empty;
-            _logger = logger;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<List<CMGWebRole>> GetRolesForUserAsync(string username)
@@ -47,8 +47,6 @@ namespace AlloyTicketClient.Services
             }
             return roles;
         }
-
-
 
         public async Task<string> GetUsernameByEmailAsync(string email)
         {

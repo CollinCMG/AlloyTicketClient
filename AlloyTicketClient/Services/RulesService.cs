@@ -87,11 +87,6 @@ namespace AlloyTicketClient.Services
             }
         }
 
-        public async Task<List<Guid>> GetAllFormIdsAsync()
-        {
-            return await _db.AlloyTicketRules.Select(r => r.FormId).Distinct().ToListAsync();
-        }
-
         public async Task EvaluateRulesAsync(Guid formId, List<PageDto> pages, Dictionary<string, object?> fieldValues, string? changedField = null)
         {
             var rules = await GetRulesForFormAsync(formId);
@@ -326,10 +321,5 @@ namespace AlloyTicketClient.Services
             _cache.Remove(FormRulesCacheKey(formId));
             _cache.Remove(AllRulesCacheKey);
         }
-    }
-
-    public class RuleEvaluationResult
-    {
-        public Dictionary<string, string> ModifiedApps { get; set; } = new();
     }
 }

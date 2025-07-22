@@ -5,12 +5,6 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 using System.Data.Common;
-using System.Xml.Linq;
-
-public class DropdownOptionDto
-{
-    public Dictionary<string, object?> Properties { get; set; } = new();
-}
 
 public class FormFieldService
 {
@@ -19,7 +13,7 @@ public class FormFieldService
 
     public FormFieldService(AlloyNavigatorDbContext db)
     {
-        _db = db;
+        _db = db ?? throw new ArgumentNullException(nameof(db));
     }
 
     public async Task<Guid> GetFormId(string objectId)
@@ -314,47 +308,6 @@ ORDER BY PageRank, SortOrder, DefinitionID
         };
     }
 
-    private AttachmentConfig? ParseAttachmentConfig(string? xml)
-    {
-        if (string.IsNullOrWhiteSpace(xml)) return null;
-        try
-        {
-            var doc = XDocument.Parse(xml);
-            var config = new AttachmentConfig();
-            foreach (var item in doc.Descendants("ITEM"))
-            {
-                var name = item.Attribute("Name")?.Value;
-                var value = item.Attribute("Value")?.Value;
-                switch (name)
-                {
-                    case "Caption":
-                        config.Caption = value ?? string.Empty;
-                        break;
-                    case "ForProgram":
-                        config.ForProgram = value == "true";
-                        break;
-                    case "Mandatory":
-                        config.Mandatory = value == "true";
-                        break;
-                    case "ReadOnly":
-                        config.ReadOnly = value == "true";
-                        break;
-                    case "InclFiles":
-                        config.InclFiles = value == "true";
-                        break;
-                    case "InclExisting":
-                        config.InclExisting = value == "true";
-                        break;
-                }
-            }
-            return config;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
     private IPageItem? MapToPageItem(dynamic x)
     {
         if (x.ElementType == null)
@@ -388,23 +341,6 @@ ORDER BY PageRank, SortOrder, DefinitionID
         else
         {
             return null;
-        }
-    }
-
-    private string ReadDropdownOption(DbDataReader reader)
-    {
-        if (reader.FieldCount > 0)
-        {
-            var values = new string[reader.FieldCount];
-            for (int i = 0; i < reader.FieldCount; i++)
-            {
-                values[i] = reader.IsDBNull(i) ? string.Empty : reader.GetValue(i)?.ToString() ?? string.Empty;
-            }
-            return string.Join(" ", values).Trim();
-        }
-        else
-        {
-            return reader.IsDBNull(0) ? string.Empty : reader.GetValue(0)?.ToString() ?? string.Empty;
         }
     }
 }

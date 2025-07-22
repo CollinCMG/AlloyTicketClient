@@ -51,33 +51,6 @@
             }
         }
 
-
-        public async Task<(bool Success, string Message)> PostAttachmentsAsync(RequestActionPayload payload)
-        {
-            try
-            {
-                SetAuthHeader("test", null);
-                var apiUrl = $"{GetBaseUrl()}/request/attachments";
-                // Serialize and send the RequestActionPayload object directly (no wrapper)
-                var serializedPayload = JsonSerializer.Serialize(payload);
-                _logger.LogInformation("Sending POST to {ApiUrl} with payload: {Payload}", apiUrl, serializedPayload);
-                var content = new StringContent(serializedPayload, Encoding.UTF8, "application/json");
-                using var response = await _client.PostAsync(apiUrl, content);
-                var apiResponse = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation("Received response: {StatusCode} - {Response}", response.StatusCode, apiResponse);
-
-                if (response.IsSuccessStatusCode)
-                    return (true, "Success");
-
-                return (false, $"API Error: {response.StatusCode} - {apiResponse}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Exception occurred in PostAsync");
-                return (false, $"Exception occurred in PostAsync: {ex.Message}");
-            }
-        }
-
         private void SetAuthHeader(string requester, string email = null)
         {
             if (string.IsNullOrWhiteSpace(requester))
@@ -92,40 +65,6 @@
             if (string.IsNullOrWhiteSpace(baseUrl))
                 throw new InvalidOperationException("AlloyAPI BaseUrl is not configured.");
             return baseUrl;
-        }
-
-
-        public async Task<(bool Success, string Message)> DeleteAsync(string endpoint, string requester, string email = null)
-        {
-            try
-            {
-                SetAuthHeader(requester, email);
-                var apiUrl = $"{GetBaseUrl()}/{endpoint.TrimStart('/')}";
-                using var response = await _client.DeleteAsync(apiUrl);
-                string apiResponse = await response.Content.ReadAsStringAsync();
-
-                if (response.IsSuccessStatusCode)
-                    return (true, "Success");
-
-                try
-                {
-                    var respObj = System.Text.Json.JsonSerializer.Deserialize<AlloyApiResponse>(apiResponse);
-                    if (respObj == null)
-                        return (false, "Error communicating with Alloy. Response object is NULL.");
-                    if (respObj.Status != 200)
-                        return (false, $"Unsuccessful. ({respObj.Status}) {respObj.Error}");
-                }
-                catch (Exception ex)
-                {
-                    return (false, $"Error parsing Alloy API response: {ex.Message}");
-                }
-
-                return (false, "Unknown error.");
-            }
-            catch (Exception ex)
-            {
-                return (false, $"Exception occurred in DeleteAsync: {ex.Message}");
-            }
         }
     }
 }
