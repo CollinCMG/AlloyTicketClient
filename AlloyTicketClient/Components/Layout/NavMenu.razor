@@ -1,4 +1,7 @@
-﻿@inject IConfiguration Configuration
+﻿@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.OpenIdConnect
+@inject NavigationManager Navigation
+@inject IConfiguration Configuration
 @using Microsoft.AspNetCore.Components.Authorization
 
 <div class="top-row ps-3 navbar navbar-dark">
@@ -30,6 +33,11 @@
                 </NavLink>
             </div>
         </AuthorizeView>
+        <AuthorizeView>
+            <div class="nav-item px-3">
+                <button class="nav-link btn btn-link" @onclick="Logout">Logout</button>
+            </div>
+        </AuthorizeView>
     </nav>
 </div>
 
@@ -38,6 +46,10 @@
     protected override void OnInitialized()
     {
         dynamicPages = Configuration.GetSection("DynamicPages").Get<List<DynamicPageConfig>>() ?? new();
+    }
+    private void Logout()
+    {
+        Navigation.NavigateTo("/Account/Logout", true);
     }
     public class DynamicPageConfig
     {

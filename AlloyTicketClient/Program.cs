@@ -35,6 +35,8 @@ builder.Services.AddAuthorization(options =>
 {
 });
 
+builder.Services.AddControllers(); // Register MVC controllers for Microsoft Identity endpoints
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -45,10 +47,13 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-app.UseAntiforgery();
-
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+app.UseRouting(); // Ensure routing is enabled before authentication/authorization
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseAntiforgery();
+
+app.MapControllers(); // Map controllers before Razor components
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode();
+
 app.Run();
