@@ -104,6 +104,11 @@ else
         {
             <input type="date" class="form-control" @bind="DateValue" required="@(Field.Mandatory == true)" disabled="@(Field.Read_Only == true)" />
         }
+        @* Date Time input *@
+        else if (Field.FieldType == FieldType.DateTime)
+        {
+            <input type="datetime-local" class="form-control" @bind="DateValue" required="@(Field.Mandatory == true)" disabled="@(Field.Read_Only == true)" />
+        }
         @* Fallback: text input *@
         else
         {

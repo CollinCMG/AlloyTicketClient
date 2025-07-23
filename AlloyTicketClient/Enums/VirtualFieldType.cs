@@ -8,7 +8,7 @@ namespace AlloyTicketClient.Enums
         Three = 3,
         Input = 4,
         Memo = 5, 
-        Six = 6,
+        DateTime = 6,
         Seven = 7,
         Dropdown = 8, 
         Eleven = 11,

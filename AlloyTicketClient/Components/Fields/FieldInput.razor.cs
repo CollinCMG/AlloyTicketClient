@@ -101,11 +101,23 @@ namespace AlloyTicketClient.Components.Fields
             }
             set
             {
-                var strValue = value.HasValue ? value.Value.ToString("yyyy-MM-dd") : null;
-                if (!Equals(Value, strValue))
+                if (Field?.FieldType == FieldType.DateTime)
                 {
-                    Value = strValue;
-                    OnValueChanged.InvokeAsync(strValue);
+                    var strValue = value.HasValue ? value.Value.ToString("yyyy-MM-ddTHH:mm") : null;
+                    if (!Equals(Value, strValue))
+                    {
+                        Value = strValue;
+                        OnValueChanged.InvokeAsync(strValue);
+                    }
+                }
+                else
+                {
+                    var strValue = value.HasValue ? value.Value.ToString("yyyy-MM-dd") : null;
+                    if (!Equals(Value, strValue))
+                    {
+                        Value = strValue;
+                        OnValueChanged.InvokeAsync(strValue);
+                    }
                 }
             }
         }
