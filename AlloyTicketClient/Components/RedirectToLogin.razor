@@ -18,7 +18,7 @@
             if (!authState.User.Identity?.IsAuthenticated ?? true)
             {
                 _navigated = true;
-                Navigation.NavigateTo("/Account/Login", true); // Triggers OpenID login
+                Navigation.NavigateTo($"{Navigation.BaseUri}Account/Login", true); // Triggers OpenID login
             }
         }
     }
