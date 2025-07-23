@@ -15,15 +15,12 @@
 .field-block input,
 .field-block select,
 .field-block textarea {
-    width: 100%;
     min-width: 0;
     box-sizing: border-box;
 }
 
 .field-block textarea.full-row {
-    width: 100% !important;
     min-width: 0;
-    max-width: 100%;
     display: block;
     resize: vertical;
 }
@@ -76,7 +73,6 @@
    Full Width Row
    ===================== */
 .full-width-row {
-    width: 100%;
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
