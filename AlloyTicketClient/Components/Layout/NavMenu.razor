@@ -20,7 +20,7 @@
                 foreach (var dp in dynamicPages)
                 {
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="@(Navigation.BaseUri.TrimEnd('/') + $"/request?type={Uri.EscapeDataString(dp.HeaderText)}")">
+                        <NavLink class="nav-link" href="@(Navigation.BaseUri + $"request?type={Uri.EscapeDataString(dp.HeaderText)}")">
                             @dp.HeaderText
                         </NavLink>
                     </div>
@@ -29,7 +29,7 @@
 
             <AuthorizeView Roles="Admin">
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="@(Navigation.BaseUri.TrimEnd('/') + "/rules")">
+                    <NavLink class="nav-link" href="@(Navigation.BaseUri + "rules")">
                         Rules 
                     </NavLink>
                 </div>
@@ -53,7 +53,8 @@
     }
     private void Logout()
     {
-        Navigation.NavigateTo(Navigation.BaseUri.TrimEnd('/') + "/Account/Logout", true);
+        var returnUrl = Uri.EscapeDataString(Navigation.Uri);
+        Navigation.NavigateTo($"{Navigation.BaseUri}Account/Logout?returnUrl={returnUrl}", true);
     }
     public class DynamicPageConfig
     {

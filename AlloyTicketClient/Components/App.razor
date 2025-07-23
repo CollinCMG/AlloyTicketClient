@@ -4,6 +4,12 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <Environment Names="Development">
+        <base href="/" />
+    </Environment>
+    <Environment Names="Staging,Production">
+        <base href="/RequestCenter/" />
+    </Environment>
     <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
     <link rel="stylesheet" href="app.css" />
     <link rel="stylesheet" href="AlloyTicketClient.styles.css" />
