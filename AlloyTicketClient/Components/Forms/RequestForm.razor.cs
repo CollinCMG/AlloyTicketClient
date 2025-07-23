@@ -125,7 +125,7 @@ namespace AlloyTicketClient.Components.Forms
                         return;
                     }
 
-                    await ShowToastAsync("There was a problem submitting your request.<br />Please reach out to the help desk directly for assistance.", "error");
+                    await ShowToastAsync("There was a problem submitting your request.", "error");
                 }
             }
             finally

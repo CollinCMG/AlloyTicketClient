@@ -29,7 +29,7 @@
         {
             try
             {
-                SetAuthHeader("test", null);
+                SetAuthHeader(payload.Requester_ID);
                 var apiUrl = $"{GetBaseUrl()}/request";
                 // Serialize and send the RequestActionPayload object directly (no wrapper)
                 var serializedPayload = JsonSerializer.Serialize(payload);
