@@ -15,7 +15,7 @@
             if (dynamicPages.Count > 0)
             {
                 var first = dynamicPages[0];
-                NavigationManager.NavigateTo($"request/{Uri.EscapeDataString(first.HeaderText)}");
+                NavigationManager.NavigateTo($"request?type={Uri.EscapeDataString(first.HeaderText)}");
             }
         }
     }

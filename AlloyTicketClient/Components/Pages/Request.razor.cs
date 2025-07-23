@@ -8,7 +8,9 @@ namespace AlloyTicketClient.Components.Pages
     public partial class Request : ComponentBase
     {
         // --- Parameters ---
-        [Parameter] public string? headerText { get; set; }
+        [Parameter]
+        [SupplyParameterFromQuery(Name = "type")]
+        public string? type { get; set; }
 
         // --- Injected Services ---
         [Inject] private IConfiguration Configuration { get; set; }
@@ -31,14 +33,14 @@ namespace AlloyTicketClient.Components.Pages
         }
 
         /// <summary>
-        /// Loads the dynamic page configuration based on the headerText route parameter.
+        /// Loads the dynamic page configuration based on the 'type' query parameter.
         /// </summary>
         protected override void OnParametersSet()
         {
             var dynamicPages = Configuration.GetSection("DynamicPages").Get<List<DynamicPageConfig>>() ?? new();
-            if (!string.IsNullOrEmpty(headerText))
+            if (!string.IsNullOrEmpty(type))
             {
-                var match = dynamicPages.FirstOrDefault(p => string.Equals(p.HeaderText, Uri.UnescapeDataString(headerText), StringComparison.OrdinalIgnoreCase));
+                var match = dynamicPages.FirstOrDefault(p => string.Equals(p.HeaderText, Uri.UnescapeDataString(type), StringComparison.OrdinalIgnoreCase));
                 dynamicPage = match;
             }
             else
