@@ -4,7 +4,6 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <base href="/" />
     <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
     <link rel="stylesheet" href="app.css" />
     <link rel="stylesheet" href="AlloyTicketClient.styles.css" />
@@ -13,7 +12,18 @@
 </head>
 
 <body>
-    <Routes @rendermode=RenderMode.InteractiveServer />
+    <ErrorBoundary>
+        <ChildContent>
+            <Routes @rendermode=RenderMode.InteractiveServer />
+        </ChildContent>
+        <ErrorContent>
+            <div class="alert alert-danger mt-4">
+                <h4 class="alert-heading">An unhandled error has occurred!</h4>
+                <p><b>Exception:</b> @context.Message</p>
+                <pre>@context.ToString()</pre>
+            </div>
+        </ErrorContent>
+    </ErrorBoundary>
     <script src="_framework/blazor.web.js"></script>
 </body>
 
