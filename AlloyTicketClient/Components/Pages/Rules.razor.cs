@@ -264,7 +264,7 @@ namespace AlloyTicketClient.Components.Pages
                 {
                     foreach (var btn in page.Buttons)
                     {
-                        var formId = await FormFieldService.GetFormId(btn.ObjectId);
+                        var formId = await FormFieldService.GetFormIdByObjectId(btn.ObjectId);
 
                         Forms.Add(new FormInfo { FormId = formId, Name = btn.Name, ObjectId = btn.ObjectId });
                     }

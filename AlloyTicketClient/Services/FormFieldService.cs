@@ -19,7 +19,7 @@ public class FormFieldService
     /// <summary>
     /// Gets the FormId for a given objectId.
     /// </summary>
-    public async Task<Guid> GetFormId(string objectId)
+    public async Task<Guid> GetFormIdByObjectId(string objectId)
     {
         if (string.IsNullOrWhiteSpace(objectId))
             return Guid.Empty;
@@ -33,6 +33,39 @@ public class FormFieldService
             {
                 command.CommandText = sql;
                 command.Parameters.Add(new SqlParameter("@ObjId", objectId));
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                    {
+                        var formIdObj = reader["Form_ID"];
+                        if (formIdObj != DBNull.Value && Guid.TryParse(formIdObj.ToString(), out var formId))
+                            return formId;
+                    }
+                }
+            }
+        }
+        return Guid.Empty;
+    }
+
+    public async Task<Guid> GetFormIdByActionId(int? actionId)
+    {
+        if (actionId == null)
+            return Guid.Empty;
+
+        var sql = @"SELECT e.Form_ID FROM   alloynavigator.dbo.cfgLCActionList  al
+ INNER JOIN cfgLCEvents e
+    ON al.ID = e.ID
+Where al.EventID = @ActionId
+";
+
+        var connString = _db.Database.GetConnectionString();
+        using (var connection = new SqlConnection(connString))
+        {
+            await connection.OpenAsync();
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = sql;
+                command.Parameters.Add(new SqlParameter("@ActionId", actionId));
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     if (await reader.ReadAsync())

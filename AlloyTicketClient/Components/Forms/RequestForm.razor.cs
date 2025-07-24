@@ -46,9 +46,13 @@ namespace AlloyTicketClient.Components.Forms
             isLoading = true;
             try
             {
-                if (!string.IsNullOrWhiteSpace(Payload?.ObjectId) && Payload.Type == RequestType.Service)
+                if (Payload.Type == RequestType.Service)
                 {
-                    Payload.FormId = await formFieldService.GetFormId(Payload.ObjectId);
+                    Payload.FormId = await formFieldService.GetFormIdByObjectId(Payload.ObjectId);
+                }
+                else if (Payload.Type == RequestType.Support)
+                {
+                    Payload.FormId = await formFieldService.GetFormIdByActionId(Payload.ActionId.Value);
                 }
 
                 if (Show && Payload != null && Payload.FormId != Guid.Empty)
