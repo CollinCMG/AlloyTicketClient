@@ -9,6 +9,15 @@
 
 @if (Show)
 {
+    if (isSubmitting)
+    {
+        <div class="modal-overlay" style="z-index:10001; background:rgba(255,255,255,0.7)">
+            <div class="modern-loading">
+                <div class="modern-spinner"></div>
+                <span>Submitting, please wait...</span>
+            </div>
+        </div>
+    }
     <div class="modal-overlay" @onclick="HandleOverlayClick">
         <div class="modal-dialog" @onclick:stopPropagation>
             <div class="modal-header modal-header-flex">
@@ -35,9 +44,9 @@
                                     @foreach (var row in GetFieldRows(p.Items.Where(i => !(i is FieldInputDto fi && fi.FieldName == "Requester_ID")).ToList()))
                                     {
                                         var isFullWidthRow =
-                                            (row.Count == 1 && row[0] is FieldInputDto fieldInputDto && fieldInputDto.FieldType == FieldType.Memo)
-                                            || (row.Count == 1 && row[0] is FieldTextDto)
-                                            || RowNeedsFullWidth(row);
+                                        (row.Count == 1 && row[0] is FieldInputDto fieldInputDto && fieldInputDto.FieldType == FieldType.Memo)
+                                        || (row.Count == 1 && row[0] is FieldTextDto)
+                                        || RowNeedsFullWidth(row);
                                         var isSingleInputRow = row.Count == 1 && row[0] is FieldInputDto singleInput && singleInput.FieldType != FieldType.Memo;
                                         <div class="form-row@(isFullWidthRow ? " full-width-row" : "")">
                                             @foreach (var item in row)
@@ -84,15 +93,8 @@
                         </div>
                         <div class="modal-footer modal-footer-fixed">
                             <button class="btn btn-primary btn-submit" type="submit" disabled="@(isSubmitting)">
-                                @if (isSubmitting)
-                                {
-                                    <span>Submitting</span>
-                                    <span class="modern-spinner btn-spinner"></span>
-                                }
-                                else
-                                {
-                                    <span>Submit</span>
-                                }
+
+                                <span>Submit</span>
                             </button>
                         </div>
                     </EditForm>

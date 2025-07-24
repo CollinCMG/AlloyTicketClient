@@ -66,5 +66,31 @@
                 throw new InvalidOperationException("AlloyAPI BaseUrl is not configured.");
             return baseUrl;
         }
+
+        public static JsonElement FormatDateTimesInJsonElement(JsonElement element)
+        {
+            if (element.ValueKind == JsonValueKind.Object)
+            {
+                var dict = new Dictionary<string, object?>();
+                foreach (var prop in element.EnumerateObject())
+                {
+                    if (prop.Value.ValueKind == JsonValueKind.String && DateTime.TryParse(prop.Value.GetString(), out var dt))
+                    {
+                        dict[prop.Name] = dt.ToString("yyyy-MM-ddTHH:mm:sszzz", System.Globalization.CultureInfo.InvariantCulture);
+                    }
+                    else if (prop.Value.ValueKind == JsonValueKind.Object)
+                    {
+                        dict[prop.Name] = FormatDateTimesInJsonElement(prop.Value);
+                    }
+                    else
+                    {
+                        dict[prop.Name] = prop.Value.Deserialize<object?>();
+                    }
+                }
+                var json = System.Text.Json.JsonSerializer.Serialize(dict);
+                return System.Text.Json.JsonDocument.Parse(json).RootElement;
+            }
+            return element;
+        }
     }
 }

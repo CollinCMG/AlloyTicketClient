@@ -64,6 +64,15 @@ namespace AlloyTicketClient.Services
                         value = dto.Properties.Values.FirstOrDefault();
                 }
 
+                // Format DateTime fields as yyyy-MM-ddTHH:mm:sszzz
+                if (fieldType == FieldType.DateTime && value != null)
+                {
+                    if (DateTime.TryParse(value.ToString(), out var dt))
+                    {
+                        value = dt.ToString("yyyy-MM-ddTHH:mm:sszzz", System.Globalization.CultureInfo.InvariantCulture);
+                    }
+                }
+
                 nameKeyed[fieldName ?? guid] = value;
             }
             return nameKeyed;

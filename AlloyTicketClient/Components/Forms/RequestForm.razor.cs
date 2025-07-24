@@ -115,7 +115,8 @@ namespace AlloyTicketClient.Components.Forms
                     var namedKeys = FormDataMapperService.MapFieldValuesToNameKeyed(pages, fieldValues);
                     var json = JsonSerializer.Serialize(namedKeys);
                     JsonDocument doc = JsonDocument.Parse(json);
-                    Payload.Data = doc.RootElement;
+                    // Format all DateTime values before sending
+                    Payload.Data = AlloyApiService.FormatDateTimesInJsonElement(doc.RootElement);
                     var (success, message) = await AlloyApiService.PostAsync(Payload);
 
                     if (success)
