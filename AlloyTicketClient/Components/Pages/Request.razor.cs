@@ -61,7 +61,9 @@ namespace AlloyTicketClient.Components.Pages
                 Requester_ID = userDisplayName ?? string.Empty,
                 FormId = btn.FormId,
                 Data = emptyJson,
-                ObjectId = btn.ObjectId
+                ObjectId = btn.ObjectId,
+                Type = btn.Type,
+                ActionId = btn.ActionId
             };
             showFormModal = true;
             return Task.CompletedTask;

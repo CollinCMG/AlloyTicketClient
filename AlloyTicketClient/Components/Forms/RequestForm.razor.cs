@@ -38,10 +38,15 @@ namespace AlloyTicketClient.Components.Forms
         // --- Lifecycle ---
         protected override async Task OnParametersSetAsync()
         {
+            if (Payload == null)
+            {
+                return;
+            }
+
             isLoading = true;
             try
             {
-                if (!string.IsNullOrWhiteSpace(Payload?.ObjectId))
+                if (!string.IsNullOrWhiteSpace(Payload?.ObjectId) && Payload.Type == RequestType.Service)
                 {
                     Payload.FormId = await formFieldService.GetFormId(Payload.ObjectId);
                 }
@@ -117,7 +122,7 @@ namespace AlloyTicketClient.Components.Forms
                     JsonDocument doc = JsonDocument.Parse(json);
                     // Format all DateTime values before sending
                     Payload.Data = AlloyApiService.FormatDateTimesInJsonElement(doc.RootElement);
-                    var (success, message) = await AlloyApiService.PostAsync(Payload);
+                    var (success, message) = await AlloyApiService.CreateRequestAsync(Payload);
 
                     if (success)
                     {

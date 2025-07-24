@@ -25,7 +25,7 @@
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<(bool Success, string Message)> PostAsync(RequestActionPayload payload)
+        public async Task<(bool Success, string Message)> CreateRequestAsync(RequestActionPayload payload)
         {
             try
             {
@@ -33,7 +33,7 @@
                 var apiUrl = $"{GetBaseUrl()}/request";
                 // Serialize and send the RequestActionPayload object directly (no wrapper)
                 var serializedPayload = JsonSerializer.Serialize(payload);
-                _logger.LogInformation("Sending POST to {ApiUrl} with payload: {Payload}", apiUrl, serializedPayload);
+                _logger.LogInformation("Sending request to {ApiUrl} with payload: {Payload}", apiUrl, serializedPayload);
                 var content = new StringContent(serializedPayload, Encoding.UTF8, "application/json");
                 using var response = await _client.PostAsync(apiUrl, content);
                 var apiResponse = await response.Content.ReadAsStringAsync();
@@ -47,7 +47,7 @@
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Exception occurred in PostAsync");
-                return (false, $"Exception occurred in PostAsync: {ex.Message}");
+                return (false, $"Exception occurred in CreateRequestAsync: {ex.Message}");
             }
         }
 
