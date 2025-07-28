@@ -69,30 +69,12 @@ else
                 }
             </select>
         }
-        @* Dropdown with async options *@
-        else if (Field.FieldType == FieldType.Dropdown && !string.IsNullOrWhiteSpace(Field.TableName) && !string.IsNullOrWhiteSpace(Field.DisplayFields))
-        {
-            if (Options == null)
-            {
-                <span>Loading...</span>
-            }
-            else
-            {
-                <select class="form-control" @onchange="OnDropdownChanged" required="@(Field.Mandatory == true)" disabled="@(Field.Read_Only == true)">
-                    <option value="">-- Select --</option>
-                    @foreach (var option in Options)
-                    {
-                        var (value, display) = GetDropdownValueAndDisplay(option);
-                        <option value="@value" selected="@(CurrentValue == value)">@display</option>
-                    }
-                </select>
-            }
-        }
-        @* Dropdown with static options *@
-        else if (Field.FieldType == FieldType.Dropdown && Options != null)
+        @* Dropdown with options from Field.Options *@
+        else if (Field.FieldType == FieldType.Dropdown && Field.Options != null)
         {
             <select class="form-control" @onchange="OnDropdownChanged" required="@(Field.Mandatory == true)" disabled="@(Field.Read_Only == true)">
-                @foreach (var option in Options)
+                <option value="">-- Select --</option>
+                @foreach (var option in Field.Options)
                 {
                     var (value, display) = GetDropdownValueAndDisplay(option);
                     <option value="@value" selected="@(CurrentValue == value)">@display</option>

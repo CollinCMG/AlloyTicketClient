@@ -265,12 +265,16 @@ namespace AlloyTicketClient.Services
                         triggerDto = dto;
                         isActive = dto.Properties.Values.Any(v => v != null && !string.IsNullOrWhiteSpace(v.ToString()));
                         valueStr = dto.ToString();
-                        if (dto.Properties.TryGetValue("Primary_Email", out var emailObj) && emailObj is string email && !string.IsNullOrWhiteSpace(email))
+                        if (dto.Properties.TryGetValue("Primary_Email", out var emailObj) && emailObj is System.Text.Json.JsonElement je && je.ValueKind == System.Text.Json.JsonValueKind.String)
                         {
-                            var resolvedUsername = await _userRoleService.GetUsernameByEmailAsync(email);
-                            if (!string.IsNullOrWhiteSpace(resolvedUsername))
+                            var email = je.GetString();
+                            if (!string.IsNullOrWhiteSpace(email))
                             {
-                                username = resolvedUsername;
+                                var resolvedUsername = await _userRoleService.GetUsernameByEmailAsync(email);
+                                if (!string.IsNullOrWhiteSpace(resolvedUsername))
+                                {
+                                    username = resolvedUsername;
+                                }
                             }
                         }
                     }

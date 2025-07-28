@@ -18,8 +18,8 @@ namespace AlloyTicketClient.Components.Pages
         }
 
         [Inject] private IConfiguration Configuration { get; set; } = default!;
-        [Inject] private FormFieldService FormFieldService { get; set; } = default!;
         [Inject] private RulesService RulesService { get; set; } = default!;
+        [Inject] private AlloyApiService AlloyApiService { get; set; } = default!;
 
         private List<FormInfo> Forms { get; set; } = new();
         private List<RuleConfig> RulesList { get; set; } = new();
@@ -94,7 +94,7 @@ namespace AlloyTicketClient.Components.Pages
                 }
                 if (ModalSelectedFormId != null && ModalSelectedFormId != Guid.Empty)
                 {
-                    var pages = await FormFieldService.GetFormPagesAsync(ModalSelectedFormId.Value);
+                    var pages = await AlloyApiService.GetFormPagesAsync(ModalSelectedFormId.Value);
                     var fields = pages.SelectMany(p => p.Items).OfType<FieldInputDto>();
                     ModalFormFields = fields
                         .Where(f => f.FieldType != FieldType.Text)
@@ -127,7 +127,7 @@ namespace AlloyTicketClient.Components.Pages
             ModalFormFields.Clear();
             if (ModalSelectedFormId != null && ModalSelectedFormId != Guid.Empty)
             {
-                var pages = await FormFieldService.GetFormPagesAsync(ModalSelectedFormId.Value);
+                var pages = await AlloyApiService.GetFormPagesAsync(ModalSelectedFormId.Value);
                 ModalFormFields = pages.SelectMany(p => p.Items).OfType<FieldInputDto>().ToList();
             }
             StateHasChanged();
@@ -270,11 +270,11 @@ namespace AlloyTicketClient.Components.Pages
                         var formId = Guid.Empty;
                         if (!string.IsNullOrWhiteSpace(btn.ObjectId))
                         {
-                            formId = await FormFieldService.GetFormIdByObjectId(btn.ObjectId);
+                            formId = await AlloyApiService.GetFormIdByObjectId(btn.ObjectId);
                         }
                         else if (btn.ActionId != null)
                         {
-                            formId = await FormFieldService.GetFormIdByActionId(btn.ActionId);
+                            formId = await AlloyApiService.GetFormIdByActionId(btn.ActionId);
                         }
 
                         Forms.Add(new FormInfo { FormId = formId, Name = btn.Name, ObjectId = btn.ObjectId });

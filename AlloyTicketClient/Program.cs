@@ -19,7 +19,6 @@ builder.Services.AddDbContext<AlloyNavigatorDbContext>(options =>
 builder.Services.AddDbContext<AlloyTicketRulesDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("AlloyTicketRulesDb")));
 
-builder.Services.AddScoped<FormFieldService>();
 builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddScoped<AlloyApiService>();
 builder.Services.AddScoped<UserRoleService>();

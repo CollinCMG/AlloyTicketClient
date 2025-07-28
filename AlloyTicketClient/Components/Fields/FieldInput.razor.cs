@@ -13,10 +13,7 @@ namespace AlloyTicketClient.Components.Fields
         [Parameter] public EventCallback<object?> OnValueChanged { get; set; }
 
         // INJECTED SERVICES
-        [Inject] private FormFieldService FormFieldService { get; set; } = default!;
-
-        // PROPERTIES/FIELDS
-        private List<DropdownOptionDto>? Options;
+        [Inject] private AlloyApiService AlloyApiService { get; set; } = default!;
 
         private List<string> SelectedMultiValues
         {
@@ -53,9 +50,9 @@ namespace AlloyTicketClient.Components.Fields
             }
             set
             {
-                if (Field?.FieldType == FieldType.Dropdown && Options != null)
+                if (Field?.FieldType == FieldType.Dropdown && Field?.Options != null)
                 {
-                    var selected = Options.FirstOrDefault(o => (o.Properties.ContainsKey("Id") ? o.Properties["Id"]?.ToString() : o.Properties.Values.FirstOrDefault()?.ToString()) == value);
+                    var selected = Field.Options.FirstOrDefault(o => (o.Properties.ContainsKey("Id") ? o.Properties["Id"]?.ToString() : o.Properties.Values.FirstOrDefault()?.ToString()) == value);
                     if (selected != null && !Equals(Value, selected))
                     {
                         Value = selected;
@@ -123,12 +120,6 @@ namespace AlloyTicketClient.Components.Fields
             }
         }
 
-        // LIFECYCLE METHODS
-        protected override async Task OnInitializedAsync()
-        {
-            await LoadDropdownOptions();
-        }
-
         // EVENT HANDLERS
         private void OnMultiSelectChanged(ChangeEventArgs e)
         {
@@ -171,36 +162,11 @@ namespace AlloyTicketClient.Components.Fields
         private void OnDropdownChanged(ChangeEventArgs e)
         {
             var selectedValue = e.Value?.ToString();
-            if (Options != null)
+            if (Field?.Options != null)
             {
-                var selected = Options.FirstOrDefault(o => (o.Properties.ContainsKey("Id") ? o.Properties["Id"]?.ToString() : o.Properties.Values.FirstOrDefault()?.ToString()) == selectedValue);
+                var selected = Field.Options.FirstOrDefault(o => (o.Properties.ContainsKey("Id") ? o.Properties["Id"]?.ToString() : o.Properties.Values.FirstOrDefault()?.ToString()) == selectedValue);
                 Value = selected;
                 OnValueChanged.InvokeAsync(selected);
-            }
-        }
-
-        // HELPER/UTILITY METHODS
-        private async Task LoadDropdownOptions()
-        {
-            if (Field?.FieldType == FieldType.Dropdown && !string.IsNullOrWhiteSpace(Field.TableName) && !string.IsNullOrWhiteSpace(Field.DisplayFields))
-            {
-                Options = await FormFieldService.GetDropdownOptionsAsync(Field);
-                // Set default value if not already set
-                if ((Value == null || (Value is string s && string.IsNullOrWhiteSpace(s))) && !string.IsNullOrWhiteSpace(Field.Field_Value) && Options != null)
-                {
-                    var selected = Options.FirstOrDefault(o => (o.Properties.ContainsKey("Id") ? o.Properties["Id"]?.ToString() : o.Properties.Values.FirstOrDefault()?.ToString()) == Field.Field_Value);
-                    if (selected != null)
-                    {
-                        var id = selected.Properties.ContainsKey("Id") ? selected.Properties["Id"]?.ToString() : selected.Properties.Values.FirstOrDefault()?.ToString();
-                        Value = id;
-                        await OnValueChanged.InvokeAsync(id);
-                        StateHasChanged();
-                    }
-                }
-            }
-            else
-            {
-                Options = null;
             }
         }
 

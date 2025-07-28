@@ -16,7 +16,6 @@ namespace AlloyTicketClient.Components.Forms
         [Parameter] public EventCallback OnClose { get; set; }
 
         // --- Injected Services ---
-        [Inject] private FormFieldService formFieldService { get; set; }
         [Inject] private AlloyApiService AlloyApiService { get; set; }
         [Inject] private RulesService RulesService { get; set; }
 
@@ -48,11 +47,11 @@ namespace AlloyTicketClient.Components.Forms
             {
                 if (Payload.Type == RequestType.Service)
                 {
-                    Payload.FormId = await formFieldService.GetFormIdByObjectId(Payload.ObjectId);
+                    Payload.FormId = await AlloyApiService.GetFormIdByObjectId(Payload.ObjectId);
                 }
                 else if (Payload.Type == RequestType.Support)
                 {
-                    Payload.FormId = await formFieldService.GetFormIdByActionId(Payload.ActionId.Value);
+                    Payload.FormId = await AlloyApiService.GetFormIdByActionId(Payload?.ActionId);
                 }
 
                 if (Show && Payload != null && Payload.FormId != Guid.Empty)
@@ -69,7 +68,7 @@ namespace AlloyTicketClient.Components.Forms
                     }
                     if (lastLoadedFormId != Payload.FormId || pages == null)
                     {
-                        pages = await formFieldService.GetFormPagesAsync(Payload.FormId);
+                        pages = await AlloyApiService.GetFormPagesAsync(Payload.FormId);
                         lastLoadedFormId = Payload.FormId;
                         var rules = await RulesService.GetRulesForFormAsync(Payload.FormId);
                         modifyAppsTriggerFields = rules
@@ -205,28 +204,27 @@ namespace AlloyTicketClient.Components.Forms
         }
 
         // --- Helpers ---
-        private List<List<IPageItem>> GetFieldRows(List<IPageItem> items)
+        private List<List<FieldInputDto>> GetFieldRows(List<FieldInputDto> items)
         {
-            var rows = new List<List<IPageItem>>();
-            var currentRow = new List<IPageItem>();
+            var rows = new List<List<FieldInputDto>>();
+            var currentRow = new List<FieldInputDto>();
             foreach (var item in items)
             {
-                if ((item is FieldInputDto fieldInput && (fieldInput.FieldType == FieldType.Memo || (fieldInput.DefinitionID != null && modifyAppsTriggerFields.Contains(fieldInput.DefinitionID.ToString()))))
-                    || item is FieldTextDto)
+                if (item is FieldInputDto fieldInput && (fieldInput.FieldType == FieldType.Memo || (fieldInput.DefinitionID != null && modifyAppsTriggerFields.Contains(fieldInput.DefinitionID.ToString()))))
                 {
                     if (currentRow.Count > 0)
                     {
-                        rows.Add(new List<IPageItem>(currentRow));
+                        rows.Add(new List<FieldInputDto>(currentRow));
                         currentRow.Clear();
                     }
-                    rows.Add(new List<IPageItem> { item });
+                    rows.Add(new List<FieldInputDto> { item });
                 }
                 else
                 {
                     currentRow.Add(item);
                     if (currentRow.Count == 2)
                     {
-                        rows.Add(new List<IPageItem>(currentRow));
+                        rows.Add(new List<FieldInputDto>(currentRow));
                         currentRow.Clear();
                     }
                 }
@@ -236,7 +234,7 @@ namespace AlloyTicketClient.Components.Forms
             return rows;
         }
 
-        private bool RowNeedsFullWidth(List<IPageItem> row)
+        private bool RowNeedsFullWidth(List<FieldInputDto> row)
         {
             if (row.Count == 1 && row[0] is FieldInputDto fieldInput)
             {

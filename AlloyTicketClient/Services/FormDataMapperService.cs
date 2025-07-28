@@ -158,7 +158,8 @@ namespace AlloyTicketClient.Services
                 LookupID = input.Lookup_ID,
                 Filter = input.Filter,
                 FieldType = input.FieldType,
-                DisplayFields = input.DisplayFields
+                DisplayFields = input.DisplayFields,
+                Options = input.Options
             };
         }
 

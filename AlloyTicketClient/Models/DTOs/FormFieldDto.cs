@@ -1,4 +1,5 @@
 using AlloyTicketClient.Enums;
+using AlloyTicketClient.Models.DTOs;
 
 public class FormFieldDto
 {
@@ -15,6 +16,6 @@ public class FormFieldDto
     public Guid? LookupID { get; set; }
     public string? Filter { get; set; }
     public FieldType? FieldType { get; set; } 
-    public string? DisplayFields { get; set; } 
-    public List<string>? Options { get; set; } 
+    public string? DisplayFields { get; set; }
+    public List<DropdownOptionDto>? Options { get; set; } 
 }

@@ -45,7 +45,6 @@
                                     {
                                         var isFullWidthRow =
                                         (row.Count == 1 && row[0] is FieldInputDto fieldInputDto && (fieldInputDto.FieldType == FieldType.Memo || fieldInputDto.FieldType == FieldType.Description))
-                                        || (row.Count == 1 && row[0] is FieldTextDto)
                                         || RowNeedsFullWidth(row);
                                         var isSingleInputRow = row.Count == 1 && row[0] is FieldInputDto singleInput && singleInput.FieldType != FieldType.Memo && singleInput.FieldType != FieldType.Description;
                                         <div class="form-row@(isFullWidthRow ? " full-width-row" : "")">
@@ -65,25 +64,6 @@
                                                                         OnValueChanged="@(val => OnFieldValueChanged(val, fieldKey))" />
                                                         </div>
                                                     }
-                                                }
-                                                else if (item is FieldTextDto fieldText)
-                                                {
-                                                    <div class="form-col field-text">
-                                                        <h4>
-                                                            @if (fieldText.Config != null && !string.IsNullOrWhiteSpace(fieldText.Config.Url))
-                                                            {
-                                                                <a href="@fieldText.Config.Url" target="_blank" rel="noopener noreferrer">@fieldText.Config.Text</a>
-                                                            }
-                                                            else if (fieldText.Config != null)
-                                                            {
-                                                                @fieldText.Config.Text
-                                                            }
-                                                            else
-                                                            {
-                                                                @FormDataMapperService.GetTextValue(fieldText.ElementDefinition)
-                                                            }
-                                                        </h4>
-                                                    </div>
                                                 }
                                             }
                                         </div>

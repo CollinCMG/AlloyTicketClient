@@ -2,7 +2,7 @@
 
 namespace AlloyTicketClient.Models.DTOs
 {
-    public class FieldInputDto : IPageItem
+    public class FieldInputDto
     {
         public int? Field_Num { get; set; }
         public string FieldLabel { get; set; } = string.Empty;
@@ -20,5 +20,7 @@ namespace AlloyTicketClient.Models.DTOs
         public FieldType? FieldType { get; set; }
         public string? DisplayFields { get; set; }
         public bool IsHidden { get; set; } = false;
+        public List<DropdownOptionDto>? Options { get; set; }
+
     }
 }
