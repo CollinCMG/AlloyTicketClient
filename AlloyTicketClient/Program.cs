@@ -13,9 +13,6 @@ builder.Services.AddRazorComponents()
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddDbContext<AlloyNavigatorDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("AlloyNavigator")));
-
 builder.Services.AddDbContext<AlloyTicketRulesDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("AlloyTicketRulesDb")));
 
