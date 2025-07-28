@@ -8,7 +8,7 @@
 }
 else
 {
-    <div class="field-block@(Field.FieldType == FieldType.Memo ? " full-width" : "")">
+    <div class="field-block@((Field.FieldType == FieldType.Memo || Field.FieldType == FieldType.Description) ? " full-width" : "")">
         <h4>
             @GetDisplayName(Field)
             <span class="required" title="Required">
@@ -54,7 +54,7 @@ else
             <input type="checkbox" class="form-check-input" @bind="IsChecked" disabled="@(Field.Read_Only == true)" />
         }
         @* Memo (textarea) *@
-        else if (Field.FieldType == FieldType.Memo)
+        else if (Field.FieldType == FieldType.Memo || Field.FieldType == FieldType.Description)
         {
             <textarea class="form-control full-row" @bind="CurrentValue" required="@(Field.Mandatory == true)" disabled="@(Field.Read_Only == true)"></textarea>
         }

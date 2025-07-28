@@ -44,10 +44,10 @@
                                     @foreach (var row in GetFieldRows(p.Items.Where(i => !(i is FieldInputDto fi && fi.FieldName == "Requester_ID")).ToList()))
                                     {
                                         var isFullWidthRow =
-                                        (row.Count == 1 && row[0] is FieldInputDto fieldInputDto && fieldInputDto.FieldType == FieldType.Memo)
+                                        (row.Count == 1 && row[0] is FieldInputDto fieldInputDto && (fieldInputDto.FieldType == FieldType.Memo || fieldInputDto.FieldType == FieldType.Description))
                                         || (row.Count == 1 && row[0] is FieldTextDto)
                                         || RowNeedsFullWidth(row);
-                                        var isSingleInputRow = row.Count == 1 && row[0] is FieldInputDto singleInput && singleInput.FieldType != FieldType.Memo;
+                                        var isSingleInputRow = row.Count == 1 && row[0] is FieldInputDto singleInput && singleInput.FieldType != FieldType.Memo && singleInput.FieldType != FieldType.Description;
                                         <div class="form-row@(isFullWidthRow ? " full-width-row" : "")">
                                             @foreach (var item in row)
                                             {
@@ -56,8 +56,8 @@
                                                     var fieldKey = fieldInput.DefinitionID?.ToString();
                                                     if (!fieldInput.IsHidden)
                                                     {
-                                                        var isTextarea = fieldInput.FieldType == FieldType.Memo;
-                                                        var formColClass = "form-col" + (isTextarea ? " textarea-col" : "") + (isSingleInputRow ? " single-col" : "");
+                                                        var isTextarea = (fieldInput.FieldType == FieldType.Memo || fieldInput.FieldType == FieldType.Description);
+                                                        var formColClass = "form-col" + (isTextarea ? " textarea-col" : "") + (isSingleInputRow ? " single-col" : string.Empty);
                                                         <div class="@formColClass">
                                                             <FieldInput @key="fieldInput.DefinitionID"
                                                                         Field="@(FormDataMapperService.MapToFormFieldDto(fieldInput))"

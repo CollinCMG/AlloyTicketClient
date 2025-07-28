@@ -3,7 +3,6 @@ using AlloyTicketClient.Models;
 using AlloyTicketClient.Models.DTOs;
 using AlloyTicketClient.Services;
 using Microsoft.AspNetCore.Components;
-using System.Linq;
 
 namespace AlloyTicketClient.Components.Pages
 {
@@ -172,7 +171,7 @@ namespace AlloyTicketClient.Components.Pages
                         FieldId = id,
                         FieldName = field?.FieldName ?? id,
                         FieldType = field?.FieldType ?? FieldType.Null,
-                        FieldValue = field?.FieldValue 
+                        FieldValue = field?.FieldValue
                     };
                 })
                 .ToList();
@@ -248,13 +247,6 @@ namespace AlloyTicketClient.Components.Pages
             StateHasChanged();
         }
 
-        private string GetFieldLabelById(string? id)
-        {
-            if (string.IsNullOrEmpty(id)) return id ?? string.Empty;
-            var field = FormFields.FirstOrDefault(f => f.DefinitionID?.ToString() == id);
-            return !string.IsNullOrWhiteSpace(field?.FieldLabel) ? field.FieldLabel : (field?.FieldName ?? id);
-        }
-
         protected override async Task OnInitializedAsync()
         {
             var dynamicPages = Configuration.GetSection("DynamicPages").Get<List<DynamicPageConfig>>() ?? new();
@@ -264,7 +256,15 @@ namespace AlloyTicketClient.Components.Pages
                 {
                     foreach (var btn in page.Buttons)
                     {
-                        var formId = await FormFieldService.GetFormIdByObjectId(btn.ObjectId);
+                        var formId = Guid.Empty;
+                        if (!string.IsNullOrWhiteSpace(btn.ObjectId))
+                        {
+                            formId = await FormFieldService.GetFormIdByObjectId(btn.ObjectId);
+                        }
+                        else if (btn.ActionId != null)
+                        {
+                            formId = await FormFieldService.GetFormIdByActionId(btn.ActionId);
+                        }
 
                         Forms.Add(new FormInfo { FormId = formId, Name = btn.Name, ObjectId = btn.ObjectId });
                     }
