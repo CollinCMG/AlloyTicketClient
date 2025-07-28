@@ -29,20 +29,20 @@
                         <table class="table table-sm table-bordered mb-0">
                             <thead>
                                 <tr>
+                                    <th>Action</th>
                                     <th>Trigger Field</th>
                                     <th>Trigger Value</th>
-                                    <th>Action</th>
                                     <th>Target Fields</th>
                                     <th></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var rule in group)
+                                @foreach (var rule in group.OrderBy(r => r.Action).ThenBy(r => r.TriggerFieldLabel))
                                 {
                                     <tr>
+                                        <td>@rule.Action</td>
                                         <td>@rule.TriggerFieldLabel</td>
                                         <td>@(string.IsNullOrWhiteSpace(rule.TriggerValue) ? "Any" : rule.TriggerValue)</td>
-                                        <td>@rule.Action</td>
                                         <td>@string.Join(", ", rule.TargetFieldLabels ?? rule.TargetList.Select(t => t.FieldName))</td>
                                         <td class="text-nowrap">
                                             <div class="d-flex flex-row gap-1 justify-content-center align-items-center">
@@ -95,9 +95,18 @@
                                             <option value="FieldsByRole">Fields By Role</option>
                                         </select>
                                     </div>
+                                    @if (ModalSelectedAction == FilterAction.Hide)
+                                    {
+                                        <div class="col-md-6 d-flex align-items-end">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="alwaysHideCheck" @bind="ModalAlwaysHide" />
+                                                <label class="form-check-label" for="alwaysHideCheck">Always hide (no trigger)</label>
+                                            </div>
+                                        </div>
+                                    }
                                     <div class="col-md-6">
                                         <label class="form-label">Trigger Field</label>
-                                        <select class="form-select" @bind="ModalSelectedFieldId">
+                                        <select class="form-select" @bind="ModalSelectedFieldId" disabled="@(ModalSelectedAction == FilterAction.Hide && ModalAlwaysHide)">
                                             <option value="">-- Select Trigger Field --</option>
                                             @foreach (var field in ModalFormFields)
                                             {
@@ -107,8 +116,15 @@
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label">Trigger Value <span class="text-muted rules-trigger-note">(leave blank for any value)</span></label>
-                                        <input class="form-control" @bind="ModalTriggerValue" placeholder="Any value" />
+                                        <input class="form-control" @bind="ModalTriggerValue" placeholder="Any value" disabled="@(ModalSelectedAction == FilterAction.Hide && ModalAlwaysHide)" />
                                     </div>
+                                    @if (ModalSelectedAction == FilterAction.FieldsByRole || ModalSelectedAction == FilterAction.ModifyApps || (ModalSelectedAction == FilterAction.Hide))
+                                    {
+                                        <div class="col-md-6">
+                                            <label class="form-label">Default Value <span class="text-muted rules-override-note">(optional)</span></label>
+                                            <input class="form-control" @bind="ModalTargetValueOverride" placeholder="Default value for hidden field (optional)" />
+                                        </div>
+                                    }
                                     <div class="col-12">
                                         <label class="form-label">Target Fields</label>
                                         @if (ModalSelectedAction == FilterAction.FieldsByRole)

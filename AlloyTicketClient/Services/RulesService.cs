@@ -133,7 +133,34 @@ namespace AlloyTicketClient.Services
             }
 
             // 3. Hide logic (set IsHidden = true for triggered Hide rules)
-            foreach (var rule in hideRules)
+            // First, honor AlwaysHide
+            foreach (var rule in hideRules.Where(r => r.AlwaysHide))
+            {
+                foreach (var target in rule.TargetList)
+                {
+                    foreach (var page in pages)
+                    {
+                        foreach (var item in page.Items)
+                        {
+                            if (item is FieldInputDto f && f.DefinitionID?.ToString() == target.FieldId)
+                            {
+                                f.IsHidden = true;
+                                if (!string.IsNullOrWhiteSpace(rule.TargetValueOverride))
+                                {
+                                    f.FieldValue = rule.TargetValueOverride;
+                                    if (fieldValues.ContainsKey(target.FieldId))
+                                        fieldValues[target.FieldId] = rule.TargetValueOverride;
+                                    else
+                                        fieldValues.Add(target.FieldId, rule.TargetValueOverride);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Then, process normal Hide rules
+            foreach (var rule in hideRules.Where(r => !r.AlwaysHide))
             {
                 if (fieldValues.TryGetValue(rule.TriggerField, out var value))
                 {

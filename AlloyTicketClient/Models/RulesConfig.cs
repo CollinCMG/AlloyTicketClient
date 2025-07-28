@@ -12,7 +12,6 @@ namespace AlloyTicketClient.Models
     public class RuleConfig
     {
         public Guid FormId { get; set; }
-
         public Guid RuleId { get; set; }
         public string? FormName { get; set; } // Display name for the form
         public string TriggerField { get; set; } = string.Empty;
@@ -24,6 +23,7 @@ namespace AlloyTicketClient.Models
         public List<string>? TargetFieldLabels { get; set; } // Display names for target fields
         public RoleName? RoleName { get; set; } // Only used for FieldsByRole
         public bool IsQueue { get; set; } // Only used for FieldsByRole
-        public string? TargetValueOverride { get; set; } // Only used for FieldsByRole, default to null/empty
+        public string? TargetValueOverride { get; set; } // Used for FieldsByRole, ModifyApps, and Hide (default value)
+        public bool AlwaysHide { get; set; } = false; // Always hide the field (no trigger)
     }
 }
