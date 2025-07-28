@@ -118,13 +118,6 @@
                                         <label class="form-label">Trigger Value <span class="text-muted rules-trigger-note">(leave blank for any value)</span></label>
                                         <input class="form-control" @bind="ModalTriggerValue" placeholder="Any value" disabled="@(ModalSelectedAction == FilterAction.Hide && ModalAlwaysHide)" />
                                     </div>
-                                    @if (ModalSelectedAction == FilterAction.FieldsByRole || ModalSelectedAction == FilterAction.ModifyApps)
-                                    {
-                                        <div class="col-md-6">
-                                            <label class="form-label">Default Value <span class="text-muted rules-override-note">(optional)</span></label>
-                                            <input class="form-control" @bind="ModalTargetValueOverride" placeholder="Default value for hidden field (optional)" />
-                                        </div>
-                                    }
                                     <div class="col-12">
                                         <label class="form-label">Target Fields</label>
                                         @if (ModalSelectedAction == FilterAction.FieldsByRole)
