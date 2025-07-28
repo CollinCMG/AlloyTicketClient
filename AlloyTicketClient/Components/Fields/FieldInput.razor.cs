@@ -17,35 +17,6 @@ namespace AlloyTicketClient.Components.Fields
 
         // PROPERTIES/FIELDS
         private List<DropdownOptionDto>? Options;
-        
-        // New: For dropdown binding
-        private string? SelectedDropdownValue
-        {
-            get
-            {
-                // Always return the string ID if possible
-                if (Value is string s)
-                    return s;
-                if (Value is DropdownOptionDto dto)
-                    return dto.Properties.ContainsKey("Id") ? dto.Properties["Id"]?.ToString() : dto.Properties.Values.FirstOrDefault()?.ToString();
-                if (Field != null && !string.IsNullOrWhiteSpace(Field.Field_Value))
-                    return Field.Field_Value;
-                return null;
-            }
-            set
-            {
-                if (!string.IsNullOrEmpty(value))
-                {
-                    Value = value; // Store as string
-                    OnValueChanged.InvokeAsync(value);
-                }
-                else
-                {
-                    Value = null;
-                    OnValueChanged.InvokeAsync(null);
-                }
-            }
-        }
 
         private List<string> SelectedMultiValues
         {
@@ -242,7 +213,7 @@ namespace AlloyTicketClient.Components.Fields
 
         private string GetDisplayName(FormFieldDto field)
             => string.IsNullOrWhiteSpace(field.Field_Label) ? field.Field_Name ?? string.Empty : field.Field_Label;
-       
+
         // Parses lookup values for radio/select fields. Example: 1,"No,Yes","No,Yes" or 2,"A,B,C"
         private (int lookupType, List<string> options) ParseLookupTypeAndValues(string lookupValues)
         {
@@ -254,7 +225,7 @@ namespace AlloyTicketClient.Components.Fields
             }
             var rest = parts[1];
             var options = new List<string>();
-            
+
             // Try to extract quoted string(s)
             var quoteStart = rest.IndexOf('"');
             var quoteEnd = rest.LastIndexOf('"');

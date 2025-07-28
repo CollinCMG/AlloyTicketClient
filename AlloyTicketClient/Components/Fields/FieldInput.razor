@@ -78,12 +78,12 @@ else
             }
             else
             {
-                <select class="form-control" @bind="SelectedDropdownValue" required="@(Field.Mandatory == true)" disabled="@(Field.Read_Only == true)">
+                <select class="form-control" @onchange="OnDropdownChanged" required="@(Field.Mandatory == true)" disabled="@(Field.Read_Only == true)">
                     <option value="">-- Select --</option>
                     @foreach (var option in Options)
                     {
                         var (value, display) = GetDropdownValueAndDisplay(option);
-                        <option value="@value">@display</option>
+                        <option value="@value" selected="@(CurrentValue == value)">@display</option>
                     }
                 </select>
             }
@@ -95,7 +95,7 @@ else
                 @foreach (var option in Options)
                 {
                     var (value, display) = GetDropdownValueAndDisplay(option);
-                    <option value="@value">@display</option>
+                    <option value="@value" selected="@(CurrentValue == value)">@display</option>
                 }
             </select>
         }
