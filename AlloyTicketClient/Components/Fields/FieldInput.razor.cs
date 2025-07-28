@@ -17,6 +17,36 @@ namespace AlloyTicketClient.Components.Fields
 
         // PROPERTIES/FIELDS
         private List<DropdownOptionDto>? Options;
+        
+        // New: For dropdown binding
+        private string? SelectedDropdownValue
+        {
+            get
+            {
+                // Always return the string ID if possible
+                if (Value is string s)
+                    return s;
+                if (Value is DropdownOptionDto dto)
+                    return dto.Properties.ContainsKey("Id") ? dto.Properties["Id"]?.ToString() : dto.Properties.Values.FirstOrDefault()?.ToString();
+                if (Field != null && !string.IsNullOrWhiteSpace(Field.Field_Value))
+                    return Field.Field_Value;
+                return null;
+            }
+            set
+            {
+                if (!string.IsNullOrEmpty(value))
+                {
+                    Value = value; // Store as string
+                    OnValueChanged.InvokeAsync(value);
+                }
+                else
+                {
+                    Value = null;
+                    OnValueChanged.InvokeAsync(null);
+                }
+            }
+        }
+
         private List<string> SelectedMultiValues
         {
             get
@@ -184,6 +214,18 @@ namespace AlloyTicketClient.Components.Fields
             if (Field?.FieldType == FieldType.Dropdown && !string.IsNullOrWhiteSpace(Field.TableName) && !string.IsNullOrWhiteSpace(Field.DisplayFields))
             {
                 Options = await FormFieldService.GetDropdownOptionsAsync(Field);
+                // Set default value if not already set
+                if ((Value == null || (Value is string s && string.IsNullOrWhiteSpace(s))) && !string.IsNullOrWhiteSpace(Field.Field_Value) && Options != null)
+                {
+                    var selected = Options.FirstOrDefault(o => (o.Properties.ContainsKey("Id") ? o.Properties["Id"]?.ToString() : o.Properties.Values.FirstOrDefault()?.ToString()) == Field.Field_Value);
+                    if (selected != null)
+                    {
+                        var id = selected.Properties.ContainsKey("Id") ? selected.Properties["Id"]?.ToString() : selected.Properties.Values.FirstOrDefault()?.ToString();
+                        Value = id;
+                        await OnValueChanged.InvokeAsync(id);
+                        StateHasChanged();
+                    }
+                }
             }
             else
             {

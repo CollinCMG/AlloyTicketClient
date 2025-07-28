@@ -86,7 +86,6 @@ Where al.EventID = @ActionId
     public async Task<List<PageDto>> GetFormPagesAsync(Guid formId)
     {
         var sql = @"
-
 WITH PageBreaks AS (
     SELECT
         e.Field_ID      AS PageFieldID,
@@ -119,7 +118,7 @@ FieldAssignments AS (
         ff.Field_Type,
         cd.Mandatory,
         cd.Read_Only AS ReadOnly,
-        Lookup_ID AS Lookup_Values,
+        Lookup_Values AS Lookup_Values,
          CASE 
             WHEN ff.Table_Name = 'Persons' THEN 'Person_List'
             WHEN ff.Table_Name = 'Organizational_Units' THEN 'Organizational_Unit_List'
@@ -299,21 +298,23 @@ ORDER BY PageRank, SortOrder, DefinitionID;
             }
         }
         // All data is now in memory, safe to process
-        var pages = results
+        var grouped = results
             .GroupBy(r => new { r.PageName, r.PageRank })
-            .Select(g => new PageDto
+            .ToList();
+        var pageTasks = grouped.Select(async g =>
+        {
+            var itemsList = g.OrderBy(x => x.SortOrder).ToList();
+            var mapTasks = itemsList.Select((dynamic x) => MapToPageItemAsync(x)).Cast<Task<IPageItem?>>().ToList();
+            var mappedItems = await Task.WhenAll(mapTasks);
+            return new PageDto
             {
                 PageName = g.Key.PageName,
                 PageRank = g.Key.PageRank,
-                Items = g.OrderBy(x => x.SortOrder)
-                    .Select(x => MapToPageItem(x))
-                    .Where(i => i != null)
-                    .Cast<IPageItem>()
-                    .ToList()
-            })
-            .OrderBy(p => p.PageRank)
-            .ToList();
-        return pages;
+                Items = mappedItems.Where(i => i != null).Cast<IPageItem>().ToList()
+            };
+        }).ToList();
+        var resolvedPages = await Task.WhenAll(pageTasks);
+        return resolvedPages.OrderBy(p => p.PageRank).ToList();
     }
 
     /// <summary>
@@ -416,18 +417,42 @@ ORDER BY PageRank, SortOrder, DefinitionID;
         };
     }
 
+    // Helper to resolve FieldValue as described
+    private async Task<string?> ResolveFieldValueAsync(dynamic x)
+    {
+        Guid guid = Guid.Empty;
+        if (!(x.FieldValue is string fieldValueStr) || !Guid.TryParse(fieldValueStr, out guid) || guid == Guid.Empty || string.IsNullOrWhiteSpace(x.TableName) || string.IsNullOrWhiteSpace(x.DisplayFields))
+        {
+            return x.FieldValue;
+        }
+        var sql = $"SELECT {x.DisplayFields} FROM [{x.TableName}] WHERE Id = @Id";
+        var connString = _db.Database.GetConnectionString();
+        using (var connection = new SqlConnection(connString))
+        {
+            await connection.OpenAsync();
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = sql;
+                command.Parameters.Add(new SqlParameter("@Id", guid));
+                var result = await command.ExecuteScalarAsync();
+                return result?.ToString();
+            }
+        }
+    }
+
     /// <summary>
     /// Maps a dynamic row to an IPageItem (FieldInputDto or FieldTextDto).
     /// </summary>
-    private IPageItem? MapToPageItem(dynamic x)
+    private async Task<IPageItem?> MapToPageItemAsync(dynamic x)
     {
         if (x.ElementType == null)
         {
+            var resolvedValue =  await ResolveFieldValueAsync(x);
             return new FieldInputDto
             {
                 Field_Num = x.FieldNum,
                 FieldLabel = x.FieldLabel,
-                FieldValue = x.FieldValue,
+                FieldValue = resolvedValue,
                 FieldName = x.FieldName,
                 DefinitionID = x.DefinitionID,
                 SortOrder = x.SortOrder,

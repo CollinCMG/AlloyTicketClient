@@ -78,7 +78,7 @@ else
             }
             else
             {
-                <select class="form-control" @onchange="OnDropdownChanged" required="@(Field.Mandatory == true)" disabled="@(Field.Read_Only == true)">
+                <select class="form-control" @bind="SelectedDropdownValue" required="@(Field.Mandatory == true)" disabled="@(Field.Read_Only == true)">
                     <option value="">-- Select --</option>
                     @foreach (var option in Options)
                     {
