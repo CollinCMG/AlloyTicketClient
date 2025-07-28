@@ -86,6 +86,7 @@ Where al.EventID = @ActionId
     public async Task<List<PageDto>> GetFormPagesAsync(Guid formId)
     {
         var sql = @"
+
 WITH PageBreaks AS (
     SELECT
         e.Field_ID      AS PageFieldID,
@@ -101,47 +102,103 @@ WITH PageBreaks AS (
       AND e.Form_ID = @FormId
 ),
 FieldAssignments AS (
-    SELECT
-        d.ID            AS DefinitionID,
-        d.Field_Num     AS Field_Num,
-        CASE
-            WHEN d.Virtual = 0 THEN d.Field_Name
-            ELSE f.Field_Caption
-        END             AS Field_Name,
-        d.Field_Label   AS Field_Label,
-        d.Field_Value   AS Field_Value,
-        d.Form_ID       AS Form_ID,
-        f.Field_Caption AS Field_Caption,
-        pb.PageName     AS PageName,
-        pb.PageRank     AS PageRank,
-        NULL            AS ElementType,
-        d.Field_Num     AS SortOrder,
-        NULL            AS ElementDefinition,
-        f.Field_Type    AS FieldType,
-        d.Mandatory     AS Mandatory,
-        d.Read_Only     AS ReadOnly,
-        Lookup_Values   AS Lookup_Values,
-        CASE 
-            WHEN f.Table_Name = 'Persons' THEN 'Person_List'
-            WHEN f.Table_Name = 'Organizational_Units' THEN 'Organizational_Unit_List'
-            ELSE f.Table_Name
+    -- Virtual Fields
+    SELECT DISTINCT
+        cd.ID AS DefinitionID,
+        cd.Field_Num,
+        ff.Field_Caption AS Field_Name,
+        cd.Field_Label,
+        cd.Field_Value,
+        cd.Form_ID,
+        ff.Field_Caption,
+        pb.PageName,
+        pb.PageRank,
+        NULL AS ElementType,
+        cd.Field_Num AS SortOrder,
+        NULL AS ElementDefinition,
+        ff.Field_Type,
+        cd.Mandatory,
+        cd.Read_Only AS ReadOnly,
+        Lookup_ID AS Lookup_Values,
+         CASE 
+            WHEN ff.Table_Name = 'Persons' THEN 'Person_List'
+            WHEN ff.Table_Name = 'Organizational_Units' THEN 'Organizational_Unit_List'
+            ELSE ff.Table_Name
         END             AS Table_Name,
-        Virtual         AS Virtual,
-        ct.Display_Fields AS Display_Fields,
-        Filter          AS Filter
-    FROM cfgLCFormDefinition d
-    LEFT JOIN cfgLCFormFields f
-        ON REPLACE(REPLACE(d.Field_Name, '{', ''), '}', '') = REPLACE(REPLACE(f.ID, '{', ''), '}', '')
+        cd.Virtual,
+         ISNULL(cf.Display_Fields, ct.Display_Fields) AS Display_Fields,
+        Filter
+    FROM cfgLCFormDefinition cd
+    INNER JOIN cfgLCFormFields ff 
+        ON TRY_CAST(REPLACE(REPLACE(cd.Field_Name, '{', ''), '}', '') AS UNIQUEIDENTIFIER) = ff.ID
     LEFT JOIN cfgCustTables ct
-        ON f.Table_Name = ct.Table_Name
+        ON ff.Table_Name = ct.Table_Name
     OUTER APPLY (
         SELECT TOP 1 pb2.PageName, pb2.PageRank
         FROM PageBreaks pb2
-        WHERE pb2.Form_ID = d.Form_ID
-          AND pb2.StartFieldNum <= d.Field_Num
+        WHERE pb2.Form_ID = cd.Form_ID
+          AND pb2.StartFieldNum <= cd.Field_Num
         ORDER BY pb2.StartFieldNum DESC
     ) pb
-    WHERE d.Form_ID = @FormId
+        OUTER APPLY (
+        SELECT DISTINCT TOP 1 cf.Default_Label, Mandatory, Read_Only, Table_Name, Display_Fields
+        FROM cfgCustFields cf
+        INNER JOIN cfgCustTableFields ctf
+            ON cf.ID = ctf.Field_ID
+        INNER JOIN cfgCustTables ct2
+            ON ctf.Ref_Table_ID = ct2.ID
+        WHERE Virtual = 0
+          AND cf.Field_Name = cd.Field_Name
+    ) cf
+    WHERE cd.Form_ID = @FormId
+      AND cd.Virtual = 1
+
+    UNION
+
+    -- Non-Virtual Fields
+    SELECT DISTINCT
+        cd.ID AS DefinitionID,
+        cd.Field_Num,
+        cfv.Field_Name,
+        cfv.Field_Label,
+        cd.Field_Value,
+        cd.Form_ID,
+        cfv.Field_Name AS Field_Caption,
+        pb.PageName,
+        pb.PageRank,
+        NULL AS ElementType,
+        cd.Field_Num AS SortOrder,
+        NULL AS ElementDefinition,
+        flData.Param_Type AS FieldType,
+        cd.Mandatory,
+        cd.Read_Only AS ReadOnly,
+        null AS Lookup_Values,
+        Ref_Table_Name as TableName,
+        cd.Virtual,
+         Ref_Display_Fields AS Display_Fields,
+        NULL AS Filter
+    FROM cfgLCForms f
+        INNER JOIN cfgLCFormDefinition cd
+            ON cd.Form_ID = f.ID
+    INNER JOIN cfgCustFieldsView cfv 
+        ON cd.Field_Name = cfv.Field_Name
+    INNER JOIN cfgWFObjectsView ov
+        ON cfv.Table_Name = ov.Object_Table AND ov.ID = f.WFObject_ID
+    CROSS APPLY (
+        SELECT fl.ID, fp.Param_Name, fp.Param_Type
+        FROM cfgLCFunctionList fl
+        INNER JOIN cfgLCFunctionParams fp ON fl.ID = fp.Function_ID
+        WHERE fp.Param_Name = cfv.Field_Label and fl.WFObject_ID = f.WFObject_ID
+    ) AS flData
+    OUTER APPLY (
+        SELECT TOP 1 pb2.PageName, pb2.PageRank
+        FROM PageBreaks pb2
+        WHERE pb2.Form_ID = cd.Form_ID
+          AND pb2.StartFieldNum <= cd.Field_Num
+        ORDER BY pb2.StartFieldNum DESC
+    ) pb
+    WHERE cd.Form_ID = @FormId
+      AND cd.Virtual = 0
 ),
 ElementAssignments AS (
     SELECT
@@ -179,7 +236,7 @@ ElementAssignments AS (
     WHERE e.Type = 1
       AND e.Form_ID = @FormId
 )
-SELECT
+SELECT DISTINCT
     PageName,
     PageRank,
     Field_Num,
@@ -190,7 +247,7 @@ SELECT
     ElementType,
     ElementDefinition,
     SortOrder,
-    FieldType,
+    Field_Type as FieldType,
     Mandatory,
     ReadOnly,
     Lookup_Values      AS LookupValues,
@@ -202,7 +259,7 @@ FROM FieldAssignments
 
 UNION ALL
 
-SELECT
+SELECT DISTINCT
     PageName,
     PageRank,
     Field_Num,
@@ -216,14 +273,14 @@ SELECT
     FieldType,
     Mandatory,
     ReadOnly,
-    Lookup_Values      AS LookupValues,
-    Table_Name         AS TableName,
+    Lookup_Values,
+    Table_Name,
     Virtual,
-    Display_Fields     AS DisplayFields,
+    Display_Fields,
     Filter
 FROM ElementAssignments
 
-ORDER BY PageRank, SortOrder, DefinitionID
+ORDER BY PageRank, SortOrder, DefinitionID;
 ";
         var param = new SqlParameter("@FormId", formId);
         var results = new List<dynamic>();
@@ -277,15 +334,21 @@ ORDER BY PageRank, SortOrder, DefinitionID
 
         if (field.TableName == "Person_List")
         {
-            sql = $"SELECT {field.DisplayFields + ", [Primary_Email]"} FROM [{field.TableName}]";
+            sql = $"SELECT DISTINCT {field.DisplayFields + ", [Primary_Email]"} FROM [{field.TableName}]";
         }
         else
         {
-            sql = $"SELECT {field.DisplayFields} FROM [{field.TableName}]";
+            sql = $"SELECT DISTINCT {field.DisplayFields} FROM [{field.TableName}]";
         }
 
         if (!string.IsNullOrWhiteSpace(field.Filter))
             sql += $" WHERE {field.Filter}";
+
+        if (!sql.Contains("ORDER BY "))
+        {
+            sql = $"{sql} ORDER BY {field.DisplayFields}";
+        }
+
         var options = new List<DropdownOptionDto>();
         var connString = _db.Database.GetConnectionString();
         using (var connection = new SqlConnection(connString))
