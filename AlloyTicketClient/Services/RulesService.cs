@@ -287,7 +287,6 @@ namespace AlloyTicketClient.Services
                         var roles = await _userRoleService.GetRolesForUserAsync(username);
                         var queues = await _userRoleService.GetUserQueuesAsync(username);
                         var apps = roles.Select(x => x.AppCode).Distinct();
-                        //bool triggerMatch = string.IsNullOrWhiteSpace(rule.TriggerValue) || string.Equals(valueStr, rule.TriggerValue, StringComparison.OrdinalIgnoreCase);
 
                         foreach (var target in rule.TargetList)
                         {

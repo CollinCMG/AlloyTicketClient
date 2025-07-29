@@ -101,24 +101,6 @@
             return pages ?? new List<PageDto>();
         }
 
-        public async Task<List<DropdownOptionDto>> GetDropdownOptionsAsync(FieldInputDto field)
-        {
-            if (field == null)
-                throw new ArgumentNullException(nameof(field));
-
-            var apiUrl = $"{GetBaseUrl()}/formfields/dropdown-options";
-            var serializedPayload = JsonSerializer.Serialize(field);
-            var content = new StringContent(serializedPayload, Encoding.UTF8, "application/json");
-            var response = await _client.PostAsync(apiUrl, content);
-            if (!response.IsSuccessStatusCode)
-                return new List<DropdownOptionDto>();
-
-            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var json = await response.Content.ReadAsStringAsync();
-            var dropdownOptions = JsonSerializer.Deserialize<List<DropdownOptionDto>>(json, options);
-            return dropdownOptions ?? new List<DropdownOptionDto>();
-        }
-
         private void SetAuthHeader(string requester, string email = null)
         {
             if (string.IsNullOrWhiteSpace(requester))
