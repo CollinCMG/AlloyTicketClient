@@ -2,6 +2,7 @@
 {
     using AlloyTicketClient.Models;
     using AlloyTicketClient.Models.DTOs;
+    using Microsoft.AspNetCore.Components.Authorization;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Logging;
     using System;
@@ -18,20 +19,25 @@
         private readonly IConfiguration _config;
         private readonly JwtTokenService _jwtTokenService;
         private readonly ILogger<AlloyApiService> _logger;
+        private readonly AuthenticationStateProvider _authStateProvider;
 
-        public AlloyApiService(HttpClient client, IConfiguration config, JwtTokenService jwtTokenService, ILogger<AlloyApiService> logger)
+        public AlloyApiService(HttpClient client, IConfiguration config, JwtTokenService jwtTokenService, ILogger<AlloyApiService> logger, AuthenticationStateProvider authStateProvider)
         {
             _client = client ?? throw new ArgumentNullException(nameof(client));
             _config = config ?? throw new ArgumentNullException(nameof(config));
             _jwtTokenService = jwtTokenService ?? throw new ArgumentNullException(nameof(jwtTokenService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _authStateProvider = authStateProvider ?? throw new ArgumentNullException(nameof(authStateProvider));
         }
+
+
 
         public async Task<(bool Success, string Message)> CreateRequestAsync(RequestActionPayload payload)
         {
             try
             {
-                SetAuthHeader(payload.Requester_ID);
+                await SetAuthHeaderAsync();
+
                 var apiUrl = $"{GetBaseUrl()}/request";
                 // Serialize and send the RequestActionPayload object directly (no wrapper)
                 var serializedPayload = JsonSerializer.Serialize(payload);
@@ -58,6 +64,8 @@
             if (string.IsNullOrWhiteSpace(objectId))
                 return Guid.Empty;
 
+            await SetAuthHeaderAsync();
+
             var apiUrl = $"{GetBaseUrl()}/formfields/object/{objectId}";
 
             var response = await _client.GetAsync(apiUrl);
@@ -72,6 +80,8 @@
         {
             if (actionId == null)
                 return Guid.Empty;
+
+            await SetAuthHeaderAsync();
 
             var apiUrl = $"{GetBaseUrl()}/formfields/action/{actionId}";
 
@@ -101,13 +111,14 @@
             return pages ?? new List<PageDto>();
         }
 
-        private void SetAuthHeader(string requester, string email = null)
+        private async Task SetAuthHeaderAsync(string email = null)
         {
-            if (string.IsNullOrWhiteSpace(requester))
-                throw new ArgumentException("Requester cannot be null or empty.", nameof(requester));
+            var requester = await GetLoggedInUsernameAsync();
+
             string jwtToken = _jwtTokenService.GenerateJwtToken(requester, email ?? requester);
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
         }
+
 
         private string GetBaseUrl()
         {
@@ -137,10 +148,18 @@
                         dict[prop.Name] = prop.Value.Deserialize<object?>();
                     }
                 }
-                var json = System.Text.Json.JsonSerializer.Serialize(dict);
-                return System.Text.Json.JsonDocument.Parse(json).RootElement;
+                var json = JsonSerializer.Serialize(dict);
+                return JsonDocument.Parse(json).RootElement;
             }
             return element;
+        }
+
+        private async Task<string> GetLoggedInUsernameAsync()
+        {
+            var authState = await _authStateProvider.GetAuthenticationStateAsync();
+            return authState.User.Claims.FirstOrDefault(c => c.Type == "name")?.Value
+                ?? authState.User.Identity?.Name
+                ?? string.Empty;
         }
     }
 }

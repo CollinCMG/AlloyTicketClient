@@ -51,7 +51,7 @@ namespace AlloyTicketClient.Components.Forms
                 }
                 else if (Payload.Type == RequestType.Support)
                 {
-                    Payload.FormId = await AlloyApiService.GetFormIdByActionId(Payload?.ActionId);
+                    Payload.FormId = await AlloyApiService.GetFormIdByActionId(Payload.ActionId);
                 }
 
                 if (Show && Payload != null && Payload.FormId != Guid.Empty)
