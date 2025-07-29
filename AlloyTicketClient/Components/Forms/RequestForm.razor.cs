@@ -96,12 +96,15 @@ namespace AlloyTicketClient.Components.Forms
         }
 
         // --- Event Handlers ---
-        private async Task ShowToastAsync(string message, string type = "success", int durationMs = 3000)
+        private async Task ShowToastAsync(string message, string type = "success", int durationMs = 5000)
         {
             toastMessage = message;
             toastType = type;
             showToast = true;
             StateHasChanged();
+            // Hide toast after duration
+            await Task.Delay(durationMs);
+            await HideToastAsync();
         }
 
         private  async Task HideToastAsync()
